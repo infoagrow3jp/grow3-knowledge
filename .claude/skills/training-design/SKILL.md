@@ -1,10 +1,10 @@
 ---
 name: training-design
 description: >-
-  Provides Grow3 training and workshop design methodology—design philosophy,
-  ADDIE/SAM/7-step process, time/work/venue patterns, theme mappings,
-  facilitation, and deliverable quality standards. Use when designing trainings,
-  workshops, time schedules (TS), facilitation guides, or Grow3研修設計.
+  Grow3研修・ワークショップの設計方法論（設計思想、ADDIE/SAM、7ステップ、時間設計、
+  ワークの型、テーマ別マッピング、ファシリテーション、成果物品質）。研修設計・研修構成・
+  ワークショップ設計・タイムスケジュール・TS作成・ファシリガイド・振り返り設計・
+  半日研修・1日研修の相談や骨格設計時に使う。
 ---
 
 # Grow3 研修設計OS
