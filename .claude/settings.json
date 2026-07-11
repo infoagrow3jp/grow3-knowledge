@@ -1,0 +1,15 @@
+{
+  "_comment": "既に.claude/settings.jsonがある場合は、このhooksブロックを既存JSONにマージすること（丸ごと上書きしない）。Stopフックはstop-hook-check.sh経由で実行される：変更ファイルのみ検品し、FAIL時はexit 2で差し戻し（自動差し戻しは1回まで、ループ防止でstop_hook_active時は警告のみ）。ハードゲートはpre-commit側。",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/stop-hook-check.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

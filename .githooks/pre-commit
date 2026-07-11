@@ -1,0 +1,14 @@
+#!/bin/bash
+# Grow3 pre-commit フック
+# 有効化: git config core.hooksPath .githooks
+# コミット対象ファイルに出荷前検品を実行し、FAILがあればコミットを中止する。
+REPO_ROOT=$(git rev-parse --show-toplevel)
+bash "$REPO_ROOT/scripts/pre-delivery-check.sh" --staged
+RESULT=$?
+if [ $RESULT -ne 0 ]; then
+  echo ""
+  echo "コミットを中止しました。FAIL項目を解消するか、"
+  echo "意図的な例外の場合のみ git commit --no-verify を使用してください。"
+  exit 1
+fi
+exit 0
