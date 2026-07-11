@@ -39,8 +39,8 @@ else
     if [ -d "$a" ]; then
       while IFS= read -r f; do
         ! is_excluded "$f" && TARGETS+=("$f")
-      done < <(find "$a" -type f \( -name "*.md" -o -name "*.html" -o -name "*.txt" \
-            -o -name "*.pptx" -o -name "*.docx" -o -name "*.xlsx" \
+      done < <(find "$a" -type f \( -name "*.md" -o -name "*.html" -o -name "*.htm" \
+            -o -name "*.txt" -o -name "*.pptx" -o -name "*.docx" -o -name "*.xlsx" \
             -o -name "*.css" -o -name "*.js" -o -name "*.svg" \) \
             ! -path "*/node_modules/*" ! -path "*/.git/*")
     elif [ -f "$a" ]; then
@@ -122,7 +122,7 @@ for f in "${TARGETS[@]}"; do
   # ===== WARN（要レビュー） =====
   # 3) ブランド外カラーコード（html/css/js/svgのみ）
   case "$f" in
-    *.html|*.css|*.js|*.svg)
+    *.html|*.htm|*.css|*.js|*.svg)
       OFFBRAND=$(grep -oiE "#[0-9a-f]{6}|#[0-9a-f]{3}\b" "$f" 2>/dev/null \
         | tr 'a-f' 'A-F' | sed 's/#//' | sort -u \
         | grep -vE "^(${BRAND_COLORS})$" | head -5)
@@ -132,13 +132,25 @@ for f in "${TARGETS[@]}"; do
   esac
   # 4) 改行直前の読点（md/html/txtのみ）
   case "$f" in
-    *.md|*.html|*.txt)
+    *.md|*.html|*.htm|*.txt)
       LINES=$(grep -nE "、[[:space:]]*$" "$f" 2>/dev/null | cut -d: -f1 | head -10 | tr '\n' ',')
       [ -n "$LINES" ] && report WARN "$f" "改行直前の読点：行 ${LINES%,}"
       # 5) AI語候補（禁止語ではない・要レビュー）
       for w in "寄り添" "最大化" "変容を促" "本質的な価値" "唯一無二"; do
         if grep -qF "$w" "$f" 2>/dev/null; then
           report WARN "$f" "AI語候補：「${w}」（文脈上必要なら問題なし）"
+        fi
+      done ;;
+  esac
+  # 6) HTML構造タグの開閉個数不一致（補助検査・WARNのみ）
+  #    個数一致でも入れ子誤りは保証できず、コメント内文字列で誤検出しうる。
+  case "$f" in
+    *.html|*.htm)
+      for tag in div section article main; do
+        open_n=$(grep -oiE "<${tag}([[:space:]/>])" "$f" 2>/dev/null | wc -l | tr -d ' ')
+        close_n=$(grep -oiE "</${tag}[[:space:]]*>" "$f" 2>/dev/null | wc -l | tr -d ' ')
+        if [ "${open_n:-0}" != "${close_n:-0}" ]; then
+          report WARN "$f" "HTMLタグ個数不一致：<${tag}> 開${open_n} / 閉${close_n}（入れ子誤りは未検出・コメント内誤検知ありうる）"
         fi
       done ;;
   esac
