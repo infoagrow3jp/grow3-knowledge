@@ -9,7 +9,8 @@
 ## 構成
 
 ```
-.claude/skills/grow3-judgment/evals/     … タスクA ブログ採点／タスクD 法令ファクトチェック
+.claude/skills/grow3-judgment/evals/     … タスクA ブログ採点／タスクD-1/D-2 法令ファクトチェック（Webなし=フェイルセーフ／
+                                            Webあり=実務検証）
 .claude/skills/coaching-training/evals/  … タスクB 研修レビュー
 .claude/skills/sns-repurpose/evals/      … タスクC Threads生成
 各evals/ … evals.json（プロンプト＋合格条件）＋ files/（欠陥を仕込んだ架空素材）
