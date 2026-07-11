@@ -7,6 +7,11 @@
 # 終了コード: 0 = 合格（WARNのみ含む） / 1 = FAILあり（出荷不可）
 # 判定できるのは文字列レベルのみ。CPマスター準拠・視覚的なブランド適合は
 # compliance-checker（裁量判定）で確認すること。
+#
+# 未確定表記（【要確認】/TODO/仮置き/未確定）の扱い:
+#   frontmatter の status: draft|reviewed → WARN
+#   status: final または frontmatterなし → FAIL
+# 公開禁止事例・★★・XXX は status に関係なく常に FAIL。
 # =============================================================
 set -u
 FAIL=0
@@ -54,6 +59,28 @@ get_text() {
   esac
 }
 
+# 先頭YAML frontmatterの status 値を返す（なければ空）。
+get_doc_status() {
+  local first
+  first=$(head -n 1 "$1" 2>/dev/null | tr -d '\r')
+  [ "$first" = "---" ] || { echo ""; return; }
+  awk '
+    BEGIN { in_fm=0 }
+    {
+      line=$0
+      sub(/\r$/, "", line)
+    }
+    NR==1 && line=="---" { in_fm=1; next }
+    in_fm && line=="---" { exit }
+    in_fm && line ~ /^status:[[:space:]]*/ {
+      sub(/^status:[[:space:]]*/, "", line)
+      sub(/[[:space:]]+$/, "", line)
+      print line
+      exit
+    }
+  ' "$1"
+}
+
 report() { # $1=LEVEL $2=file $3=message
   echo "[$1] $2 : $3"
   [ "$1" = "FAIL" ] && FAIL=$((FAIL+1)) || WARN=$((WARN+1))
@@ -63,9 +90,15 @@ BRAND_COLORS="0F3D96|EEF3FA|1F2937|E5E7EB|FFFFFF|000000|FFF|000"
 
 for f in "${TARGETS[@]}"; do
   TEXT=$(get_text "$f")
+  DOC_STATUS=$(get_doc_status "$f")
+  if [ "$DOC_STATUS" = "draft" ] || [ "$DOC_STATUS" = "reviewed" ]; then
+    UNCERTAIN_LEVEL=WARN
+  else
+    UNCERTAIN_LEVEL=FAIL
+  fi
 
   # ===== FAIL（出荷不可） =====
-  # 1) 公開禁止事例：介護施設の離職率改善事例
+  # 1) 公開禁止事例：介護施設の離職率改善事例（statusに関係なく常にFAIL）
   if echo "$TEXT" | grep -q "介護" && echo "$TEXT" | grep -q "離職率"; then
     report FAIL "$f" "公開禁止事例の疑い：「介護」と「離職率」が共起（使用制限事例）"
   fi
@@ -73,7 +106,14 @@ for f in "${TARGETS[@]}"; do
     report FAIL "$f" "公開禁止事例の疑い：離職率30%台→5%台の数値パターン"
   fi
   # 2) 未確定表記の残存
-  for kw in "【要確認】" "TODO" "仮置き" "未確定" "★★" "XXX"; do
+  #    draft/reviewed → WARN / final・frontmatterなし → FAIL
+  for kw in "【要確認】" "TODO" "仮置き" "未確定"; do
+    if echo "$TEXT" | grep -qF "$kw"; then
+      report "$UNCERTAIN_LEVEL" "$f" "未確定表記が残存：${kw}"
+    fi
+  done
+  # ★★ / XXX は status に関係なく FAIL
+  for kw in "★★" "XXX"; do
     if echo "$TEXT" | grep -qF "$kw"; then
       report FAIL "$f" "未確定表記が残存：${kw}"
     fi
