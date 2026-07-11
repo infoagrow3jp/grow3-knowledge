@@ -1,0 +1,973 @@
+<!-- ============================================================
+     グロウスリー「組織づくりの考え方」ページ
+     改訂版 v5（2026-07-11）
+     v4からの変更点（レビュー確定6点＋導線1点のみ。他は不変更）:
+     ① 事例1末尾の閉じタグ3個欠落を修正（不具合修正）
+     ② SSR中央まとめ文を変更
+     ③ 差別化ボックス末尾に行動継続の一文を追加
+     ④ 3つの力チェーン「組織力の視点」に目的連鎖の問いを追加
+     ⑤ 「判断材料は渡されているか」→「共有されているか」
+     ⑥ 9/3ワークショップへの期間限定案内ブロックを追加
+        （WS_20260903コメントで囲み、2026-09-04以降に削除）
+     ------------------------------------------------------------
+     v4の変更点（参考）:
+     ① FVキャッチを「社長があれやろう」型に変更
+     ② SSR説明に石見氏の原典定義 + 3割洞察を強調
+     ③ 「成果が出る組織の状態」セクション新設（100点文を分割掲載）
+     ④ 差別化言語「制度と対話のあいだを扱える」を見立てセクションに追加
+     ⑤ 抽象化事例2件を新設
+     ============================================================ -->
+
+<style>
+.g3-ssr-page {
+  font-family: "Noto Sans JP","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",YuGothic,Meiryo,sans-serif;
+  color: #33434b;
+  line-height: 1.9;
+  font-size: 16px;
+}
+.g3-ssr-page * { box-sizing: border-box; }
+.g3-ssr-page .g3s-section { padding: 80px 24px; }
+.g3-ssr-page .g3s-section--bg { background: #f7f8f3; }
+.g3-ssr-page .g3s-section--dark { background: #0f3d96; color: white; }
+.g3-ssr-page .g3s-section--case { background: #21313a; color: white; }
+.g3-ssr-page .g3s-inner { max-width: 900px; margin: 0 auto; }
+.g3-ssr-page .g3s-label {
+  display: inline-block; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.1em; color: #0f3d96; border: 1px solid #0f3d96;
+  border-radius: 4px; padding: 4px 12px; margin-bottom: 20px;
+}
+.g3-ssr-page .g3s-label--white { color: white; border-color: rgba(255,255,255,0.6); }
+.g3-ssr-page .g3s-label--light { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.35); }
+.g3-ssr-page .g3s-h2 {
+  font-size: 28px; font-weight: 700; line-height: 1.6;
+  color: #21313a; margin-bottom: 28px;
+}
+.g3-ssr-page .g3s-h2--white { color: white; }
+.g3-ssr-page .g3s-lead { font-size: 16px; line-height: 2; color: #33434b; margin-bottom: 20px; }
+
+/* ── FV ──────────────────────────────────── */
+.g3-ssr-page .g3s-fv {
+  background: linear-gradient(135deg, #1a4fa0 0%, #0f3d96 60%, #0a2d70 100%);
+  padding: 100px 24px 80px; text-align: center; color: white;
+}
+.g3-ssr-page .g3s-fv__label {
+  display: inline-block; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.12em; color: rgba(255,255,255,0.65); margin-bottom: 20px;
+}
+.g3-ssr-page .g3s-fv__catch {
+  font-size: 32px; font-weight: 700; line-height: 1.65;
+  letter-spacing: 0.02em; margin-bottom: 36px; color: white;
+}
+.g3-ssr-page .g3s-fv__catch em {
+  font-style: normal; color: #93c5fd; font-size: 1.05em;
+}
+.g3-ssr-page .g3s-fv__sub {
+  font-size: 16px; line-height: 2.1;
+  color: rgba(255,255,255,0.88); margin-bottom: 40px;
+  max-width: 560px; margin-left: auto; margin-right: auto;
+}
+.g3-ssr-page .g3s-btn-primary {
+  display: inline-block; background: white; color: #0f3d96;
+  font-weight: 700; font-size: 15px; padding: 16px 36px;
+  border-radius: 999px; text-decoration: none; letter-spacing: 0.05em;
+}
+
+/* ── 共感 ────────────────────────────────── */
+.g3-ssr-page .g3s-sympathy-list { margin: 28px 0; padding: 0; list-style: none; }
+.g3-ssr-page .g3s-sympathy-list li {
+  padding: 14px 20px; border-left: 4px solid #0f3d96;
+  background: white; margin-bottom: 12px; border-radius: 0 8px 8px 0;
+  font-size: 15px; line-height: 1.8;
+}
+.g3-ssr-page .g3s-sympathy-close {
+  margin-top: 28px; padding: 28px 32px; background: white;
+  border-radius: 12px; border: 1px solid #dfe7dc;
+  font-size: 15px; line-height: 2;
+}
+
+/* ── 原体験 ──────────────────────────────── */
+.g3-ssr-page .g3s-origin {
+  margin: 48px 0 0; padding: 32px 36px 32px 40px;
+  background: white; border-radius: 12px;
+  border: 1px solid #dfe7dc; border-left: 4px solid #0f3d96;
+  font-size: 15px; line-height: 2.1;
+}
+.g3-ssr-page .g3s-origin__label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+  color: #0f3d96 !important; margin-bottom: 20px;
+}
+.g3-ssr-page .g3s-origin__body p { margin: 0 0 14px; color: #33434b !important; }
+.g3-ssr-page .g3s-origin__body p:last-child { margin-bottom: 0; }
+.g3-ssr-page .g3s-origin__body strong { color: #21313a !important; font-weight: 700; }
+
+/* ── 氷山 ────────────────────────────────── */
+.g3-ssr-page .g3s-iceberg-visual { margin-top: 36px; }
+.g3-ssr-page .g3s-iceberg-visual figure { margin: 0 0 24px; border-radius: 12px; overflow: hidden; }
+.g3-ssr-page .g3s-iceberg-visual figure img { width: 100%; display: block; }
+.g3-ssr-page .g3s-iceberg-visual__text {
+  padding: 24px 28px; background: #e8f0fb;
+  border-radius: 12px; border-left: 4px solid #0f3d96;
+}
+.g3-ssr-page .g3s-iceberg-visual__label {
+  font-size: 14px; font-weight: 700; color: #0f3d96; margin: 0 0 14px;
+}
+.g3-ssr-page .g3s-iceberg-visual__text p {
+  font-size: 14px; line-height: 1.9; color: #33434b; margin: 0 0 12px;
+}
+.g3-ssr-page .g3s-iceberg-visual__text p:last-child { margin-bottom: 0; }
+
+/* ── SSRカード ───────────────────────────── */
+.g3-ssr-page .g3s-ssr-cards {
+  display: -webkit-box !important;
+  display: -ms-flexbox !important;
+  display: flex !important;
+  -ms-flex-wrap: nowrap; flex-wrap: nowrap;
+  gap: 20px; max-width: 860px; margin: 0 auto 24px;
+  align-items: stretch;
+}
+.g3-ssr-page .g3s-ssr-card {
+  background: white; border: 1px solid #dfe7dc;
+  border-radius: 0 0 14px 14px; padding: 22px 20px;
+  -webkit-box-flex: 1; -ms-flex: 1 1 0%; flex: 1 1 0%; min-width: 0;
+}
+.g3-ssr-page .g3s-ssr-card--strength { border-top: 4px solid #e8a020; }
+.g3-ssr-page .g3s-ssr-card--structure { border-top: 4px solid #1e7a6e; }
+.g3-ssr-page .g3s-ssr-card--relation { border-top: 4px solid #a93226; }
+.g3-ssr-page .g3s-ssr-card-title { margin: 0 0 6px; font-size: 15px; font-weight: 700; }
+.g3-ssr-page .g3s-ssr-card--strength .g3s-ssr-card-title { color: #c8760a; }
+.g3-ssr-page .g3s-ssr-card--structure .g3s-ssr-card-title { color: #155f55; }
+.g3-ssr-page .g3s-ssr-card--relation .g3s-ssr-card-title { color: #8b1a11; }
+.g3-ssr-page .g3s-ssr-card p { margin: 0; font-size: 13px; line-height: 1.9; color: #33434b; }
+.g3-ssr-page .g3s-triangle-center {
+  max-width: 440px; margin: 0 auto; padding: 16px 20px;
+  border-radius: 999px; background: #0f3d96; color: white;
+  text-align: center; font-weight: 700; font-size: 14px;
+}
+
+/* ── 3割インサイトボックス ───────────────── */
+.g3-ssr-page .g3s-insight {
+  margin: 32px auto; max-width: 680px;
+  padding: 24px 32px; background: #21313a;
+  border-radius: 12px; color: white; font-size: 15px; line-height: 2;
+}
+.g3-ssr-page .g3s-insight strong { color: #93c5fd; }
+
+/* ── 成果が出る組織の状態（100点文） ────── */
+.g3-ssr-page .g3s-outcome { margin: 36px 0; }
+.g3-ssr-page .g3s-outcome-item {
+  display: flex; gap: 18px; align-items: flex-start;
+  padding: 18px 24px; background: white;
+  border: 1px solid #dfe7dc; border-radius: 12px;
+  margin-bottom: 12px; font-size: 15px; line-height: 1.85;
+}
+.g3-ssr-page .g3s-outcome-item__tag {
+  flex-shrink: 0; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; padding: 4px 10px; border-radius: 4px;
+  margin-top: 3px; white-space: nowrap;
+}
+.g3-ssr-page .g3s-outcome-item--s .g3s-outcome-item__tag { background: #fef3dc; color: #c8760a; }
+.g3-ssr-page .g3s-outcome-item--r .g3s-outcome-item__tag { background: #edf7f5; color: #155f55; }
+.g3-ssr-page .g3s-outcome-item--x .g3s-outcome-item__tag { background: #fdecea; color: #8b1a11; }
+.g3-ssr-page .g3s-outcome-close {
+  margin-top: 24px; padding: 22px 28px; background: #e8f0fb;
+  border-left: 4px solid #0f3d96; border-radius: 0 12px 12px 0;
+  font-size: 16px; font-weight: 700; color: #21313a; line-height: 1.8;
+}
+
+/* ── 3つの力のチェーン ───────────────────── */
+.g3-ssr-page .g3s-chain { display: flex; flex-direction: column; gap: 0; margin: 36px auto; max-width: 680px; }
+.g3-ssr-page .g3s-chain-note {
+  margin-bottom: 20px; padding: 14px 20px; background: #f5f7fb;
+  border-radius: 8px; font-size: 14px; color: #66757c;
+}
+.g3-ssr-page .g3s-chain-item {
+  background: white; border: 1px solid #dfe7dc;
+  border-radius: 12px; padding: 20px 24px;
+  font-size: 15px; line-height: 1.9;
+}
+.g3-ssr-page .g3s-chain-arrow { text-align: center; color: #0f3d96; font-size: 20px; padding: 6px 0; }
+.g3-ssr-page .g3s-chain-close {
+  margin-top: 28px; padding: 24px 28px; background: #e8f0fb;
+  border-radius: 12px; border-left: 4px solid #0f3d96;
+  font-size: 15px; line-height: 1.9; font-weight: 500;
+  max-width: 680px; margin-left: auto; margin-right: auto;
+}
+
+/* ── 差別化ボックス ──────────────────────── */
+.g3-ssr-page .g3s-diff {
+  margin: 36px 0; padding: 32px 36px;
+  background: white; border: 1px solid #dfe7dc;
+  border-radius: 14px; border-top: 4px solid #0f3d96;
+}
+.g3-ssr-page .g3s-diff__label {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+  color: #0f3d96; margin-bottom: 16px;
+}
+.g3-ssr-page .g3s-diff__row {
+  display: flex; gap: 0; margin-bottom: 12px; align-items: stretch;
+}
+.g3-ssr-page .g3s-diff__col {
+  flex: 1; padding: 16px 20px; font-size: 14px; line-height: 1.8;
+}
+.g3-ssr-page .g3s-diff__col--other {
+  background: #f7f8f3; border-radius: 8px 0 0 8px;
+  color: #66757c;
+}
+.g3-ssr-page .g3s-diff__col--grow3 {
+  background: #e8f0fb; border-radius: 0 8px 8px 0;
+  color: #21313a; font-weight: 500;
+}
+.g3-ssr-page .g3s-diff__col-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.g3-ssr-page .g3s-diff__col--other .g3s-diff__col-label { color: #8a9ba5; }
+.g3-ssr-page .g3s-diff__col--grow3 .g3s-diff__col-label { color: #0f3d96; }
+.g3-ssr-page .g3s-diff__vs {
+  width: 40px; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #8a9ba5;
+}
+
+/* ── 事例 ────────────────────────────────── */
+.g3-ssr-page .g3s-cases { display: flex; flex-direction: column; gap: 56px; margin-top: 40px; }
+.g3-ssr-page .g3s-case-card { }
+.g3-ssr-page .g3s-case-card__head { padding: 0 0 20px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.g3-ssr-page .g3s-case-card__meta {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+  color: #93c5fd; margin-bottom: 10px;
+}
+.g3-ssr-page .g3s-case-card__title {
+  font-size: 20px; font-weight: 700; color: white; line-height: 1.6;
+}
+.g3-ssr-page .g3s-case-card__body { padding: 0; margin-top: 4px; }
+.g3-ssr-page .g3s-case-steps { display: flex; flex-direction: column; gap: 0; }
+.g3-ssr-page .g3s-case-step {
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  font-size: 14px; line-height: 1.85;
+}
+.g3-ssr-page .g3s-case-step:last-child { border-bottom: none; }
+.g3-ssr-page .g3s-case-step__label {
+  display: inline-block;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  padding: 3px 10px; border-radius: 4px;
+  margin-bottom: 8px;
+  white-space: nowrap;
+}
+.g3-ssr-page .g3s-case-step--before .g3s-case-step__label { background: rgba(252,165,165,0.15); color: #fca5a5; }
+.g3-ssr-page .g3s-case-step--diag .g3s-case-step__label   { background: rgba(147,197,253,0.15); color: #93c5fd; }
+.g3-ssr-page .g3s-case-step--support .g3s-case-step__label { background: rgba(134,239,172,0.15); color: #86efac; }
+.g3-ssr-page .g3s-case-step--after .g3s-case-step__label  { background: rgba(253,230,138,0.15); color: #fde68a; }
+.g3-ssr-page .g3s-case-step p { margin: 0; color: rgba(255,255,255,0.85); }
+
+/* ── サービスマップ ───────────────────────── */
+.g3-ssr-page .g3s-svcmap { margin-top: 36px; }
+.g3-ssr-page .g3s-svcmap-grid {
+  display: grid; grid-template-columns: 1fr 40px 1fr;
+  gap: 16px; align-items: stretch; margin-bottom: 20px;
+}
+.g3-ssr-page .g3s-svc-side { display: flex; flex-direction: column; gap: 14px; }
+.g3-ssr-page .g3s-map-card {
+  flex: 1; padding: 20px 22px; background: white;
+  border: 1px solid #dfe7dc; border-radius: 12px;
+}
+.g3-ssr-page .g3s-map-card h3 { font-size: 15px; font-weight: 700; color: #0f3d96; margin: 0 0 8px; }
+.g3-ssr-page .g3s-map-card p { font-size: 13px; line-height: 1.8; color: #33434b; margin: 0; }
+.g3-ssr-page .g3s-map-arrow {
+  display: flex; flex-direction: column;
+  justify-content: space-around; align-items: center; padding-top: 20px;
+}
+.g3-ssr-page .g3s-map-arrow span { color: #0f3d96; font-size: 22px; font-weight: 700; }
+.g3-ssr-page .g3s-svc-mobile { display: none; }
+.g3-ssr-page .g3s-svc-message {
+  padding: 24px 28px; background: #e8f0fb;
+  border-radius: 12px; border-left: 4px solid #0f3d96;
+  font-size: 15px; line-height: 2; color: #33434b;
+}
+
+/* ── 見立て ──────────────────────────────── */
+.g3-ssr-page .g3s-qlist { margin: 28px 0; }
+.g3-ssr-page .g3s-qitem {
+  padding: 14px 0; border-bottom: 1px solid #dfe7dc;
+  font-size: 16px; line-height: 1.8;
+}
+.g3-ssr-page .g3s-qitem:last-child { border-bottom: none; }
+.g3-ssr-page .g3s-core-msg {
+  margin: 32px auto; max-width: 680px;
+  padding: 28px 32px; border-left: 4px solid #0f3d96;
+  background: white; border-radius: 0 12px 12px 0;
+  font-size: 17px; font-weight: 700; line-height: 1.8; color: #21313a;
+}
+.g3-ssr-page .g3s-case {
+  margin-top: 28px; padding: 24px 28px; background: white;
+  border: 1px solid #dfe7dc; border-radius: 12px;
+  border-left: 4px solid #0f3d96; font-size: 15px; line-height: 2;
+}
+
+/* ── CTA ─────────────────────────────────── */
+.g3-ssr-page .g3s-cta-problems { display: flex; flex-direction: column; gap: 10px; margin: 28px 0; }
+.g3-ssr-page .g3s-cta-problem {
+  padding: 12px 20px; background: rgba(255,255,255,0.12);
+  border-radius: 8px; font-size: 15px; color: rgba(255,255,255,0.9);
+}
+.g3-ssr-page .g3s-cta-reassure {
+  font-size: 15px; color: rgba(255,255,255,0.72);
+  line-height: 2; margin-bottom: 20px;
+}
+.g3-ssr-page .g3s-cta-invite {
+  font-size: 18px; font-weight: 700;
+  color: white; line-height: 1.8; margin-bottom: 36px;
+}
+.g3-ssr-page .g3s-btn-white {
+  display: inline-block; background: white; color: #0f3d96;
+  font-weight: 700; font-size: 16px; padding: 18px 44px;
+  border-radius: 999px; text-decoration: none; letter-spacing: 0.05em;
+}
+.g3-ssr-page .g3s-btn-ghost {
+  display: inline-block; background: transparent;
+  color: rgba(255,255,255,0.85); font-size: 14px;
+  padding: 10px 24px; border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 999px; text-decoration: none; margin-top: 16px;
+}
+
+/* ── スマホ対応 ──────────────────────────── */
+@media screen and (max-width: 768px) {
+  .g3-ssr-page .g3s-section { padding: 60px 20px; }
+  .g3-ssr-page .g3s-fv { padding: 80px 20px 64px; }
+  .g3-ssr-page .g3s-fv__catch { font-size: 22px; }
+  .g3-ssr-page .g3s-h2 { font-size: 22px; }
+  .g3-ssr-page .g3s-ssr-cards { -ms-flex-wrap: wrap !important; flex-wrap: wrap !important; }
+  .g3-ssr-page .g3s-ssr-card { -ms-flex: 1 1 100% !important; flex: 1 1 100% !important; }
+  .g3-ssr-page .g3s-triangle-center { border-radius: 14px; }
+  .g3-ssr-page .g3s-svcmap-grid { display: none; }
+  .g3-ssr-page .g3s-svc-mobile { display: block; margin-bottom: 20px; }
+  .g3-ssr-page .g3s-svc-mobile-card {
+    background: white; border: 1px solid #dfe7dc;
+    border-radius: 12px; padding: 20px; margin-bottom: 16px;
+    font-size: 14px; line-height: 1.9;
+  }
+  .g3-ssr-page .g3s-svc-mobile-card h3 { font-size: 15px; font-weight: 700; color: #0f3d96; margin: 0 0 8px; }
+  .g3-ssr-page .g3s-svc-mobile-card p { margin: 0 0 10px; color: #33434b; }
+  .g3-ssr-page .g3s-svc-mobile-card strong { color: #0f3d96; display: block; margin-bottom: 6px; }
+  .g3-ssr-page .g3s-svc-mobile-arrow { text-align: center; color: #0f3d96; font-size: 20px; padding: 8px 0; }
+  .g3-ssr-page .g3s-origin { padding: 28px 24px; }
+  .g3-ssr-page .g3s-diff__row { flex-direction: column; }
+  .g3-ssr-page .g3s-diff__col--other { border-radius: 8px 8px 0 0; }
+  .g3-ssr-page .g3s-diff__col--grow3 { border-radius: 0 0 8px 8px; }
+  .g3-ssr-page .g3s-diff__vs { width: 100%; padding: 6px 0; }
+
+  .g3-ssr-page .g3s-outcome-item { flex-direction: column; gap: 8px; }
+  .g3-ssr-page .g3s-core-msg { padding: 22px 20px; font-size: 15px; }
+}
+</style>
+
+<div class="g3-ssr-page">
+
+<!-- ════════════════════════════════════════
+     1. FV
+════════════════════════════════════════ -->
+<section class="g3s-fv">
+  <div class="g3s-inner">
+    <p class="g3s-fv__label">組織づくりの考え方</p>
+    <h1 class="g3s-fv__catch">
+      社長が「これをやろう」と言ったとき<br>
+      <em>すぐ動き出す組織</em>と<br>
+      なぜか止まってしまう組織がある。
+    </h1>
+    <p class="g3s-fv__sub">
+      その違いは、社員の意識の差だけではありません。<br><br>
+      会社の目指す方向、役割、判断基準、対話の流れが<br>
+      現場に届く形になっているかどうかで<br>
+      組織の動き方は変わります。
+    </p>
+    <a href="/contact2/" class="g3s-btn-primary">組織の状態を相談する</a>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     2. 共感 + 原体験
+════════════════════════════════════════ -->
+<section class="g3s-section g3s-section--bg">
+  <div class="g3s-inner">
+    <span class="g3s-label">こんな声が届きます</span>
+    <h2 class="g3s-h2">
+      「研修も評価も1on1も<br>
+      全部やっている。それでも変わらない。」
+    </h2>
+    <ul class="g3s-sympathy-list">
+      <li>「評価制度を整えたのに、何を頑張ればよいのかが現場に伝わっていない」</li>
+      <li>「研修を実施したのに、翌週には元の行動に戻っている」</li>
+      <li>「管理職にしたのに、プレイヤーのままなんです」</li>
+      <li>「任せたつもりなのに、結局自分が全部見ている」</li>
+    </ul>
+    <div class="g3s-sympathy-close">
+      <p>こうしたことが繰り返されているとき<br>
+      「社員の意識が低いから」「あの管理職にやる気がないから」<br>
+      という見方をしたくなるのはわかります。</p>
+      <br>
+      <p>でも、同じ問題が繰り返されているなら<br>
+      その下には、人・仕組み・関係性のどこかに<br>
+      まだ整えきれていない構造があるはずです。</p>
+    </div>
+
+    <div class="g3s-origin">
+      <p class="g3s-origin__label">代表・小林裕司のこと</p>
+      <div class="g3s-origin__body">
+        <p>社会人になって最初の仕事で、月に150時間近い残業が1年半続きました。<br>
+        仕事自体はお客様に可愛がってもらえて楽しかった。<br>
+        それでも体が限界を超えて、入院が必要なほど体を壊しました。</p>
+        <p>その後に移った会計事務所で15年間<br>
+        中小企業の経営者と社員の間にある労務トラブルを見続けてきました。<br>
+        そこで気づいたことがあります。</p>
+        <p><strong>経営者も社員も、それぞれ本気で会社のことを考えている。<br>
+        それなのに、善意がすれ違い続けている。</strong></p>
+        <p>悪い人がいるわけではない。<br>
+        仕組みと言葉と対話を整えれば<br>
+        すでにある人間関係の質が一気に変わる——<br>
+        その確信でグロウスリーを立ち上げました。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     3. 氷山モデル
+════════════════════════════════════════ -->
+<section class="g3s-section">
+  <div class="g3s-inner">
+    <span class="g3s-label">ICEBERG MODEL</span>
+    <h2 class="g3s-h2">
+      同じ違和感が繰り返されるときは<br>
+      水面下の構造を見るタイミングです。
+    </h2>
+    <p class="g3s-lead">
+      「あの人は動かない」という見え方のまま対処しても<br>
+      課題はほとんどの場合、また別の形で戻ってきます。<br><br>
+      離職が続く。評価への不満が出る。研修後に行動が戻る。<br>
+      これらは、組織の中で目に見えている「できごと」に過ぎません。
+    </p>
+    <div class="g3s-iceberg-visual">
+      <figure>
+        <img src="https://grow3.jp/wp-content/uploads/2026/05/iceberg_4layers_labeled_v2.png"
+          alt="氷山モデル：4つの階層（できごと・時系列パターン・構造・メンタルモデル）"
+          style="width:100%;display:block;border-radius:12px;">
+      </figure>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px;">
+        <div style="flex:1;min-width:160px;background:#fff;border:1px solid #dfe7dc;border-left:4px solid #e74c3c;border-radius:10px;padding:18px;">
+          <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#c0392b;">▲ できごと</p>
+          <ul style="margin:0;padding-left:16px;">
+            <li style="font-size:13px;line-height:1.8;color:#33434b;margin-bottom:4px;">「あの人は動かない」</li>
+            <li style="font-size:13px;line-height:1.8;color:#33434b;">離職・評価不満・研修後に戻る</li>
+          </ul>
+        </div>
+        <div style="flex:1;min-width:160px;background:#fff;border:1px solid #dfe7dc;border-left:4px solid #e67e22;border-radius:10px;padding:18px;">
+          <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#d35400;">▼ 時系列パターン</p>
+          <ul style="margin:0;padding-left:16px;">
+            <li style="font-size:13px;line-height:1.8;color:#33434b;margin-bottom:4px;">いつも同じ部署で対立が起きる</li>
+            <li style="font-size:13px;line-height:1.8;color:#33434b;">繰り返されている傾向</li>
+          </ul>
+        </div>
+        <div style="flex:1;min-width:160px;background:#fff;border:1px solid #dfe7dc;border-left:4px solid #0f3d96;border-radius:10px;padding:18px;">
+          <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0f3d96;">▼▼ 構造（仕組み）</p>
+          <ul style="margin:0;padding-left:16px;">
+            <li style="font-size:13px;line-height:1.8;color:#33434b;margin-bottom:4px;">評価基準がズレている</li>
+            <li style="font-size:13px;line-height:1.8;color:#33434b;">役割・目的が言葉になっていない</li>
+          </ul>
+        </div>
+        <div style="flex:1;min-width:160px;background:#fff;border:1px solid #dfe7dc;border-left:4px solid #2c3e50;border-radius:10px;padding:18px;">
+          <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#2c3e50;">▼▼▼ メンタルモデル</p>
+          <ul style="margin:0;padding-left:16px;">
+            <li style="font-size:13px;line-height:1.8;color:#33434b;margin-bottom:4px;">「どうせ言っても無駄だ」</li>
+            <li style="font-size:13px;line-height:1.8;color:#33434b;">「失敗は許されない」</li>
+          </ul>
+        </div>
+      </div>
+      <div class="g3s-iceberg-visual__text">
+        <p class="g3s-iceberg-visual__label">できごとを直そうとするのではなく、その下を見ること</p>
+        <p>たとえば「管理職が動いていない」という現象も<br>
+        役割が言葉になっていない、何を自分で決めてよいかが伝わっていない<br>
+        相談しても大丈夫だと思える関係ができていない——<br>
+        そういった構造が重なっていることがあります。</p>
+        <p>表面のできごとだけを追いかけるのは、モグラたたきと同じです。<br>
+        水面下にある構造にアプローチすることで<br>
+        はじめて同じ違和感が繰り返されにくくなります。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     4. SSR理論
+════════════════════════════════════════ -->
+<section class="g3s-section g3s-section--bg">
+  <div class="g3s-inner">
+    <span class="g3s-label">SSR THEORY</span>
+    <h2 class="g3s-h2">
+      組織が動き出す鍵は<br>
+      3つの力のつながりにあります。
+    </h2>
+    <p class="g3s-lead">
+      構造に目を向けようとしても<br>
+      「では何から見ればいいのか」で迷うことがあります。<br><br>
+      グロウスリーでは、組織が動きにくくなっている理由を<br>
+      <strong>人材力・組織力・関係力</strong>という3つの視点から整理しています。
+    </p>
+    <div style="max-width:480px;margin:36px auto 32px;">
+      <img src="https://grow3.jp/wp-content/uploads/2026/05/ssr_cycle_with_labels_card_centered.png"
+        alt="SSR理論：人材力・組織力・関係力の循環図" style="width:100%;display:block;">
+    </div>
+    <div class="g3s-ssr-cards">
+      <div class="g3s-ssr-card g3s-ssr-card--strength">
+        <p class="g3s-ssr-card-title">人材力（Strength）</p>
+        <p>一人ひとりが持つ強み・弱み・長所・短所、そして思考と行動の特徴のことです。<br>
+        能力不足と決めつける前に、その人の力が発揮できる役割や環境になっているかを見ます。</p>
+      </div>
+      <div class="g3s-ssr-card g3s-ssr-card--structure">
+        <p class="g3s-ssr-card-title">組織力（Structure）</p>
+        <p>経営理念・ビジョン・目標・事業計画・制度・ルール・規範など<br>
+        組織を組織たらしめているものすべてです。人が迷わず動けるための設計を見ます。</p>
+      </div>
+      <div class="g3s-ssr-card g3s-ssr-card--relation">
+        <p class="g3s-ssr-card-title">関係力（Relation）</p>
+        <p>1対1から多対多まで、ジェスチャー・音声・文章・ビデオ通話を含む<br>
+        コミュニケーションそのものです。仕組みを機能させる対話の質を見ます。</p>
+      </div>
+    </div>
+    <div class="g3s-triangle-center">
+      一人ひとりの力を活かし、向きをそろえ、関係の中で掛け合わせる。
+    </div>
+
+    <!-- 3割インサイト -->
+    <div class="g3s-insight">
+      コミュニケーションの課題に見えても<br>
+      対話を増やすだけでは解けないことがあります。<br><br>
+      役割が曖昧だったり<br>
+      判断基準が共有されていなかったり<br>
+      その人の強みが活きる配置になっていなかったりする。<br><br>
+      だからグロウスリーでは、関係力だけでなく<br>
+      <strong>人材力・組織力もあわせて見立てます。</strong>
+    </div>
+
+    <p style="margin-top:16px;font-size:12px;color:#aaa;text-align:center;">
+      グロウスリーでは、チームビルディングSSR理論（株式会社コーチングファームジャパン）の考え方を支援の土台として活用しています。
+    </p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     5. 成果が出る組織の状態（100点文）【新設】
+════════════════════════════════════════ -->
+<section class="g3s-section">
+  <div class="g3s-inner">
+    <span class="g3s-label">成果が出る組織の共通点</span>
+    <h2 class="g3s-h2">
+      「うちはなぜ動くのか」を<br>
+      言葉にすると、こうなります。
+    </h2>
+    <p class="g3s-lead">
+      支援先の組織を見ていると、成果が出ているところには共通した状態があります。
+    </p>
+    <div class="g3s-outcome">
+      <div class="g3s-outcome-item g3s-outcome-item--s">
+        <span class="g3s-outcome-item__tag">人材力</span>
+        <span>お互いの違いを、強み・弱みも含めて理解していること。</span>
+      </div>
+      <div class="g3s-outcome-item g3s-outcome-item--r">
+        <span class="g3s-outcome-item__tag">組織力</span>
+        <span>会社が何を目指し、自分たちがどこにいるのかが共有されていること。</span>
+      </div>
+      <div class="g3s-outcome-item g3s-outcome-item--r">
+        <span class="g3s-outcome-item__tag">組織力</span>
+        <span>いま誰が何をすればいいかが、全員に迷いなく伝わっていること。</span>
+      </div>
+      <div class="g3s-outcome-item g3s-outcome-item--x">
+        <span class="g3s-outcome-item__tag">関係力</span>
+        <span>それを進めるためのコミュニケーション接点が設計されていること。</span>
+      </div>
+      <div class="g3s-outcome-item g3s-outcome-item--x">
+        <span class="g3s-outcome-item__tag">関係力</span>
+        <span>言葉が歪まずに届き、受け取られる関係があること。</span>
+      </div>
+    </div>
+    <div class="g3s-outcome-close">
+      この5つが揃っているとき、組織は自然に動きます。<br>
+      逆に「なぜか動かない」と感じているとき<br>
+      どこかが欠けているか、つながりが切れています。
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     6. 3つの力のつながり
+════════════════════════════════════════ -->
+<section class="g3s-section g3s-section--bg">
+  <div class="g3s-inner">
+    <span class="g3s-label">3つの力の関係</span>
+    <h2 class="g3s-h2">
+      3つの力がつながると<br>
+      打ち手は現場に根づきやすくなります。
+    </h2>
+    <p class="g3s-lead">
+      人の力があっても、役割や判断基準があいまいなままでは動きにくくなります。<br><br>
+      仕組みを整えても、それを使いながらすり合わせる対話がなければ<br>
+      現場にはなかなか根づきません。<br><br>
+      コミュニケーションコストの先払いは、複利で返ってくる——<br>
+      対話を後回しにしていると、制度や研修への投資がなかなか回収できなくなります。
+    </p>
+    <div class="g3s-chain">
+      <div class="g3s-chain-note">
+        「幹部がなかなか動き出さない」という相談をよく受けます。3つの視点で見ると、こんな問いが出てきます。
+      </div>
+      <div class="g3s-chain-item">
+        <strong style="color:#c8760a;">人材力の視点</strong><br>
+        その人の経験、強み、判断できる範囲はどうか。<br>
+        任せたい仕事に必要な視点や判断材料が共有されているか。
+      </div>
+      <div class="g3s-chain-arrow">↓</div>
+      <div class="g3s-chain-item">
+        <strong style="color:#155f55;">組織力の視点</strong><br>
+        役割、権限、目標、評価基準は言葉になっているか。<br>
+        その目標は、会社の目的につながっているか。<br>
+        何を自分で決めてよくて、何を相談すべきかが伝わっているか。
+      </div>
+      <div class="g3s-chain-arrow">↓</div>
+      <div class="g3s-chain-item">
+        <strong style="color:#8b1a11;">関係力の視点</strong><br>
+        任せた後に、相談・確認・フィードバック・振り返りの場があるか。<br>
+        迷いや失敗を共有しても大丈夫だと思える関係になっているか。
+      </div>
+    </div>
+    <div class="g3s-chain-close">
+      「幹部が動かない」は、人材力だけの課題とは限りません。<br><br>
+      人の力、仕組み、関係性のどこが弱いのか。<br>
+      そして、どこでつながりが切れているのか。<br><br>
+      そこを見立てることで<br>
+      研修なのか、役割整理なのか、1on1なのか、評価制度なのか——<br>
+      今の組織に合う打ち手が見えてきます。
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     7. グロウスリーの支援
+════════════════════════════════════════ -->
+<section class="g3s-section">
+  <div class="g3s-inner">
+    <span class="g3s-label">グロウスリーの支援</span>
+    <h2 class="g3s-h2">
+      見立てから始めて<br>
+      現場に根づくまで整えていく。
+    </h2>
+    <p class="g3s-lead">
+      制度を現場に根づかせたい会社もあれば<br>
+      研修を行動につなげたい会社もあります。<br>
+      1on1やフィードバックの設計から始めた方がよい会社もあります。<br><br>
+      大切なのは、いきなり打ち手を決めることではありません。<br>
+      人材力・組織力・関係力の3つのどこでつながりが切れているかを<br>
+      まず見立てることです。
+    </p>
+
+    <!-- 差別化ボックス -->
+    <div class="g3s-diff">
+      <p class="g3s-diff__label">GROW3 の立ち位置</p>
+      <div class="g3s-diff__row">
+        <div class="g3s-diff__col g3s-diff__col--other">
+          <p class="g3s-diff__col-label">よくある支援の流れ</p>
+          <p>現状を分析して、制度や研修を提案・実施する。<br>打ち手の設計と実行が中心になりやすい。</p>
+        </div>
+        <div class="g3s-diff__vs">→</div>
+        <div class="g3s-diff__col g3s-diff__col--grow3">
+          <p class="g3s-diff__col-label">グロウスリーが加える視点</p>
+          <p>制度や研修を入れる前に、どこで詰まりが起きているかを見立てる。<br>
+          <strong>制度と対話のあいだを整え、現場に根づくまで伴走する。</strong></p>
+        </div>
+      </div>
+      <p style="margin:16px 0 0;font-size:14px;color:#66757c;line-height:1.8;">
+        「研修を現場の行動につなげたい」「制度を現場に根づかせたい」という状態は<br>
+        多くの場合、打ち手そのものではなく、打ち手を入れる場所のズレが原因です。<br>
+        見立てなしに進めると、せっかくの投資が現場に届きません。<br>
+        打ち手を選んで終わりではなく、行動が続く仕組みまで整える。<br>
+        そこまで含めて、現場に根づく支援だと考えています。
+      </p>
+    </div>
+
+    <div class="g3s-svcmap">
+      <div class="g3s-svcmap-grid">
+        <div class="g3s-svc-side">
+          <div class="g3s-map-card">
+            <h3>人材力を見る</h3>
+            <p>一人ひとりの強み、思考特性、経験、スキルを把握する。</p>
+          </div>
+          <div class="g3s-map-card">
+            <h3>組織力を見る</h3>
+            <p>目的・目標・役割・評価・ルールなど、人が動ける構造を確認する。</p>
+          </div>
+          <div class="g3s-map-card">
+            <h3>関係力を見る</h3>
+            <p>対話・承認・フィードバック・話し合いの状態を確認する。</p>
+          </div>
+        </div>
+        <div class="g3s-map-arrow">
+          <span>→</span><span>→</span><span>→</span>
+        </div>
+        <div class="g3s-svc-side">
+          <div class="g3s-map-card">
+            <h3>思考特性診断・研修</h3>
+            <p>違いを分類するのではなく、相互理解と対話の入口をつくる。</p>
+          </div>
+          <div class="g3s-map-card">
+            <h3>評価制度・人事制度設計</h3>
+            <p>A4一枚評価制度®の考え方をベースに、業績向上と人材育成につながる行動を整理し、必要に応じて役割や賃金制度との整合性まで整える。</p>
+          </div>
+          <div class="g3s-map-card">
+            <h3>1on1・チームビルディング研修・伴走支援</h3>
+            <p>業務進捗・内省・コンディションを支える対話を日常に組み込み、現場に根づくまで支える。</p>
+          </div>
+        </div>
+      </div>
+      <!-- モバイル用 -->
+      <div class="g3s-svc-mobile">
+        <div class="g3s-svc-mobile-card">
+          <h3>人材力を見る</h3>
+          <p>一人ひとりの強み、思考特性、経験、スキルを把握する。</p>
+          <div class="g3s-svc-mobile-arrow">↓</div>
+          <strong>思考特性診断・研修</strong>
+          <p>違いを分類するのではなく、相互理解と対話の入口をつくる。</p>
+        </div>
+        <div class="g3s-svc-mobile-card">
+          <h3>組織力を見る</h3>
+          <p>目的・目標・役割・評価・ルールなど、人が動ける構造を確認する。</p>
+          <div class="g3s-svc-mobile-arrow">↓</div>
+          <strong>評価制度・人事制度設計</strong>
+          <p>A4一枚評価制度®の考え方をベースに、役割や賃金制度との整合性まで整える。</p>
+        </div>
+        <div class="g3s-svc-mobile-card">
+          <h3>関係力を見る</h3>
+          <p>対話・承認・フィードバック・話し合いの状態を確認する。</p>
+          <div class="g3s-svc-mobile-arrow">↓</div>
+          <strong>1on1・チームビルディング研修・伴走支援</strong>
+          <p>対話を日常に組み込み、現場に根づくまで支える。</p>
+        </div>
+      </div>
+      <div class="g3s-svc-message">
+        人材力・組織力・関係力を、ばらばらの打ち手として扱うのではなく<br>
+        つながりとして見立て、現場で動ける仕組みに変えていく。<br><br>
+        強い組織とは、違和感が放置されない組織です。<br>
+        小さな対話が日常にある状態をつくることが<br>
+        グロウスリーが目指す組織づくりの姿です。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     8. チームビルディング
+════════════════════════════════════════ -->
+<section class="g3s-section g3s-section--bg">
+  <div class="g3s-inner">
+    <span class="g3s-label">TEAM BUILDING</span>
+    <h2 class="g3s-h2">
+      チームビルディングとは<br>
+      今いるメンバーで成果を出せる状態をつくることです。
+    </h2>
+    <p class="g3s-lead">
+      レクリエーションや交流イベントで関係をやわらかくすることは<br>
+      もちろん意味があります。ただ、それだけでは組織は動きません。
+    </p>
+    <p class="g3s-lead">たとえば、こんな場面はないでしょうか。</p>
+
+    <div style="display:flex;flex-wrap:wrap;gap:16px;margin:32px 0;">
+      <div style="flex:1;min-width:260px;padding:22px 24px;border-radius:12px;border:1px solid #dfe7dc;background:#fff;font-size:14px;line-height:1.9;">
+        <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.08em;color:#0f3d96;">経営者の本音</p>
+        <p style="margin:0 0 10px;font-size:15px;font-weight:700;line-height:1.7;color:#21313a;">「もっと主体的に動いてほしい。<br>任せているのに、なぜ待っているのか」</p>
+        <p style="margin:0;color:#33434b;">社員のためを思って任せている。<br>自分で考えて動いてほしいからこそ、細かく言わないようにしている。</p>
+      </div>
+      <div style="flex:1;min-width:260px;padding:22px 24px;border-radius:12px;border:1px solid #dfe7dc;background:#fff;font-size:14px;line-height:1.9;">
+        <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.08em;color:#8b1a11;">社員の本音</p>
+        <p style="margin:0 0 10px;font-size:15px;font-weight:700;line-height:1.7;color:#21313a;">「何を期待されているのかがわからない。<br>間違えて怒られるくらいなら、確認したい」</p>
+        <p style="margin:0;color:#33434b;">やる気がないわけではない。<br>何が正解かわからないまま動いて、また修正させられるのが怖い。</p>
+      </div>
+    </div>
+    <div style="margin-top:4px;padding:16px 24px;text-align:center;font-size:14px;font-weight:700;color:#0f3d96;border-top:1px solid #dfe7dc;">
+      正義の反対は、もう一つの正義。どちらも間違っていない。ただ、すれ違っている。
+    </div>
+
+    <div class="g3s-case" style="margin-top:32px;">
+      人と人が違うという前提に立って<br>
+      それぞれを尊重しつつ、共通の目的に向かって対話を重ねることで目的を達成する——<br>
+      それがグロウスリーの考えるチームビルディングです。
+    </div>
+
+    <p class="g3s-lead" style="margin-top:28px;">
+      この違いを「あの人の問題」にするのではなく<br>
+      役割を言葉にし、対話の場を設け<br>
+      すれ違いが起きにくい仕組みを整えていく。<br><br>
+      それがチームビルディングを通じてグロウスリーが取り組むことです。
+    </p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     9. 事例【新設】
+════════════════════════════════════════ -->
+<section class="g3s-section g3s-section--case">
+  <div class="g3s-inner">
+    <span class="g3s-label g3s-label--light">CASE STUDY</span>
+    <h2 class="g3s-h2 g3s-h2--white" style="margin-top:16px;">
+      見立てが変わると<br>
+      打ち手が変わる。
+    </h2>
+    <p style="color:rgba(255,255,255,0.75);font-size:15px;line-height:1.9;margin-bottom:8px;">
+      「研修を現場の行動につなげたい」「制度を根づかせたい」という状態は<br>
+      見立てが変わることで解決のスピードが変わります。
+    </p>
+    <p style="color:rgba(255,255,255,0.45);font-size:12px;line-height:1.8;margin-bottom:0;">
+      実際の支援内容をもとに、一部内容を抽象化しています。
+    </p>
+
+    <div class="g3s-cases">
+
+      <!-- 事例1 -->
+      <div class="g3s-case-card">
+        <div class="g3s-case-card__head">
+          <p class="g3s-case-card__meta">製造業・従業員40名規模</p>
+          <p class="g3s-case-card__title">評価制度を入れたのに、管理職が<br>「よくできました」しか言えない</p>
+        </div>
+        <div class="g3s-case-card__body">
+          <div class="g3s-case-steps">
+            <div class="g3s-case-step g3s-case-step--before">
+              <p class="g3s-case-step__label">相談前の状態</p>
+              <p>半年かけて評価制度を整備したが、管理職が評価面談で言葉に詰まる。社員からも「評価の根拠がわからない」という声が出ていた。</p>
+            </div>
+            <div class="g3s-case-step g3s-case-step--diag">
+              <p class="g3s-case-step__label">見立て（どこで詰まっていたか）</p>
+              <p>制度は整っていた。問題は「等級ごとに何ができれば合格か」という行動基準が言語化されていなかったこと。管理職が評価軸を持てないまま運用しようとしていた。（組織力の詰まり）</p>
+            </div>
+            <div class="g3s-case-step g3s-case-step--support">
+              <p class="g3s-case-step__label">支援内容</p>
+              <p>管理職と一緒に役割等級ごとの行動基準を言語化。評価面談の問い方と記録の型を整え、運用に向けた管理職勉強会を実施。</p>
+            </div>
+            <div class="g3s-case-step g3s-case-step--after">
+              <p class="g3s-case-step__label">変化</p>
+              <p>管理職が「なぜこの評価か」を言葉で説明できるようになった。社員から「去年より評価面談が変わった」という声が出始めた。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 事例2 -->
+      <div class="g3s-case-card">
+        <div class="g3s-case-card__head">
+          <p class="g3s-case-card__meta">サービス業・従業員55名規模</p>
+          <p class="g3s-case-card__title">研修を続けているのに<br>入社1〜2年の離職が止まらない</p>
+        </div>
+        <div class="g3s-case-card__body">
+          <div class="g3s-case-steps">
+            <div class="g3s-case-step g3s-case-step--before">
+              <p class="g3s-case-step__label">相談前の状態</p>
+              <p>コミュニケーション研修を毎年実施しているが、入社1〜2年の離職が続いている。「うちは関係性が薄い」という認識だった。</p>
+            </div>
+            <div class="g3s-case-step g3s-case-step--diag">
+              <p class="g3s-case-step__label">見立て（どこで詰まっていたか）</p>
+              <p>関係力の問題ではなかった。入社後に「何を期待されているか」「どこまで自分で判断してよいか」が伝わっていないことが原因だった。研修より先に整えるべきものがあった。（組織力の詰まり）</p>
+            </div>
+            <div class="g3s-case-step g3s-case-step--support">
+              <p class="g3s-case-step__label">支援内容</p>
+              <p>入社後3・6ヶ月の役割期待を言語化。上司との1on1の問いを設計し、試用期間中の対話の接点を増やした。</p>
+            </div>
+            <div class="g3s-case-step g3s-case-step--after">
+              <p class="g3s-case-step__label">変化</p>
+              <p>「自分がどこに向かっているかが見えた」という声が増えた。早期離職を防ぐための対話が、上司側で設計しやすくなった。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     10. 見立て
+════════════════════════════════════════ -->
+<section class="g3s-section">
+  <div class="g3s-inner">
+    <span class="g3s-label">最初の一歩</span>
+    <h2 class="g3s-h2">
+      今の組織に合う打ち手を選ぶ前に<br>
+      外しすぎない見立てが必要です。
+    </h2>
+    <p class="g3s-lead">今の組織に必要なのは何でしょうか。</p>
+    <div class="g3s-qlist">
+      <div class="g3s-qitem">研修なのか。</div>
+      <div class="g3s-qitem">評価制度の見直しなのか。</div>
+      <div class="g3s-qitem">1on1や対話の設計なのか。</div>
+      <div class="g3s-qitem">役割や期待値を言葉にすることなのか。</div>
+      <div class="g3s-qitem">経営者の想いを、社員に伝わる言葉に整えることなのか。</div>
+    </div>
+    <p class="g3s-lead">会社によって、最初に整えるべき場所は違います。</p>
+    <div class="g3s-case">
+      大切なのは、いきなり打ち手を決めることではありません。<br><br>
+      今の組織が、人材力・組織力・関係力のどこでつまずいているのか。<br>
+      どこでつながりが切れているのか。<br><br>
+      一度立ち止まって、そこを見立てるところから始めましょう。
+    </div>
+    <p style="margin:28px 0 0;font-size:15px;color:#66757c;line-height:1.9;">
+      グロウスリーが整えるのは、制度と対話のあいだです。
+    </p>
+    <div class="g3s-core-msg">
+      人を動かすのではなく<br>
+      人が動きたくなる環境をつくる。
+    </div>
+    <p class="g3s-lead" style="margin-top:8px;">
+      そこが見えてくると<br>
+      研修も評価制度も1on1も<br>
+      ばらばらの打ち手ではなく<br>
+      組織を動かすための仕組みとしてつながっていきます。
+    </p>
+  </div>
+</section>
+
+<!-- WS_20260903_START:2026-09-04以降に削除 -->
+<section class="g3s-section" style="padding-top:0;">
+  <div class="g3s-inner">
+    <div style="background:#fff;border:1px solid #dfe7dc;border-radius:12px;padding:28px 32px;text-align:center;">
+      <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0f3d96;letter-spacing:0.06em;">この考え方を、実際の場面で考えてみたい方へ</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.9;color:#33434b;">9月3日に、組織の気になる場面を構造として考える少人数ワークショップを開催します。</p>
+      <a href="/workshop-20260903/" style="display:inline-block;font-size:14px;font-weight:700;color:#0f3d96;border:1px solid #0f3d96;border-radius:999px;padding:10px 28px;text-decoration:none;">ワークショップの詳細を見る</a>
+      <!-- 上記hrefはワークショップLPの公開URLに差し替えること -->
+    </div>
+  </div>
+</section>
+<!-- WS_20260903_END -->
+
+<!-- ════════════════════════════════════════
+     11. CTA
+════════════════════════════════════════ -->
+<section class="g3s-section g3s-section--dark">
+  <div class="g3s-inner" style="text-align:center;">
+    <span class="g3s-label g3s-label--white">初回無料相談</span>
+    <h2 class="g3s-h2 g3s-h2--white" style="margin-top:16px;">
+      今の組織の状態を<br>
+      一緒に見てみませんか。
+    </h2>
+    <div class="g3s-cta-problems">
+      <div class="g3s-cta-problem">採用しても、なぜか定着しない。</div>
+      <div class="g3s-cta-problem">評価や給与の話になると、言葉に詰まる。</div>
+      <div class="g3s-cta-problem">研修をしても現場の行動につながらない。</div>
+    </div>
+    <p class="g3s-cta-reassure">
+      こうした悩みは、制度や研修の問題としてまとまっていなくても大丈夫です。<br>
+      今の会社で気になっていることを、そのまま話すところから始められます。
+    </p>
+    <p class="g3s-cta-invite">
+      まず、今の組織の状態を一緒に整理しましょう。
+    </p>
+    <div>
+      <a href="/contact2/" class="g3s-btn-white">初回無料相談を予約する</a><br>
+      <a href="/contact1/" class="g3s-btn-ghost">お問い合わせはこちら</a>
+    </div>
+  </div>
+</section>
+
+</div>
