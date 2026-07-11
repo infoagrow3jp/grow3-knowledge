@@ -12,21 +12,34 @@ set -u
 FAIL=0
 WARN=0
 
+# ---- 自己言及除外（検品の仕組み自身が検品に引っかかるのを防ぐ） ----
+# scripts/・.claude/・.githooks/ 配下、および導入手順.md は対象外。
+is_excluded() {
+  case "$1" in
+    scripts/*|*/scripts/*|.claude/*|*/.claude/*|.githooks/*|*/.githooks/*|導入手順.md|*/導入手順.md)
+      return 0 ;;
+    *)
+      return 1 ;;
+  esac
+}
+
 # ---- 検査対象の収集 ----
 TARGETS=()
 if [ "${1:-}" = "--staged" ]; then
-  while IFS= read -r f; do [ -f "$f" ] && TARGETS+=("$f"); done \
-    < <(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACM 2>/dev/null)
+  while IFS= read -r f; do
+    [ -f "$f" ] && ! is_excluded "$f" && TARGETS+=("$f")
+  done < <(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACM 2>/dev/null)
 else
   for a in "$@"; do
     if [ -d "$a" ]; then
-      while IFS= read -r f; do TARGETS+=("$f"); done \
-        < <(find "$a" -type f \( -name "*.md" -o -name "*.html" -o -name "*.txt" \
+      while IFS= read -r f; do
+        ! is_excluded "$f" && TARGETS+=("$f")
+      done < <(find "$a" -type f \( -name "*.md" -o -name "*.html" -o -name "*.txt" \
             -o -name "*.pptx" -o -name "*.docx" -o -name "*.xlsx" \
             -o -name "*.css" -o -name "*.js" -o -name "*.svg" \) \
             ! -path "*/node_modules/*" ! -path "*/.git/*")
     elif [ -f "$a" ]; then
-      TARGETS+=("$a")
+      ! is_excluded "$a" && TARGETS+=("$a")
     fi
   done
 fi
