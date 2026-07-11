@@ -99,11 +99,27 @@ for f in "${TARGETS[@]}"; do
 
   # ===== FAIL（出荷不可） =====
   # 1) 公開禁止事例：介護施設の離職率改善事例（statusに関係なく常にFAIL）
-  if echo "$TEXT" | grep -q "介護" && echo "$TEXT" | grep -q "離職率"; then
-    report FAIL "$f" "公開禁止事例の疑い：「介護」と「離職率」が共起（使用制限事例）"
-  fi
+  #    「介護」×「離職率」は近接共起（前後80行以内）のみFAIL。
+  #    数値パターン（30%台→5%台）はファイル全体でFAILを維持。
   if echo "$TEXT" | grep -Eq "30％?台.{0,20}5％?台|30%台.{0,20}5%台"; then
     report FAIL "$f" "公開禁止事例の疑い：離職率30%台→5%台の数値パターン"
+  fi
+  NEAR_HIT=$(printf '%s\n' "$TEXT" | awk '
+    {
+      if (index($0, "介護") > 0) k[NR] = 1
+      if (index($0, "離職率") > 0) r[NR] = 1
+    }
+    END {
+      for (a in k) {
+        for (b in r) {
+          d = (a > b) ? a - b : b - a
+          if (d <= 80) { print a "/" b; exit }
+        }
+      }
+    }
+  ')
+  if [ -n "$NEAR_HIT" ]; then
+    report FAIL "$f" "公開禁止事例の疑い：「介護」と「離職率」が近接共起（前後80行以内・行${NEAR_HIT}）"
   fi
   # 2) 未確定表記の残存
   #    draft/reviewed → WARN / final・frontmatterなし → FAIL
