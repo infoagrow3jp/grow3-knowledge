@@ -1,2 +1,12 @@
 # ルート直下の一時作業スクリプト（_commit_*.sh 等）
 _*.sh
+
+# 作業用ディレクトリ・生成物（成果物ではない）
+_icon_work/
+__pycache__/
+
+# ルート直下の調査・再設計用スクリプトと出力
+_pptx_inspect.py
+_pptx_inspect_report.txt
+_pptx_inspect_stdout.txt
+_redesign_slides.py
