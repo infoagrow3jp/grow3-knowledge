@@ -81,3 +81,5 @@ description: Grow3 (Kobayashi Yuji) common judgment OS — top-priority decision
 - 本スキルは、userPreferences記載の「相談に対しては採点から入る」「丁寧でフォーマルなトーン」を、実運用レビュー（2026年7月）に基づき上記のとおり条件付きに緩和している。恒久化する場合はuserPreferences側の文面更新を推奨。
 - 常時適用ルール（PREP法・第0原則）は、スキルが発火しない場面に備えてCLAUDE.mdヒエラルキーにも同旨を置くことを推奨（スキルはタスク文脈で発火したときのみ読み込まれるため）。
 - 新しい誤判定パターンが見つかったら、該当するreferencesファイルに追記していく。
+
+判断に迷ったら references/examples.md の『判断の分かれ目』を参照する。
