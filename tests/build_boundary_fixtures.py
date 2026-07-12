@@ -212,6 +212,142 @@ def build_ocf_source_safety_cases():
                 "FCF = 46,000 − 20,000(維持投資) = 26,000。CF自走性 = 26,000 ÷ 20,000 = 1.3倍。"
             ),
         },
+        {
+            # ①の完了条件④相当ケース：実績と推計可能データが両方ある場合、
+            # 実績を優先すること（推計値とは異なる値を意図的に設定し、
+            # 返り値が実績値の方であることを検証できるようにする）。
+            "case_id": "ocf_source_actual_takes_priority_over_estimated",
+            "description": (
+                "CF計算書の実績値（actual_operating_cf）と、推計に必要な"
+                "P/L＋2期分B/S項目の両方が入力された場合、実績を優先する"
+                "（推計すれば46,000になるが、実績値50,000が採用されることを確認する）"
+            ),
+            "inputs": {
+                "has_cash_flow_statement": True,
+                "has_prior_period_bs": True,
+                "actual_operating_cf": 50000.0,
+                "net_income": 26000.0,
+                "depreciation_total": 20000.0,
+                "delta_ar": 0.0,
+                "delta_inv": 0.0,
+                "delta_ap": 0.0,
+                "maintenance_investment": 20000.0,
+                "annual_principal_repayment_next12m": 20000.0,
+            },
+            "expected": {
+                "ocf_source": "actual",
+                "operating_cf_value_used": 50000.0,
+                "estimated_operating_cf_if_computed_instead": 46000.0,
+                "fcf": 30000.0,
+                "cf_self_sufficiency": 1.5,
+                "cf_self_sufficiency_zone": "余裕（銀行評価良好圏）",
+                "judgment_blocked": False,
+                "warning": None,
+                "confidence_grade": "A",
+            },
+            "formula": (
+                "実績営業CF（CF計算書） = 50,000（推計すれば46,000になるが、実績値が"
+                "優先されるため50,000が使用される）。"
+                "FCF = 50,000 − 20,000(維持投資) = 30,000。CF自走性 = 30,000 ÷ 20,000 = 1.5倍。"
+            ),
+        },
+        {
+            # ①の完了条件④：維持投資の実額（capex_actual）が入力されない場合、
+            # 減価償却費を代理値として使用し capex_source=depreciation_proxy を
+            # メタデータとして明示すること。
+            "case_id": "capex_source_depreciation_proxy_when_capex_actual_missing",
+            "description": "維持投資の実額が入力されず、減価償却費を代理値として使用するケース",
+            "inputs": {
+                "has_cash_flow_statement": True,
+                "actual_operating_cf": 50000.0,
+                "depreciation_total": 15000.0,
+                # maintenance_investment（capex実額）キー自体を与えない＝欠落
+                "annual_principal_repayment_next12m": 20000.0,
+            },
+            "expected": {
+                "ocf_source": "actual",
+                "capex_source": "depreciation_proxy",
+                "maintenance_investment_value_used": 15000.0,
+                "fcf": 35000.0,
+                "cf_self_sufficiency": 1.75,
+                "cf_self_sufficiency_zone": "余裕（銀行評価良好圏）",
+            },
+            "formula": (
+                "維持投資の実額が未入力のため、減価償却費(15,000)を代理値として使用"
+                "（capex_source=depreciation_proxy）。"
+                "FCF = 50,000 − 15,000 = 35,000。CF自走性 = 35,000 ÷ 20,000 = 1.75倍。"
+            ),
+        },
+        {
+            # 欠落とゼロの区別（①の指示3・4／②の完了条件(c)）：
+            # Δ売掛金が明示的な0.0（有効な入力値）の場合は推計営業CFを算出できる
+            # ことを確認するペアケースの片方（zero側）。
+            "case_id": "zero_vs_missing_delta_ar_explicit_zero_estimated_succeeds",
+            "description": (
+                "Δ売掛金・Δ棚卸資産・Δ買掛金がすべて明示的な数値0.0（実際に"
+                "変動が無かった有効な入力値）の場合、欠落と誤判定せず推計営業CFを"
+                "算出できることを確認する"
+            ),
+            "inputs": {
+                "net_income": 30000.0,
+                "depreciation_total": 10000.0,
+                "delta_ar": 0.0,
+                "delta_inv": 0.0,
+                "delta_ap": 0.0,
+                "maintenance_investment": 10000.0,
+                "annual_principal_repayment_next12m": 15000.0,
+            },
+            "expected": {
+                "ocf_source": "estimated",
+                "estimated_operating_cf": 40000.0,
+                "fcf": 30000.0,
+                "cf_self_sufficiency": 2.0,
+                "cf_self_sufficiency_zone": "余裕（銀行評価良好圏）",
+                "judgment_blocked": False,
+                "warning": None,
+            },
+            "formula": (
+                "推計営業CF = 30,000 + 10,000 − 0 − 0 + 0 = 40,000（Δ項目が明示的な"
+                "0.0であり欠落ではないため、推計営業CFとして正常に算出される）。"
+                "FCF = 40,000 − 10,000 = 30,000。CF自走性 = 30,000 ÷ 15,000 = 2.0倍。"
+            ),
+        },
+        {
+            # 欠落とゼロの区別のペアケース（missing側）：Δ売掛金の項目自体が
+            # 入力されない（欠落）場合は推計層を構成できず、簡易層へ
+            # フォールバックし正式判定をブロックすることを確認する。
+            # delta_inv・delta_apは同じ0.0を与えており、delta_arの有無だけが
+            # 挙動を変える唯一の差分であることに注意（zero側ケースとの対比）。
+            "case_id": "zero_vs_missing_delta_ar_missing_falls_back_to_simplified",
+            "description": (
+                "Δ売掛金のフィールド自体が欠落している場合（他のΔ項目は0.0で"
+                "存在）、推計層を構成できず簡易層にフォールバックし正式判定を"
+                "ブロックすることを確認する"
+            ),
+            "inputs": {
+                "net_income": 30000.0,
+                "depreciation_total": 10000.0,
+                # delta_ar キー自体を与えない＝欠落（delta_inv・delta_apは0.0で存在）
+                "delta_inv": 0.0,
+                "delta_ap": 0.0,
+                "ordinary_profit": 40000.0,
+                "tax": 14000.0,
+                "annual_principal_repayment_next12m": 15000.0,
+            },
+            "expected": {
+                "ocf_source": "simplified",
+                "simple_operating_cf": 36000.0,
+                "cf_self_sufficiency": None,
+                "cf_self_sufficiency_zone": None,
+                "judgment_blocked": True,
+                "warning": "運転資本変動を確認できないため正式判定不可。2期分のB/SまたはCF計算書が必要",
+            },
+            "formula": (
+                "Δ売掛金が欠落（フィールドなし）のため推計層を構成できず、"
+                "簡易営業CF = 40,000 + 10,000 − 14,000 = 36,000 にフォールバック。"
+                "簡易営業CFは正式判定に使用しないため judgment_blocked=True。"
+            ),
+        },
     ]
     return cases
 

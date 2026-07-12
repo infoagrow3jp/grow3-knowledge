@@ -168,6 +168,102 @@ class TestOcfSourceSafetyCases(unittest.TestCase):
         self.assertEqual(result.zone, expected["cf_self_sufficiency_zone"])
         self.assertIsNone(result.warning)
 
+    def test_actual_takes_priority_over_estimated_when_both_available(self):
+        """3層ロジック専用テスト①：実績と推計可能データが両方ある→実績を優先。"""
+        case = self.cases["ocf_source_actual_takes_priority_over_estimated"]
+        inputs = case["inputs"]
+        expected = case["expected"]
+        result = fc.calc_cf_self_sufficiency(
+            inputs["annual_principal_repayment_next12m"],
+            actual_operating_cf=inputs["actual_operating_cf"],
+            net_income=inputs["net_income"],
+            depreciation_total=inputs["depreciation_total"],
+            delta_ar=inputs["delta_ar"],
+            delta_inv=inputs["delta_inv"],
+            delta_ap=inputs["delta_ap"],
+            capex_actual=inputs["maintenance_investment"],
+        )
+        self.assertEqual(result.ocf_source, expected["ocf_source"])
+        self.assertEqual(result.confidence_grade, expected["confidence_grade"])
+        # 実績値(50,000)が採用され、推計すれば得られたはずの値(46,000)ではないことを確認
+        self.assertAlmostEqual(
+            result.fcf + inputs["maintenance_investment"],
+            expected["operating_cf_value_used"], places=6,
+        )
+        self.assertNotAlmostEqual(
+            result.fcf + inputs["maintenance_investment"],
+            expected["estimated_operating_cf_if_computed_instead"], places=6,
+        )
+        self.assertAlmostEqual(result.fcf, expected["fcf"], places=6)
+        self.assertAlmostEqual(result.cf_self_sufficiency, expected["cf_self_sufficiency"], places=6)
+        self.assertEqual(result.zone, expected["cf_self_sufficiency_zone"])
+        self.assertFalse(result.judgment_blocked)
+        self.assertIsNone(result.warning)
+
+    def test_capex_source_depreciation_proxy_when_actual_missing(self):
+        """3層ロジック専用テスト④：維持投資実額なし→capex_source=depreciation_proxy。"""
+        case = self.cases["capex_source_depreciation_proxy_when_capex_actual_missing"]
+        inputs = case["inputs"]
+        expected = case["expected"]
+        result = fc.calc_cf_self_sufficiency(
+            inputs["annual_principal_repayment_next12m"],
+            actual_operating_cf=inputs["actual_operating_cf"],
+            depreciation_total=inputs["depreciation_total"],
+            # capex_actual を渡さない＝維持投資の実額が欠落している状況
+        )
+        self.assertEqual(result.ocf_source, expected["ocf_source"])
+        self.assertEqual(result.capex_source, expected["capex_source"])
+        self.assertAlmostEqual(result.fcf, expected["fcf"], places=6)
+        self.assertAlmostEqual(result.cf_self_sufficiency, expected["cf_self_sufficiency"], places=6)
+        self.assertEqual(result.zone, expected["cf_self_sufficiency_zone"])
+
+    def test_zero_delta_ar_is_not_treated_as_missing(self):
+        """欠落とゼロの区別（zero側）：Δ売掛金が明示的な0.0でも推計営業CFを算出できる。"""
+        case = self.cases["zero_vs_missing_delta_ar_explicit_zero_estimated_succeeds"]
+        inputs = case["inputs"]
+        expected = case["expected"]
+        result = fc.calc_cf_self_sufficiency(
+            inputs["annual_principal_repayment_next12m"],
+            net_income=inputs["net_income"],
+            depreciation_total=inputs["depreciation_total"],
+            delta_ar=inputs["delta_ar"],  # 明示的な0.0（欠落ではない）
+            delta_inv=inputs["delta_inv"],
+            delta_ap=inputs["delta_ap"],
+            capex_actual=inputs["maintenance_investment"],
+        )
+        self.assertEqual(result.ocf_source, expected["ocf_source"])
+        self.assertFalse(result.judgment_blocked)
+        self.assertAlmostEqual(result.fcf, expected["fcf"], places=6)
+        self.assertAlmostEqual(result.cf_self_sufficiency, expected["cf_self_sufficiency"], places=6)
+        self.assertEqual(result.zone, expected["cf_self_sufficiency_zone"])
+        self.assertIsNone(result.warning)
+
+    def test_missing_delta_ar_falls_back_to_simplified(self):
+        """欠落とゼロの区別（missing側）：Δ売掛金のフィールド自体が欠落していると簡易層にフォールバックする。
+
+        zero側テスト（test_zero_delta_ar_is_not_treated_as_missing）と
+        delta_inv・delta_apは同じ0.0を使い、delta_arの有無だけを変えている。
+        両テストの結果が異なることが、欠落とゼロを区別できている証拠になる。
+        """
+        case = self.cases["zero_vs_missing_delta_ar_missing_falls_back_to_simplified"]
+        inputs = case["inputs"]
+        expected = case["expected"]
+        result = fc.calc_cf_self_sufficiency(
+            inputs["annual_principal_repayment_next12m"],
+            net_income=inputs["net_income"],
+            depreciation_total=inputs["depreciation_total"],
+            # delta_ar を渡さない（=None・欠落）。delta_inv・delta_apは0.0で渡す。
+            delta_inv=inputs["delta_inv"],
+            delta_ap=inputs["delta_ap"],
+            ordinary_profit=inputs["ordinary_profit"],
+            tax=inputs["tax"],
+        )
+        self.assertEqual(result.ocf_source, expected["ocf_source"])
+        self.assertTrue(result.judgment_blocked)
+        self.assertIsNone(result.cf_self_sufficiency)
+        self.assertIsNone(result.zone)
+        self.assertEqual(result.warning, expected["warning"])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
