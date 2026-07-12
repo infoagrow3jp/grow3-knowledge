@@ -152,6 +152,33 @@
   - schema設計段階で設計メモと矛盾する論点が判明した場合（設計メモの無限遡及修正は行わず、schema設計の発見として管理する）。
   - 初弾実案件検証（設計メモ§22）で、設計メモv0.1の運用限界が確認された場合。
 
+### DEC-009｜organization-diagnosis schema設計メモv0.1を確定し、「解釈の由来管理」を実装可能なregister構造として採用する
+- 日付：2026-07-12
+- 状態：確定
+- 対象：`docs/organization-diagnosis_schema設計メモ_v0.1.md`（JSON Schema・validator・fixture実装の設計基準）
+- 決定：
+  - `docs/organization-diagnosis_schema設計メモ_v0.1.md` をv0.1として凍結する（status: frozen）。
+  - organization-diagnosisでは、Evidence、Pattern、Hypothesis、Causal Structure、Verification Action等を分離したregister構造を採用する。
+  - 顧客master register、MTG input snapshot、manifest索引によって、解釈と入力データの追跡可能性を確保する。
+  - JSON SchemaはDraft 2020-12を使用し、9ファイルへ分割する。
+  - registerはJSONを正本とし、内部診断ブリーフはMarkdown生成物とする。
+  - `mtg_session_id` をinput snapshotの識別子として使用する。
+  - Evidenceの出典ファイルは、相対パス、SHA-256、取得日時、ファイルサイズによって追跡する。
+  - derived_summaryは元Evidenceへ遡れる場合のみ認める。
+  - validatorは形式的な追跡可能性と横断整合性を検査するが、Evidenceの真実性やHypothesisの正しさまでは保証しない。
+  - schema実装中に発見された新論点は、凍結済み設計メモの失敗として遡及修正せず、実装段階の新しい発見として管理する。
+- 理由：
+  - 凍結済みのorganization-diagnosis設計メモ（DEC-008）で定めた「解釈の由来管理」を、実データとして保存・検証できる構造へ落とす必要がある。
+  - Evidenceと解釈を分離し、どの入力から、どの判断を経て、どの仮説や因果構造が生成されたかを追跡できるようにするため。
+  - schemaとvalidatorの責務を分け、形式的整合性と内容上の妥当性を混同しないため。
+- 採用しなかった案：
+  - registerをMarkdown/YAMLで保持し、schema検証を後回しにする案。
+  - 単一巨大JSON Schemaですべてのregisterを定義する案。
+  - input snapshotを相対パスのみで保持し、内容ハッシュを記録しない案。
+- 見直し条件：
+  - schema JSON実装段階で、凍結済みschema設計メモと矛盾する論点が判明した場合（設計メモの無限遡及修正は行わず、実装段階の発見として管理する）。
+  - validator初弾実装後、register envelopeまたはMTG snapshotの運用限界が確認された場合。
+
 ## 2026-07-11 AI運用の判断基準を grow3-judgment スキルとして確立
 1. 承認済み最新版を正とし、依頼範囲外を善意で変更しない（第0原則）。
    改善案は本文反映ではなく別途提案とする。
