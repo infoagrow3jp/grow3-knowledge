@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grow3.jp/schemas/organization-diagnosis/v0.1/pattern.schema.json",
+  "title": "organization-diagnosis pattern register v0.1",
+  "description": "Pattern register schema for recurrence confirmation records. Patterns are not Evidence (source records) or Hypotheses (interpretive claims). This schema validates structure and traceability only, not whether a pattern truly exists, is correct, or is supported by independent sources.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "common.schema.json#/$defs/registerEnvelope"
+    }
+  ],
+  "properties": {
+    "register_type": {
+      "const": "patterns"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/patternItem"
+      }
+    }
+  },
+  "unevaluatedProperties": false,
+  "$defs": {
+    "patternType": {
+      "type": "string",
+      "const": "occurrence_pattern",
+      "description": "v0.1 supports occurrence_pattern only. measured_trend is deferred to v0.2."
+    },
+    "patternStatus": {
+      "type": "string",
+      "enum": [
+        "DRAFT",
+        "ACTIVE",
+        "WEAKENED",
+        "REJECTED",
+        "SUPERSEDED"
+      ],
+      "description": "Recurrence confirmation state. Status transition history is a validator responsibility."
+    },
+    "evidenceIdList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/evidenceId"
+      },
+      "description": "Supporting Evidence identifiers. Existence, case scope, and rejected Evidence exclusion are validator responsibilities."
+    },
+    "occurrenceKeyList": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/occurrenceKeyId"
+      },
+      "description": "Distinct occurrence keys supporting the pattern. Distinctness beyond ID uniqueness is a validator responsibility."
+    },
+    "patternItem": {
+      "type": "object",
+      "required": [
+        "pattern_id",
+        "pattern_type",
+        "claim",
+        "supporting_evidence_ids",
+        "supporting_occurrence_keys",
+        "occurrence_count",
+        "time_span",
+        "scope",
+        "status",
+        "sensitivity",
+        "notes"
+      ],
+      "properties": {
+        "pattern_id": {
+          "$ref": "common.schema.json#/$defs/patternId"
+        },
+        "pattern_type": {
+          "$ref": "#/$defs/patternType"
+        },
+        "claim": {
+          "type": "string",
+          "description": "Pattern statement describing observed recurrence or bias."
+        },
+        "supporting_evidence_ids": {
+          "$ref": "#/$defs/evidenceIdList"
+        },
+        "supporting_occurrence_keys": {
+          "$ref": "#/$defs/occurrenceKeyList"
+        },
+        "occurrence_count": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "Recorded recurrence count. Equality with distinct supporting_occurrence_keys count is a validator responsibility."
+        },
+        "time_span": {
+          "type": "string",
+          "description": "Recurrence period. Not a single event date."
+        },
+        "scope": {
+          "type": "string",
+          "description": "Scope of the pattern."
+        },
+        "status": {
+          "$ref": "#/$defs/patternStatus"
+        },
+        "sensitivity": {
+          "$ref": "common.schema.json#/$defs/sensitivity"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Supplementary notes. Empty string is allowed."
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "unevaluatedProperties": false
+    }
+  }
+}
