@@ -109,6 +109,49 @@
   - 返済予定表・固定資産台帳等の入力契約をorganization-diagnosis側へ拡張する際、本仕様と矛盾する要求が生じた場合。
   - 同種の由来混同が別指標で再発した場合、standards-authoring経由で横断ルールへ昇格させる。
 
+### DEC-008｜organization-diagnosis設計メモv0.1を確定し、「解釈の由来管理」を組織診断基盤の中核原則として採用する
+- 日付：2026-07-12
+- 状態：確定
+- 対象：`docs/organization-diagnosis_設計メモ_v0.1.md`（将来のOS、schema、validator、skillの設計基準）
+- 決定：
+  - organization-diagnosis設計メモv0.1を、将来のOS、schema、validator、skillの設計基準として確定する（status: frozen）。
+  - 中核構造として次を採用する：Evidence ledger、Pattern register、Hypothesis register、Causal edge / loop register、verification_action、validator。
+  - **中核原則**
+    - 事実、反復Pattern、構造仮説、メンタルモデル仮説を分離する。
+    - 語られていない因果やメンタルモデルを創作しない。
+    - validatorは形式的追跡可能性を保証するが、真実性は保証しない。
+    - 出典照合を財務分析における検算の対応物とする。
+    - MEASUREDは証拠であり、意味づけは仮説とする。
+    - フレームワークは仮説生成の必須チェックリストではなく照合レンズとする。
+    - 顧客提示版と最終判断は小林裕司が確定する。
+    - 実顧客情報をPublicリポジトリへ保存しない。
+  - **安全規律**
+    - 話者帰属と質問文脈を管理する。
+    - rejected Evidenceを支持・反証・棄却根拠に使用しない。
+    - restricted_hrの秘匿性を派生物へ継承する。
+    - exclude_from_org_diagnosisを順序外の強制除外値とする。
+    - 個別労務、法務、健康情報等を一般の組織診断へ吸収しない。
+  - **仮説管理**
+    - CONFIRMEDは使用しない。
+    - SUPPORTED／WEAKENED等の慎重な状態語彙を使用する。
+    - REVISEDは状態ではなく改訂操作とする。
+    - 棄却・改訂された仮説も履歴として残す。
+    - SUPPORTEDの主要根拠には確認済みEvidenceを要求する。
+  - **未確定事項**
+    - 保存形式、Dropbox配置、各registerのstatus、measured_trend、verification_actionのregister化、occurrence_keyの粒度等の16項目は、善意に確定せずschema段階へ送る。
+  - **今後の扱い**
+    - schema段階で新しく判明した論点は、設計メモの失敗として無限に遡及修正せず、schema設計から得られた新しい発見として管理する。
+- 理由：
+  - financial-analysis（DEC-005〜007）では、数値の由来と判定可能範囲を管理する設計を確立した。組織診断では決定論的な計算核を置けないため、同じ考え方を「解釈の由来管理」へ展開する必要があった。
+  - 組織診断の品質中心を「もっともらしい構造の提示」ではなく、Evidence・Pattern・Hypothesis・因果edgeの追跡可能性と、未確認事項の明示に置くことで、裕司さんの見立てへ安全に新しい視点を加える基盤とする。
+- 採用しなかった案：
+  - 決定論的計算核（organization_calc.py相当）を置き、仮説の真実性を機械保証する案。
+  - SSR・7S等のフレームワークを仮説生成の必須チェックリストとして全案件に強制適用する案。
+  - §23の未確定16項目を設計メモ段階で善意に確定する案。
+- 見直し条件：
+  - schema設計段階で設計メモと矛盾する論点が判明した場合（設計メモの無限遡及修正は行わず、schema設計の発見として管理する）。
+  - 初弾実案件検証（設計メモ§22）で、設計メモv0.1の運用限界が確認された場合。
+
 ## 2026-07-11 AI運用の判断基準を grow3-judgment スキルとして確立
 1. 承認済み最新版を正とし、依頼範囲外を善意で変更しない（第0原則）。
    改善案は本文反映ではなく別途提案とする。
