@@ -12,6 +12,14 @@
 #   frontmatter の status: draft|reviewed → WARN
 #   status: final または frontmatterなし → FAIL
 # 公開禁止事例・★★・XXX は status に関係なく常に FAIL。
+#
+# 設計思想（2026-07-12追記）：この検品は「緩すぎて本物の未確定表記を見逃す」より
+# 「厳しすぎて時々誤検知で止まる」方を選ぶ。誤検知は直しやすいが、見逃しは
+# 気づかないまま出荷される。DECISIONS.mdのテンプレート例示（DEC-XXX）を
+# 本文の未確定表記と誤って同一視した2026-07-12の誤検知はその代償だが、
+# 対応は「文字列個別の例外リスト」ではなく「テンプレート/例示という構造」を
+# 検出する形にし、本物の未確定表記を見逃す穴を作らないようにしている
+# （下記 strip_template_and_fences を参照）。
 # =============================================================
 set -u
 FAIL=0
@@ -26,6 +34,30 @@ is_excluded() {
     *)
       return 1 ;;
   esac
+}
+
+# ---- テンプレート／例示ブロックの除外（構造的境界のみ。文字列個別の例外はしない） ----
+# 未確定表記チェック（【要確認】/TODO/仮置き/未確定/★★/XXX）は、以下2種の
+# 構造的に判定できる範囲のみを除外して検査する。個別の文字列（例："DEC-XXX"）
+# をファイル全体・リポジトリ全体で例外扱いにすることはしない。
+#   (a) Markdownコードフェンス（```...```）内
+#   (b) 見出し「## 記録形式」から次の「## 」見出し直前までの節
+#       （DECISIONS.mdの記録フォーマット例示部。本文の判断ログとは
+#       構造的に区切られているため対象外にできる）
+# これ以外の未確定表記（本文中に実際に残った「DEC-XXX」等）は従来どおり検出する。
+strip_template_and_fences() {
+  awk '
+    BEGIN { in_fence = 0; in_template = 0 }
+    {
+      line = $0
+      if (line ~ /^```/) { in_fence = (in_fence == 0) ? 1 : 0; next }
+      if (in_fence) { next }
+      if (line ~ /^## 記録形式[[:space:]]*$/) { in_template = 1; next }
+      if (in_template && line ~ /^## /) { in_template = 0 }
+      if (in_template) { next }
+      print line
+    }
+  '
 }
 
 # ---- 検査対象の収集 ----
@@ -90,6 +122,7 @@ BRAND_COLORS="0F3D96|EEF3FA|1F2937|E5E7EB|FFFFFF|000000|FFF|000"
 
 for f in "${TARGETS[@]}"; do
   TEXT=$(get_text "$f")
+  PROSE_TEXT=$(printf '%s\n' "$TEXT" | strip_template_and_fences)
   DOC_STATUS=$(get_doc_status "$f")
   if [ "$DOC_STATUS" = "draft" ] || [ "$DOC_STATUS" = "reviewed" ]; then
     UNCERTAIN_LEVEL=WARN
@@ -121,16 +154,16 @@ for f in "${TARGETS[@]}"; do
   if [ -n "$NEAR_HIT" ]; then
     report FAIL "$f" "公開禁止事例の疑い：「介護」と「離職率」が近接共起（前後80行以内・行${NEAR_HIT}）"
   fi
-  # 2) 未確定表記の残存
+  # 2) 未確定表記の残存（テンプレート／例示ブロックを除いた本文のみ検査）
   #    draft/reviewed → WARN / final・frontmatterなし → FAIL
   for kw in "【要確認】" "TODO" "仮置き" "未確定"; do
-    if echo "$TEXT" | grep -qF "$kw"; then
+    if echo "$PROSE_TEXT" | grep -qF "$kw"; then
       report "$UNCERTAIN_LEVEL" "$f" "未確定表記が残存：${kw}"
     fi
   done
   # ★★ / XXX は status に関係なく FAIL
   for kw in "★★" "XXX"; do
-    if echo "$TEXT" | grep -qF "$kw"; then
+    if echo "$PROSE_TEXT" | grep -qF "$kw"; then
       report FAIL "$f" "未確定表記が残存：${kw}"
     fi
   done
