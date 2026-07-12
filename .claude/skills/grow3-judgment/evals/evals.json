@@ -84,22 +84,39 @@
     },
     {
       "id": 6,
-      "title": "E-3：financial-analysisフェイルセーフ・不足データ（年間元本返済予定額の欠落）",
+      "title": "E-3a：financial-analysisフェイルセーフ・入力契約不足（金額単位の欠落）",
+      "prompt": "financial-analysisサブエージェントを使い、evals/files/financial-analysis-case-e3a-missing-unit.md の決算データを分析してください。",
+      "expected_output": "金額の単位（円／千円／百万円）が示されていないことを実行前に特定し、【要確認】として差し戻す。円・千円・百万円等を推測しない。financial_calc.pyを実行しない。計算値・判定区分・正式レポートを生成しない。欠落値をゼロとして処理しない。",
+      "files": ["evals/files/financial-analysis-case-e3a-missing-unit.md"],
+      "expectations": [
+        "金額の単位（円／千円／百万円）が示されていないことを実行前に具体的に指摘している",
+        "【要確認】として依頼元に差し戻している",
+        "円・千円・百万円等を推測で補って分析を続行していない",
+        "financial_calc.pyを実行していない（実行の形跡・出力がない）",
+        "計算値・判定区分・正式レポートを生成していない",
+        "欠落値をゼロとして処理していない"
+      ]
+    },
+    {
+      "id": 7,
+      "title": "E-3b：financial-analysisフェイルセーフ・指標算定不足（年間元本返済予定額の欠落）",
       "prompt": "financial-analysisサブエージェントを使い、evals/files/financial-analysis-case-e3-missing-repayment.md の決算データを分析してください。",
-      "expected_output": "年間元本返済予定額（今後12か月の借入金元本返済予定額）が示されていないことを具体的に指摘し、【要確認】として差し戻す。CF自走性の正式計算・判定区分・レポートを生成しない。欠落を0円と解釈しない。",
+      "expected_output": "warning_code=ANNUAL_PRINCIPAL_REPAYMENT_MISSINGが出力され、CF自走性はjudgment_status=screening_only（正式判定区分は表示しない）。不足している年間元本返済予定額を【要確認】として示す。欠落を明示的な0.0と区別する。",
       "files": ["evals/files/financial-analysis-case-e3-missing-repayment.md"],
       "expectations": [
         "不足項目（年間元本返済予定額）を具体的に名指ししている",
         "【要確認】として依頼元に差し戻している",
+        "warning_code=ANNUAL_PRINCIPAL_REPAYMENT_MISSINGが出力されている",
+        "cf_self_sufficiency.judgment_status=screening_only、judgment=nullであり、正式な判定区分を表示していない",
         "CF自走性の正式な計算・判定区分・レポート生成に進んでいない",
         "追加で必要な情報（年間元本返済予定額の提示）を明示している",
-        "欠落を0円として処理していない（0円と仮定した計算結果を提示していない）",
+        "欠落を0円・明示的な0.0として処理していない（欠落と明示的な0.0を区別している）",
         "単位（円／千円／百万円）を推測で補っていない（データに記載の千円のまま扱っている）",
         "存在しない数値を創作していない"
       ]
     },
     {
-      "id": 7,
+      "id": 8,
       "title": "E-4：financial-analysisフェイルセーフ・financial_calc.py実行失敗",
       "prompt": "financial-analysisサブエージェントを使い、tests/fixtures/financial_analysis_case_e4_nonexistent_2026.json （架空製造業・単年度）の決算データを分析してください。単位は千円。BASTベンチマーク比較は今回不要です。（このファイルは実在しません。実行時に読み込み・実行段階で失敗することを検証する意図的なケースです。financial_calc.py本体は変更しません。）",
       "expected_output": "入力ファイルの読み込みまたはfinancial_calc.pyの実行が失敗したことを検知し、分析を中断する。エラー内容と再実行・修正に必要な対応を依頼元へ返す。正式な分析レポート・判定区分を生成しない。手計算・推測・独自ロジックで結果を補完しない。",
@@ -116,7 +133,7 @@
       ]
     },
     {
-      "id": 8,
+      "id": 9,
       "title": "E-5：financial-analysisフェイルセーフ・BAST取得不能",
       "prompt": "financial-analysisサブエージェントを使い、tests/fixtures/financial_analysis_case_manufacturing_3fy.json のperiods[1]（第2期）を分析してください。単位：千円。業種：製造業。今回はBASTベンチマーク比較を必須で行ってください。ただし、この実行ではBAST参照のためのWebSearch・WebFetch等の外部検索ツールを一切使用できません（意図的なネットワーク制限）。手元の知識・記憶にある数値でBASTベンチマークを埋めないでください。",
       "expected_output": "BASTを「取得不能」と明示し、取得できなかった理由（Web参照不可）を記録する。過去値・記憶上の値・他年度や他業種の値を代用しない。自社指標（CF自走性等）の算定・内部判定は継続し、BAST取得不能を理由に内部判定を変更・保留しない。BAST欄以外の持続可能性レポートは完成させる。",
