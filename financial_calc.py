@@ -14,6 +14,13 @@ docs/financial-analysis_指標定義書_v0.2.md の全指標を実装する。
 - CF自走性の算定に使う営業CFは §18（2026-07-12訂正）の3層優先順位
   （実績＞推計＞簡易）で決定し、どの層を使用したかを `ocf_source`
   （actual|estimated|simplified）として結果に必ず含める。
+- 簡易営業CFしか算出できない場合、CF自走性の参考計算値・計算過程は
+  出力するが、正式な判定区分は出力しない（`judgment=None`・
+  `judgment_status="screening_only"`・警告コード
+  `WARNING_CODE_SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENT`
+  ＝`"SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENT"`と理由文を付す。
+  後工程のレポート生成がこのコードで機械的に判定要否を分岐できるように
+  するため、自由文の`warning`だけに依存しない）。
 - 維持投資は実額（capex）を優先し、実額が無い場合のみ減価償却費を
   代理値として使用し `capex_source`（actual|depreciation_proxy）として
   明示する。実額があるのに代理値を使うことはしない。
@@ -194,6 +201,15 @@ def resolve_maintenance_investment(
     raise ValueError("維持投資を算定するための入力（実額capexまたは減価償却費）が不足している")
 
 
+#: 簡易営業CFしか算出できず正式判定をブロックした場合の警告コード
+#: （2026-07-12再訂正：レポート生成側がこのコードで判定要否を機械的に
+#:  分岐できるようにする。自由文の`warning`だけでは誤って区分表示される
+#:  リスクがあるため、コードと理由文の両方を持つ）。
+WARNING_CODE_SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENT = (
+    "SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENT"
+)
+
+
 @dataclass
 class CFSelfSufficiencyResult:
     fcf: Optional[float]
@@ -202,8 +218,11 @@ class CFSelfSufficiencyResult:
     confidence_grade: str
     cf_self_sufficiency: Optional[float]
     zone: Optional[str]
+    judgment: Optional[str]  # 正式判定区分（zoneと同値）。screening_only時はNone
+    judgment_status: str  # "formal" | "screening_only"
     judgment_blocked: bool
     warning: Optional[str]
+    warning_code: Optional[str]
     calculation_trace: str
 
 
@@ -233,7 +252,9 @@ def calc_cf_self_sufficiency(
             fcf=None, ocf_source=ocf.ocf_source, capex_source=None,
             confidence_grade=ocf.confidence_grade,
             cf_self_sufficiency=None, zone=None,
+            judgment=None, judgment_status="screening_only",
             judgment_blocked=True, warning=ocf.warning,
+            warning_code=WARNING_CODE_SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENT,
             calculation_trace=ocf.calculation_trace,
         )
 
@@ -250,7 +271,9 @@ def calc_cf_self_sufficiency(
         fcf=fcf, ocf_source=ocf.ocf_source, capex_source=maint.capex_source,
         confidence_grade=ocf.confidence_grade,
         cf_self_sufficiency=ratio, zone=zone,
-        judgment_blocked=False, warning=None, calculation_trace=trace,
+        judgment=zone, judgment_status="formal",
+        judgment_blocked=False, warning=None, warning_code=None,
+        calculation_trace=trace,
     )
 
 
@@ -570,6 +593,9 @@ def analyze_period(pl: dict, cf: dict, opening_bs: dict, ending_bs: dict,
     result["capex_source"] = cf_result.capex_source
     result["cf_self_sufficiency"] = cf_result.cf_self_sufficiency
     result["cf_self_sufficiency_zone"] = cf_result.zone
+    result["cf_self_sufficiency_judgment"] = cf_result.judgment
+    result["cf_self_sufficiency_judgment_status"] = cf_result.judgment_status
+    result["cf_self_sufficiency_warning_code"] = cf_result.warning_code
     result["distributable_resource_for_executive_comp"] = calc_distributable_resource(
         cf_result.fcf, annual_principal, cash_buffer_for_reconfigured_debt,
     )

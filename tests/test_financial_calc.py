@@ -139,6 +139,12 @@ class TestOcfSourceSafetyCases(unittest.TestCase):
         self.assertEqual(result.judgment_blocked, expected["judgment_blocked"])
         self.assertIsNone(result.cf_self_sufficiency)
         self.assertIsNone(result.zone)
+        self.assertIsNone(result.judgment)
+        self.assertEqual(result.judgment_status, "screening_only")
+        self.assertEqual(
+            result.warning_code,
+            fc.WARNING_CODE_SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENT,
+        )
         self.assertEqual(result.warning, expected["warning"])
         self.assertEqual(result.confidence_grade, expected["confidence_grade"])
 
@@ -166,6 +172,9 @@ class TestOcfSourceSafetyCases(unittest.TestCase):
         self.assertAlmostEqual(result.fcf, expected["fcf"], places=6)
         self.assertAlmostEqual(result.cf_self_sufficiency, expected["cf_self_sufficiency"], places=6)
         self.assertEqual(result.zone, expected["cf_self_sufficiency_zone"])
+        self.assertEqual(result.judgment, expected["cf_self_sufficiency_zone"])
+        self.assertEqual(result.judgment_status, "formal")
+        self.assertIsNone(result.warning_code)
         self.assertIsNone(result.warning)
 
     def test_actual_takes_priority_over_estimated_when_both_available(self):
