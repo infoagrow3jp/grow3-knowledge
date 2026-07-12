@@ -66,7 +66,7 @@ def run_case_1_estimated_ocf_period2():
         opening_bs=period2["opening_bs"], ending_bs=period2["ending_bs"],
     )
 
-    # Step3：出力メタデータの検証（スキルSKILL.md Step3）
+    # Step3：出力メタデータの検証（スキルSKILL.md Step3・6項目）
     for key in ["ocf_source", "capex_source"]:
         assert key in actual and actual[key] is not None, f"必須メタデータ欠落: {key}"
     for key in [
@@ -76,12 +76,18 @@ def run_case_1_estimated_ocf_period2():
         "cf_self_sufficiency_calculation_trace",
     ]:
         assert key in actual, f"必須メタデータ欠落: {key}"
-    assert actual["cf_self_sufficiency_calculation_trace"], "calculation_traceが空"
+    trace = actual["cf_self_sufficiency_calculation_trace"]
+    assert trace, "calculation_traceが空"
+    # 「使用した費目と算式」チェック：抽象的な記述ではなく、具体的な数値・
+    # 項目名（推計営業CF・維持投資・CF自走性の各算式）が含まれていることを確認
+    for must_contain in ["推計営業CF", "維持投資", "CF自走性"]:
+        assert must_contain in trace, f"calculation_traceに必須の費目・算式名が欠落: {must_contain}"
 
     # Step4：judgment_statusに応じた表示分岐の確認（本ケースは formal のはず）
     assert actual["cf_self_sufficiency_judgment_status"] == "formal"
-    assert actual["ocf_source"] == "estimated"
-    assert actual["capex_source"] == "actual"
+    assert actual["ocf_source"] == "estimated", "使用されたocf_sourceが期待（estimated）と不一致"
+    assert actual["capex_source"] == "actual", "使用されたcapex_sourceが期待（actual）と不一致"
+    assert actual["cf_self_sufficiency_warning_code"] is None, "formal判定なのに警告コードが設定されている"
 
     # financial_calc.pyの直接実行結果（＝test_financial_calc.pyが使う期待値）との一致確認
     expected = period2["indicators"]
@@ -127,40 +133,54 @@ def run_case_2_simplified_only_screening():
         tax=inputs["tax"],
     )
 
-    # Step3：出力メタデータの検証
+    # Step3：出力メタデータの検証（6項目：ocf_source・capex_source・
+    # judgment_status・警告/警告コード・計算過程・使用した費目と算式）
     for attr in REQUIRED_METADATA_KEYS_FOR_CF_SELF_SUFFICIENCY:
         assert hasattr(result, attr), f"必須メタデータ欠落: {attr}"
     assert result.calculation_trace, "calculation_traceが空"
+    for must_contain in ["経常利益", "減価償却費", "法人税等", "簡易営業CF"]:
+        assert must_contain in result.calculation_trace, (
+            f"calculation_traceに必須の費目・算式名が欠落: {must_contain}"
+        )
 
     # Step4：judgment_status=screening_onlyのレポート表示分岐の確認
-    assert result.judgment_status == "screening_only"
+    assert result.judgment_status == "screening_only", "judgment_statusが期待（screening_only）と不一致"
     assert result.judgment is None, "screening_only時にjudgment（正式区分）が表示されてはならない"
     assert result.zone is None
     assert result.cf_self_sufficiency is None
-    assert result.warning_code == fc.WARNING_CODE_SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENT
+    assert result.warning_code == fc.WARNING_CODE_SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENT, (
+        "警告コードが期待値と不一致"
+    )
     assert result.warning == expected["warning"]
+    assert result.ocf_source == expected["ocf_source"], "使用されたocf_sourceが期待（simplified）と不一致"
 
-    # レポート表示文の組み立て（SKILL.md Step4のルールをシミュレート）
-    if result.judgment_status == "screening_only":
-        report_line = (
-            f"CF自走性：正式判定不可（judgment_status=screening_only）。"
-            f"参考値のみ：簡易営業CFベースの計算過程＝{result.calculation_trace}"
-            f"／警告コード={result.warning_code}／理由={result.warning}"
-        )
-        assert "標準" not in report_line and "余裕" not in report_line and "要改善" not in report_line and "ぎりぎり" not in report_line, (
-            "screening_only表示に正式区分語が混入している"
-        )
-
-    # financial_calc.pyの直接実行結果（fixtureの期待値）との一致確認
-    assert result.ocf_source == expected["ocf_source"]
-    assert result.judgment_blocked == expected["judgment_blocked"]
-    assert result.confidence_grade == expected["confidence_grade"]
+    # レポート表示文の組み立て（SKILL.md Step4・screening_only時の5点構成をシミュレート）
     simple_ocf = fc.calc_simple_operating_cf(
         inputs["ordinary_profit"], inputs["depreciation_total"], inputs["tax"],
     )
+    report_lines = {
+        "1_参考計算値": f"簡易営業CF（参考値） = {simple_ocf:,.1f}千円",
+        "2_スクリーニング値である旨": (
+            "本値は速報・一次スクリーニング専用の簡易営業CFに基づく参考値であり、"
+            "運転資本変動を反映していない"
+        ),
+        "3_正式判定を行っていない理由": result.warning,
+        "4_警告コードおよび警告内容": f"{result.warning_code}：{result.warning}",
+        "5_正式判定に追加で必要な資料": "2期分のB/SまたはCF計算書",
+    }
+    full_report_text = "／".join(report_lines.values())
+    for forbidden_zone_word in ["要改善（自走していない", "ぎりぎり（自走はしている", "標準（銀行の融資目安圏）", "余裕（銀行評価良好圏）"]:
+        assert forbidden_zone_word not in full_report_text, (
+            f"screening_only表示に正式区分語が混入している: {forbidden_zone_word}"
+        )
+    assert result.zone not in (report_lines.values()), "zone（正式区分）がレポート文に紛れ込んでいる"
+
+    # financial_calc.pyの直接実行結果（fixtureの期待値）との一致確認
+    assert result.judgment_blocked == expected["judgment_blocked"]
+    assert result.confidence_grade == expected["confidence_grade"]
     assert abs(simple_ocf - expected["simple_operating_cf"]) < 1e-6
 
-    return result, report_line
+    return result, report_lines
 
 
 def main():
@@ -174,10 +194,13 @@ def main():
     print()
 
     print("=== ケース②：簡易営業CFのみ・judgment_status=screening_only ===")
-    result2, report_line = run_case_2_simplified_only_screening()
+    result2, report_lines = run_case_2_simplified_only_screening()
     print(f"ocf_source={result2.ocf_source} / judgment_status={result2.judgment_status} / "
           f"judgment={result2.judgment} / warning_code={result2.warning_code}")
-    print(f"レポート表示文（Step4シミュレーション）：{report_line}")
+    print("レポート表示文（Step4・screening_only時の5点構成）：")
+    for label, text in report_lines.items():
+        print(f"  {label}：{text}")
+    print("→ 正式な判定区分（zone）は表示されていないことを確認済み")
     print("→ スキル経由の結果が直接実行（fixture期待値）と全件一致：OK")
     print()
 
