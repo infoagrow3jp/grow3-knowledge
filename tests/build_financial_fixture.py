@@ -196,16 +196,19 @@ def compute_period(prev_bs, p):
     capital_stock_end = prev_bs["capital_stock"]  # 増減なし
     retained_earnings_end = prev_bs["retained_earnings"] + net_income  # 配当なし
 
-    # --- 実績営業CF（間接法） ---
+    # --- 推計営業CF（2026-07-12訂正：本fixtureにはCF計算書が無いため、
+    #     P/L＋2期分B/Sから運転資本増減を反映して間接法準拠で推計する。
+    #     以前「実績営業CF」と呼んでいたが、起点がP/L・B/Sであり実績値では
+    #     ないため誤りだった。ocf_source=estimated として扱う ---
     delta_ar = ar_end - prev_bs["accounts_receivable"]
     delta_inv = inv_end - prev_bs["inventory"]
     delta_ap = ap_end - prev_bs["accounts_payable"]
-    operating_cf = net_income + depreciation_total - delta_ar - delta_inv + delta_ap
+    estimated_operating_cf = net_income + depreciation_total - delta_ar - delta_inv + delta_ap
 
     investing_cf = -p["capex"]
     financing_cf = p["debt_new_borrowing"] - p["debt_repayment"]
 
-    cash_end = prev_bs["cash"] + operating_cf + investing_cf + financing_cf
+    cash_end = prev_bs["cash"] + estimated_operating_cf + investing_cf + financing_cf
 
     bs_end = {
         "cash": cash_end,
@@ -254,10 +257,10 @@ def compute_period(prev_bs, p):
         "delta_ar": delta_ar,
         "delta_inv": delta_inv,
         "delta_ap": delta_ap,
-        "operating_cf": operating_cf,          # ＝実績営業CF
+        "estimated_operating_cf": estimated_operating_cf,  # ＝推計営業CF（CF計算書なし。ocf_source=estimated）
         "investing_cf": investing_cf,
         "financing_cf": financing_cf,
-        "capex": p["capex"],
+        "capex": p["capex"],                   # 実額の維持投資（本fixtureでは減価償却費と一致するよう設計。capex_source=actual）
         "debt_repayment": p["debt_repayment"],
         "debt_new_borrowing": p["debt_new_borrowing"],
     }
@@ -272,13 +275,19 @@ def compute_indicators(pl, cf, bs_end, prev_bs):
     # ============================================================
     # §1 キャッシュフロー系指標（4定義）
     # ============================================================
-    actual_operating_cf = cf["operating_cf"]
-    simple_operating_cf = pl["ordinary_profit"] + pl["depreciation_total"] - pl["tax"]  # 簡易営業CF（補正なし＝補正後と同値）
-    broad_fcf = actual_operating_cf + cf["investing_cf"]  # 広義FCF（投資CFは負数のまま加算）
+    # 本fixtureにはCF計算書が無いため、営業CFの実体は「推計営業CF」
+    # （ocf_source=estimated）である。§18の3層優先順位のうち第2層。
+    estimated_operating_cf = cf["estimated_operating_cf"]
+    simple_operating_cf = pl["ordinary_profit"] + pl["depreciation_total"] - pl["tax"]  # 簡易営業CF（補正なし＝補正後と同値。速報・一次スクリーニング専用）
+    broad_fcf = estimated_operating_cf + cf["investing_cf"]  # 広義FCF（投資CFは負数のまま加算）
+    # 維持投資：実額（capex）が取得できるため実額を使用する（capex_source=actual）。
+    # 減価償却費への代理は行わない（実額があるのに代理値を使うのは禁止のため）。
+    maintenance_investment_actual = cf["capex"]
+    capex_source = "actual"
     # 返済原資CF＝補正後簡易営業CF−維持投資−事業外資金流出（本fixtureでは調整項目・事業外流出=0）
-    maintenance_capex_proxy = pl["depreciation_total"]
-    repayment_source_cf = simple_operating_cf - maintenance_capex_proxy - 0.0
-    result["actual_operating_cf"] = actual_operating_cf
+    repayment_source_cf = simple_operating_cf - maintenance_investment_actual - 0.0
+    result["estimated_operating_cf"] = estimated_operating_cf
+    result["ocf_source"] = "estimated"
     result["simple_operating_cf"] = simple_operating_cf
     result["broad_fcf"] = broad_fcf
     result["repayment_source_cf_calculated"] = repayment_source_cf
@@ -376,11 +385,16 @@ def compute_indicators(pl, cf, bs_end, prev_bs):
 
     # ============================================================
     # §18 CF自走性（第0指標）
+    # 2026-07-12訂正：営業CFは3層優先順位の第2層「推計営業CF」
+    # （ocf_source=estimated）を使用。維持投資は実額capexを使用
+    # （capex_source=actual。減価償却費への代理は実額がある本fixtureでは
+    #  行わない＝実額があるのに代理値を使うことは禁止のルールに従う）。
     # ============================================================
-    fcf = actual_operating_cf - maintenance_capex_proxy  # 維持投資≒減価償却費
+    fcf = estimated_operating_cf - maintenance_investment_actual
     cf_self_sufficiency = fcf / annual_principal_next12m if annual_principal_next12m else None
     distributable_resource = fcf - annual_principal_next12m - CASH_BUFFER_FOR_RECONFIGURED_DEBT
     result["fcf"] = fcf
+    result["capex_source"] = capex_source
     result["cf_self_sufficiency"] = cf_self_sufficiency
     result["cf_self_sufficiency_zone"] = zone_cf_self_sufficiency(cf_self_sufficiency)
     result["distributable_resource_for_executive_comp"] = distributable_resource
@@ -438,6 +452,7 @@ def main():
     print("=== 期首B/S ===")
     print(json.dumps(opening, ensure_ascii=False, indent=2))
     keys_to_print = [
+        "ocf_source", "capex_source",
         "cf_self_sufficiency", "cf_self_sufficiency_zone",
         "debt_payback_years_ebitda", "debt_payback_years_ebitda_zone",
         "margin_ratio_pct", "labor_share_stat_pct", "labor_share_bast_pct",
@@ -453,7 +468,7 @@ def main():
         print(f"\n=== {period['name']} ===")
         print("balance_check.diff (should be ~0):", period["balance_check"]["diff"])
         print("net_income:", period["pl"]["net_income"])
-        print("actual_operating_cf:", period["indicators"]["actual_operating_cf"])
+        print("estimated_operating_cf:", period["indicators"]["estimated_operating_cf"])
         print("simple_operating_cf:", period["indicators"]["simple_operating_cf"])
         print("fcf:", period["indicators"]["fcf"])
         for k in keys_to_print:

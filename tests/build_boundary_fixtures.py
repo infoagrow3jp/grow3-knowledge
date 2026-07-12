@@ -16,16 +16,21 @@ def build_cf_self_sufficiency_cases():
     """
     CF自走性＝FCF÷年間返済元金。境界値：0.95／1.00／1.19／1.20／1.50
     年間返済元金を10,000千円に固定し、FCFを逆算する。
-    FCF＝実績営業CF−維持投資（≒減価償却費）。減価償却費は5,000千円に固定し、
-    実績営業CF＝FCF＋減価償却費で逆算する。
+    FCF＝営業CF−維持投資。維持投資は5,000千円に固定し、
+    営業CF＝FCF＋維持投資で逆算する。
+
+    注：本ケース群は§18のFCF÷年間返済元金の算式とゾーン境界のみを検証する
+    ものであり、営業CFがどの層（実績／推計／簡易）から得られたかは問わない
+    （層の選択ロジック自体は`ocf_source_safety_cases`で別途検証する）。
+    そのため入力キーは層を示唆しない`operating_cf_input`とする。
     """
     annual_principal = 10000.0
-    depreciation = 5000.0
+    maintenance_investment = 5000.0
     targets = [0.95, 1.00, 1.19, 1.20, 1.50]
     cases = []
     for ratio in targets:
         fcf = ratio * annual_principal
-        actual_operating_cf = fcf + depreciation
+        operating_cf_input = fcf + maintenance_investment
         computed_ratio = fcf / annual_principal
         if computed_ratio < 1.0:
             zone = "要改善（自走していない。最優先論点）"
@@ -39,8 +44,8 @@ def build_cf_self_sufficiency_cases():
             "case_id": f"cf_self_sufficiency_{ratio}",
             "target_ratio": ratio,
             "inputs": {
-                "actual_operating_cf": actual_operating_cf,
-                "maintenance_capex_proxy_depreciation": depreciation,
+                "operating_cf_input": operating_cf_input,
+                "maintenance_investment": maintenance_investment,
                 "annual_principal_repayment_next12m": annual_principal,
             },
             "expected": {
@@ -48,7 +53,7 @@ def build_cf_self_sufficiency_cases():
                 "cf_self_sufficiency": computed_ratio,
                 "zone": zone,
             },
-            "formula": "CF自走性 = FCF ÷ 年間返済元金、FCF = 実績営業CF − 維持投資（≒減価償却費）",
+            "formula": "CF自走性 = FCF ÷ 年間返済元金、FCF = 営業CF − 維持投資（層・出典はこのケースでは不問。ocf_source_safety_casesで別途検証）",
         })
     return cases
 
@@ -142,6 +147,75 @@ def build_cash_months_cases():
     return cases
 
 
+def build_ocf_source_safety_cases():
+    """
+    2026-07-12追加（①の指示に基づく②実装向け安全動作ケース）：
+    営業CFの3層優先順位（実績＞推計＞簡易）のうち、簡易営業CFしか
+    算出できない入力（CF計算書なし・2期分B/Sなし＝前期末B/Sが無い）で
+    CF自走性の正式判定を求めた場合、判定値を出さず警告を返すことを
+    検証するための最小ケース。B/S全体の整合は不要（前期末B/Sが
+    無いことそのものがテストの前提条件）。
+    """
+    cases = [
+        {
+            "case_id": "ocf_source_simplified_only_no_prior_bs",
+            "description": "前期末B/S・CF計算書のいずれも無く、当期P/Lのみで簡易営業CFしか算出できない入力",
+            "inputs": {
+                "has_cash_flow_statement": False,
+                "has_prior_period_bs": False,
+                "ordinary_profit": 48000.0,
+                "depreciation_total": 20000.0,
+                "tax": 16800.0,
+                "annual_principal_repayment_next12m": 20000.0,
+            },
+            "expected": {
+                "ocf_source": "simplified",
+                "simple_operating_cf": 51200.0,
+                "cf_self_sufficiency": None,
+                "cf_self_sufficiency_zone": None,
+                "judgment_blocked": True,
+                "warning": "運転資本変動を確認できないため正式判定不可。2期分のB/SまたはCF計算書が必要",
+                "confidence_grade": "C",
+            },
+            "formula": (
+                "簡易営業CF = 経常利益 + 減価償却費 − 法人税等 = 48,000 + 20,000 − 16,800 = 51,200。"
+                "ただし簡易営業CFは速報・一次スクリーニング専用のため、CF自走性の正式判定には使用せず、"
+                "judgment_blocked=True・warning付きで返す（判定値・ゾーンは出さない）。"
+            ),
+        },
+        {
+            "case_id": "ocf_source_estimated_available_with_prior_bs",
+            "description": "CF計算書は無いが前期末B/Sがあり、推計営業CFが算出できる入力（対照ケース：判定は実行される）",
+            "inputs": {
+                "has_cash_flow_statement": False,
+                "has_prior_period_bs": True,
+                "net_income": 26000.0,
+                "depreciation_total": 20000.0,
+                "delta_ar": 0.0,
+                "delta_inv": 0.0,
+                "delta_ap": 0.0,
+                "maintenance_investment": 20000.0,
+                "annual_principal_repayment_next12m": 20000.0,
+            },
+            "expected": {
+                "ocf_source": "estimated",
+                "estimated_operating_cf": 46000.0,
+                "fcf": 26000.0,
+                "cf_self_sufficiency": 1.3,
+                "cf_self_sufficiency_zone": "標準（銀行の融資目安圏）",
+                "judgment_blocked": False,
+                "warning": None,
+            },
+            "formula": (
+                "推計営業CF = 当期純利益 + 減価償却費 − Δ売掛金 − Δ棚卸資産 + Δ買掛金 "
+                "= 26,000 + 20,000 − 0 − 0 + 0 = 46,000。"
+                "FCF = 46,000 − 20,000(維持投資) = 26,000。CF自走性 = 26,000 ÷ 20,000 = 1.3倍。"
+            ),
+        },
+    ]
+    return cases
+
+
 def main():
     out = {
         "_disclaimer": "本fixtureの数値はすべて架空である。実在の企業・決算データではない。",
@@ -155,6 +229,7 @@ def main():
         "cf_self_sufficiency_boundary_cases": build_cf_self_sufficiency_cases(),
         "debt_payback_ebitda_boundary_cases": build_debt_payback_ebitda_cases(),
         "cash_months_boundary_cases": build_cash_months_cases(),
+        "ocf_source_safety_cases": build_ocf_source_safety_cases(),
     }
 
     out_path = Path(__file__).parent / "fixtures" / "financial_analysis_boundary_cases.json"
