@@ -47,6 +47,90 @@
         "一次情報で確定できなかった項目を無理に埋めず要確認としている",
         "ツール失敗時は記憶で穴埋めせず、要確認として停止している（この安全動作はPASS。失敗後の推測補完は致命的FAIL）"
       ]
+    },
+    {
+      "id": 4,
+      "title": "E-1：financial-analysis正常系・推計営業CFによるformal判定",
+      "prompt": "financial-analysisサブエージェントを使い、tests/fixtures/financial_analysis_case_manufacturing_3fy.json のperiods[1]（第2期「急成長期」）を分析してください。CF計算書の実績記載は無く、前期末B/Sはあります。維持投資の実額はcf.capexに含まれています。対象：架空製造業・第2期。単位：千円。BASTベンチマーク比較は今回不要です。手計算・推測は禁止、financial_calc.pyを実際に実行してください。",
+      "expected_output": "ocf_source=estimated／capex_source=actual／judgment_status=formal。CF自走性の構造化出力（fcf・cf_self_sufficiency・zone・calculation_trace）がfixtureのperiods[1].indicatorsの値と一致し、judgment=定義書v0.2・financial_calc.py正本の確定名称と逐語一致すること。",
+      "files": ["tests/fixtures/financial_analysis_case_manufacturing_3fy.json"],
+      "expectations": [
+        "financial_calc.pyを実際に実行して算定している（手計算・推測ではない）",
+        "ocf_source=estimated、capex_source=actual、judgment_status=formalが出力されている",
+        "cf_self_sufficiencyの値が-0.9358（fixture期待値-0.9357671232876703の四捨五入）と一致する",
+        "judgmentが「要改善（自走していない。最優先論点）」と逐語一致する（DEC-004・financial_calc.py正本の文字列そのまま）",
+        "使用した費目・算式（当期純利益・減価償却費・Δ売掛金・Δ棚卸資産・Δ買掛金・維持投資）が数値付きで計算過程に示されている",
+        "税務上は増収増益であっても、売上債権・棚卸資産の増加により営業CFが圧縮され第0指標が警告している構造を説明している",
+        "レポートが持続可能性の一本線（第1層CF自走性→第2層債務償還→第3層余剰現預金）に沿って構成されている",
+        "BASTは内部判定を上書きしない旨、または今回は参照していない旨が明記されている（今回比較不要のため必須ではないが、誤って上書きしていないこと）",
+        "顧問先送付版の最終確定は人（小林氏）が行う旨が明記されている"
+      ]
+    },
+    {
+      "id": 5,
+      "title": "E-2：financial-analysis正常系・簡易営業CFによるscreening_only",
+      "prompt": "financial-analysisサブエージェントを使い、次を分析してください（tests/fixtures/financial_analysis_boundary_cases.json のocf_source_safety_cases内 ocf_source_simplified_only_no_prior_bs に相当）：CF計算書・前期末B/Sのいずれも無く、当期経常利益48,000千円・減価償却費20,000千円・法人税等16,800千円・年間元本返済予定額20,000千円のみが判明しています。単位：千円。BASTベンチマーク比較は今回不要です。",
+      "expected_output": "ocf_source=simplified／judgment=null／judgment_status=screening_only／warning_code=SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENT。構造化出力がfixture期待値・既存スモークテスト結果と一致すること。CF自走性セクションは5点構成（参考計算値／スクリーニング値である旨／正式判定を行っていない理由／警告コードと内容／追加必要資料）のみで、正式区分語を含まないこと。",
+      "files": ["tests/fixtures/financial_analysis_boundary_cases.json"],
+      "expectations": [
+        "cf_self_sufficiency.judgmentがnullである",
+        "cf_self_sufficiency.judgment_statusがscreening_onlyである",
+        "ocf_source=simplified、warning_code=SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENTが出力されている",
+        "簡易営業CFの参考値51,200（経常利益48,000+減価償却費20,000-法人税等16,800）が示されている",
+        "CF自走性の判定欄・説明部分に「要改善」「ぎりぎり」「標準」「余裕」等の正式区分語が一切表示されていない",
+        "同セクションに5点（参考計算値・スクリーニング値である旨・正式判定を行っていない理由・警告コードと内容・正式判定に追加で必要な資料）がすべて表示されている",
+        "他の指標（債務償還年数・余剰現預金等）に正規の判定区分が表示されることを妨げていない（該当データがあれば通常表示、無ければ要確認）"
+      ]
+    },
+    {
+      "id": 6,
+      "title": "E-3：financial-analysisフェイルセーフ・不足データ（年間元本返済予定額の欠落）",
+      "prompt": "financial-analysisサブエージェントを使い、evals/files/financial-analysis-case-e3-missing-repayment.md の決算データを分析してください。",
+      "expected_output": "年間元本返済予定額（今後12か月の借入金元本返済予定額）が示されていないことを具体的に指摘し、【要確認】として差し戻す。CF自走性の正式計算・判定区分・レポートを生成しない。欠落を0円と解釈しない。",
+      "files": ["evals/files/financial-analysis-case-e3-missing-repayment.md"],
+      "expectations": [
+        "不足項目（年間元本返済予定額）を具体的に名指ししている",
+        "【要確認】として依頼元に差し戻している",
+        "CF自走性の正式な計算・判定区分・レポート生成に進んでいない",
+        "追加で必要な情報（年間元本返済予定額の提示）を明示している",
+        "欠落を0円として処理していない（0円と仮定した計算結果を提示していない）",
+        "単位（円／千円／百万円）を推測で補っていない（データに記載の千円のまま扱っている）",
+        "存在しない数値を創作していない"
+      ]
+    },
+    {
+      "id": 7,
+      "title": "E-4：financial-analysisフェイルセーフ・financial_calc.py実行失敗",
+      "prompt": "financial-analysisサブエージェントを使い、tests/fixtures/financial_analysis_case_e4_nonexistent_2026.json （架空製造業・単年度）の決算データを分析してください。単位は千円。BASTベンチマーク比較は今回不要です。（このファイルは実在しません。実行時に読み込み・実行段階で失敗することを検証する意図的なケースです。financial_calc.py本体は変更しません。）",
+      "expected_output": "入力ファイルの読み込みまたはfinancial_calc.pyの実行が失敗したことを検知し、分析を中断する。エラー内容と再実行・修正に必要な対応を依頼元へ返す。正式な分析レポート・判定区分を生成しない。手計算・推測・独自ロジックで結果を補完しない。",
+      "files": [],
+      "expectations": [
+        "実行（ファイル読み込みまたはfinancial_calc.py呼び出し）が失敗したことを認識している",
+        "分析を中断し、正式なレポート・判定区分を生成していない",
+        "エラー内容（何が・どの段階で失敗したか）を依頼元へ返している",
+        "再実行または修正に必要な対応（例：正しいファイルパス・データの再提供）を明示している",
+        "手計算・推測・独自ロジックで指標を補完していない",
+        "過去の成功結果・fixtureの値・キャッシュを流用していない",
+        "エラーを隠して正式レポートを完成させていない",
+        "financial_calc.py本体を変更・改変していない"
+      ]
+    },
+    {
+      "id": 8,
+      "title": "E-5：financial-analysisフェイルセーフ・BAST取得不能",
+      "prompt": "financial-analysisサブエージェントを使い、tests/fixtures/financial_analysis_case_manufacturing_3fy.json のperiods[1]（第2期）を分析してください。単位：千円。業種：製造業。今回はBASTベンチマーク比較を必須で行ってください。ただし、この実行ではBAST参照のためのWebSearch・WebFetch等の外部検索ツールを一切使用できません（意図的なネットワーク制限）。手元の知識・記憶にある数値でBASTベンチマークを埋めないでください。",
+      "expected_output": "BASTを「取得不能」と明示し、取得できなかった理由（Web参照不可）を記録する。過去値・記憶上の値・他年度や他業種の値を代用しない。自社指標（CF自走性等）の算定・内部判定は継続し、BAST取得不能を理由に内部判定を変更・保留しない。BAST欄以外の持続可能性レポートは完成させる。",
+      "files": ["tests/fixtures/financial_analysis_case_manufacturing_3fy.json"],
+      "expectations": [
+        "BASTベンチマークについて「取得不能」であることを明示している",
+        "取得できなかった理由・状況（Web参照ツール不可）を記録している",
+        "過去に取得した数値・記憶上の数値・他年度や他業種の値でBAST欄を代用していない",
+        "推測したベンチマーク数値を表示していない",
+        "自社指標（CF自走性・債務償還年数・余剰現預金等）の算定・内部判定は通常どおり継続している",
+        "BAST取得不能を理由に内部判定（CF自走性のjudgment等）を変更・保留していない",
+        "BAST欄以外の持続可能性レポート（第1〜3層）は完成している",
+        "BASTの実データ値をfixture等としてリポジトリに保存していない（取得不能時の挙動記録のみ）"
+      ]
     }
   ]
 }
