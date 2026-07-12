@@ -179,6 +179,31 @@
   - schema JSON実装段階で、凍結済みschema設計メモと矛盾する論点が判明した場合（設計メモの無限遡及修正は行わず、実装段階の発見として管理する）。
   - validator初弾実装後、register envelopeまたはMTG snapshotの運用限界が確認された場合。
 
+### DEC-010｜organization-diagnosis schemaの$id名前空間に管理可能なgrow3.jpドメインを採用する
+- 日付：2026-07-12
+- 状態：確定
+- 対象：`schemas/organization-diagnosis/common.schema.json` および将来の organization-diagnosis schema群（9ファイル分割）
+- 決定：
+  - organization-diagnosis schema群の `$id` 基底URIを次とする：`https://grow3.jp/schemas/organization-diagnosis/v0.1/`
+  - `common.schema.json` の `$id` は次とする：`https://grow3.jp/schemas/organization-diagnosis/v0.1/common.schema.json`
+  - schema間の参照には、原則として同一ディレクトリを基準とする相対 `$ref` を使用する（例：`common.schema.json#/$defs/registerEnvelope`）。
+  - 凍結済みschema設計メモ§5-3の `grow3.dev` 例示は、名前空間が未指定だった修正過程で追加され、管理根拠の確認されていない値だった。
+  - `grow3.dev` を株式会社グロウスリーが管理する根拠は確認できないため、schema識別子には採用しない。
+  - 管理下にある公式ドメイン `grow3.jp` を、リポジトリ名やブランチ構成に依存しない安定した名前空間として採用する。
+  - 凍結済み設計メモは遡及修正せず、schema実装段階で判明した新しい横断的判断として本DECISIONに記録する。
+  - common schemaを開いた抽象基底とし、各具体register schemaのルートで `unevaluatedProperties: false` を使用する合成方式が、Draft 2020-12 validator（jsonschema）による実行検証で成立した。
+- 理由：
+  - `$id` はschema識別子および相対 `$ref` 解決の基点となるため、管理主体が明確な安定した名前空間が必要。
+  - 管理根拠のない、もっともらしいドメインを推測で採用しないため。
+  - 凍結文書内の例示であっても、出典や管理根拠のない値を実装上の正本へ昇格させないため。
+  - schema実装で発見した新論点を、凍結文書の遡及変更ではなくDECISIONとして管理するため。
+- 採用しなかった案：
+  - 凍結済みschema設計メモ§5-3の `grow3.dev` 例示を、そのまま実装上の正本URIとして採用する案（管理根拠が確認できないため不採用）。
+  - `$id` をリポジトリ相対パスまたは `file://` URI のみとし、HTTP名前空間を使わない案（相対 `$ref` の解決基点として `$id` URI を使う現行方針と整合しないため不採用）。
+- 見直し条件：
+  - organization-diagnosis schema群の公開配布方針が変わり、別の公式名前空間へ移行する必要が生じた場合。
+  - 相対 `$ref` 解決が、採用validatorまたは配布環境で再現不能と判明した場合。
+
 ## 2026-07-11 AI運用の判断基準を grow3-judgment スキルとして確立
 1. 承認済み最新版を正とし、依頼範囲外を善意で変更しない（第0原則）。
    改善案は本文反映ではなく別途提案とする。

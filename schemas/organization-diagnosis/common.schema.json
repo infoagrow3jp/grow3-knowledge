@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grow3.jp/schemas/organization-diagnosis/v0.1/common.schema.json",
+  "title": "organization-diagnosis common definitions v0.1",
+  "description": "Shared $defs for organization-diagnosis register schemas. ID immutability, cross-register reference integrity, and ID reuse prohibition are validator responsibilities and are not fully expressible in JSON Schema alone.",
+  "$defs": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "0.1.0",
+      "description": "Data contract version for organization-diagnosis v0.1 register files."
+    },
+    "registerType": {
+      "type": "string",
+      "enum": [
+        "evidence",
+        "patterns",
+        "hypotheses",
+        "causal",
+        "verification_actions"
+      ],
+      "description": "Register file kind for the common envelope."
+    },
+    "caseId": {
+      "type": "string",
+      "pattern": "^CASE-ORG-[0-9]{3,}$",
+      "description": "Internal case identifier without customer or personal names."
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Calendar date (YYYY-MM-DD)."
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 timestamp with timezone offset."
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Future extension fields. Only this object may carry undocumented keys.",
+      "additionalProperties": true
+    },
+    "registerEnvelope": {
+      "type": "object",
+      "description": "Abstract base envelope for register JSON files. Concrete register schemas compose with allOf at the root, specialize register_type and items, and set unevaluatedProperties:false at the root (same level as allOf, not inside an allOf branch).",
+      "required": [
+        "schema_version",
+        "case_id",
+        "register_type",
+        "last_updated_at",
+        "items"
+      ],
+      "properties": {
+        "schema_version": {
+          "$ref": "#/$defs/schemaVersion"
+        },
+        "case_id": {
+          "$ref": "#/$defs/caseId"
+        },
+        "register_type": {
+          "$ref": "#/$defs/registerType"
+        },
+        "last_updated_at": {
+          "$ref": "#/$defs/dateTime"
+        },
+        "items": {
+          "type": "array",
+          "description": "Register entries. Item shape is defined by each register schema."
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      }
+    },
+    "evidenceId": {
+      "type": "string",
+      "pattern": "^EVD-[0-9]{8}-[0-9]{3}$",
+      "description": "Evidence identifier. Date segment is the MTG session extraction date. Immutable after issuance."
+    },
+    "occurrenceKeyId": {
+      "type": "string",
+      "pattern": "^OCC-(?:[0-9]{8}|UNKNOWN)-[0-9]{3}$",
+      "description": "Occurrence key for event-level grouping. Date segment is event date when known, otherwise UNKNOWN. Immutable after issuance; do not rename when occurrence_date is later determined."
+    },
+    "patternId": {
+      "type": "string",
+      "pattern": "^PAT-[0-9]{3,}$",
+      "description": "Pattern identifier. Immutable after issuance; do not reuse."
+    },
+    "hypothesisId": {
+      "type": "string",
+      "pattern": "^HYP-[0-9]{3,}$",
+      "description": "Hypothesis identifier. Immutable after issuance; do not reuse."
+    },
+    "causalEdgeId": {
+      "type": "string",
+      "pattern": "^CED-[0-9]{3,}$",
+      "description": "Causal edge identifier. Immutable after issuance; do not reuse."
+    },
+    "causalLoopId": {
+      "type": "string",
+      "pattern": "^CLP-[0-9]{3,}$",
+      "description": "Causal loop identifier. Immutable after issuance; do not reuse."
+    },
+    "verificationActionId": {
+      "type": "string",
+      "pattern": "^ACT-[0-9]{3,}$",
+      "description": "Verification action identifier. Immutable after issuance; do not reuse."
+    },
+    "mtgSessionId": {
+      "type": "string",
+      "pattern": "^MTG-[0-9]{8}-[0-9]{3}$",
+      "description": "MTG session identifier. Also serves as the input snapshot identifier. Date segment is MTG session date. Immutable after issuance."
+    },
+    "sensitivity": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "restricted_hr",
+        "exclude_from_org_diagnosis"
+      ],
+      "description": "Confidentiality level. exclude_from_org_diagnosis is an out-of-order forced exclusion, not the top of the normal sensitivity order."
+    },
+    "sourceForm": {
+      "type": "string",
+      "enum": [
+        "original_audio",
+        "verbatim_transcript",
+        "summary_minutes",
+        "original_document",
+        "observer_note",
+        "measured_raw",
+        "derived_summary"
+      ],
+      "description": "Physical form of the source material. Shared by Evidence items and input snapshot input_files."
+    }
+  }
+}
