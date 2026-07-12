@@ -46,7 +46,7 @@ def build_cf_self_sufficiency_cases():
             "inputs": {
                 "operating_cf_input": operating_cf_input,
                 "maintenance_investment": maintenance_investment,
-                "annual_principal_repayment_next12m": annual_principal,
+                "annual_principal_repayment_scheduled": annual_principal,
             },
             "expected": {
                 "fcf": fcf,
@@ -166,7 +166,7 @@ def build_ocf_source_safety_cases():
                 "ordinary_profit": 48000.0,
                 "depreciation_total": 20000.0,
                 "tax": 16800.0,
-                "annual_principal_repayment_next12m": 20000.0,
+                "annual_principal_repayment_scheduled": 20000.0,
             },
             "expected": {
                 "ocf_source": "simplified",
@@ -195,7 +195,7 @@ def build_ocf_source_safety_cases():
                 "delta_inv": 0.0,
                 "delta_ap": 0.0,
                 "maintenance_investment": 20000.0,
-                "annual_principal_repayment_next12m": 20000.0,
+                "annual_principal_repayment_scheduled": 20000.0,
             },
             "expected": {
                 "ocf_source": "estimated",
@@ -232,7 +232,7 @@ def build_ocf_source_safety_cases():
                 "delta_inv": 0.0,
                 "delta_ap": 0.0,
                 "maintenance_investment": 20000.0,
-                "annual_principal_repayment_next12m": 20000.0,
+                "annual_principal_repayment_scheduled": 20000.0,
             },
             "expected": {
                 "ocf_source": "actual",
@@ -262,7 +262,7 @@ def build_ocf_source_safety_cases():
                 "actual_operating_cf": 50000.0,
                 "depreciation_total": 15000.0,
                 # maintenance_investment（capex実額）キー自体を与えない＝欠落
-                "annual_principal_repayment_next12m": 20000.0,
+                "annual_principal_repayment_scheduled": 20000.0,
             },
             "expected": {
                 "ocf_source": "actual",
@@ -295,7 +295,7 @@ def build_ocf_source_safety_cases():
                 "delta_inv": 0.0,
                 "delta_ap": 0.0,
                 "maintenance_investment": 10000.0,
-                "annual_principal_repayment_next12m": 15000.0,
+                "annual_principal_repayment_scheduled": 15000.0,
             },
             "expected": {
                 "ocf_source": "estimated",
@@ -332,7 +332,7 @@ def build_ocf_source_safety_cases():
                 "delta_ap": 0.0,
                 "ordinary_profit": 40000.0,
                 "tax": 14000.0,
-                "annual_principal_repayment_next12m": 15000.0,
+                "annual_principal_repayment_scheduled": 15000.0,
             },
             "expected": {
                 "ocf_source": "simplified",
@@ -353,7 +353,7 @@ def build_ocf_source_safety_cases():
             # 回帰テスト用ケース）：営業CFの層（推計層）は正常に解決できても、
             # CF自走性の分母（年間元本返済予定額）自体が欠落している場合、
             # judgment_status="formal"を誤って返してはならない
-            # （欠落=annual_principal_repayment_next12mキー自体を与えない）。
+            # （欠落=scheduled／actual_proxy／manual_estimateのいずれのキーも与えない）。
             "case_id": "annual_principal_repayment_missing_blocks_formal_judgment",
             "description": (
                 "推計営業CFは正常に算出できる入力だが、CF自走性の分母である"
@@ -368,11 +368,12 @@ def build_ocf_source_safety_cases():
                 "delta_inv": 0.0,
                 "delta_ap": 0.0,
                 "maintenance_investment": 20000.0,
-                # annual_principal_repayment_next12m キー自体を与えない＝欠落
+                # annual_principal_repayment_scheduled／actual_proxy／manual_estimate
+                # のいずれのキーも与えない＝欠落
             },
             "expected": {
                 "ocf_source": "estimated",
-                "capex_source": "actual",
+                "capex_source": "maintenance_actual",
                 "estimated_operating_cf": 46000.0,
                 "fcf": 26000.0,
                 "cf_self_sufficiency": None,
@@ -387,6 +388,135 @@ def build_ocf_source_safety_cases():
                 "年間元本返済予定額が欠落しているため、CF自走性 = 26,000 ÷ (欠落) は"
                 "算定不能。judgment_status=formalを返さず、screening_only・"
                 "warning_code=ANNUAL_PRINCIPAL_REPAYMENT_MISSINGで判定不可を明示する。"
+            ),
+        },
+        {
+            # 2026-07-12追加（追加仕様・検品要件①②の回帰テスト）：
+            # 年間元本返済予定額に「正式な返済予定表に基づく値」ではなく
+            # 「当期の実績返済額の代用値」を使用した場合、比率自体は
+            # 参考計算値として返すが、judgment_status=screening_only・
+            # judgment=None・専用warning_codeを返し、formal判定にしては
+            # ならないことを確認する。
+            "case_id": "annual_principal_repayment_actual_proxy_blocks_formal_judgment",
+            "description": (
+                "推計営業CFは正常に算出できる入力だが、年間元本返済予定額に"
+                "正式な返済予定表の値ではなく当期実績返済額の代用値を使用した"
+                "場合、cf_self_sufficiencyの参考値は返すが、judgment=None・"
+                "screening_only・ANNUAL_PRINCIPAL_REPAYMENT_ACTUAL_PROXY_USED"
+                "を返すことを確認する"
+            ),
+            "inputs": {
+                "net_income": 26000.0,
+                "depreciation_total": 20000.0,
+                "delta_ar": 0.0,
+                "delta_inv": 0.0,
+                "delta_ap": 0.0,
+                "maintenance_investment": 20000.0,
+                "annual_principal_repayment_actual_proxy": 20000.0,
+            },
+            "expected": {
+                "ocf_source": "estimated",
+                "capex_source": "maintenance_actual",
+                "estimated_operating_cf": 46000.0,
+                "fcf": 26000.0,
+                "cf_self_sufficiency": 1.3,
+                "cf_self_sufficiency_zone": None,
+                "judgment_blocked": True,
+                "judgment_status": "screening_only",
+                "warning_code": "ANNUAL_PRINCIPAL_REPAYMENT_ACTUAL_PROXY_USED",
+            },
+            "formula": (
+                "推計営業CF = 26,000 + 20,000 − 0 − 0 + 0 = 46,000。"
+                "FCF = 46,000 − 20,000(維持投資) = 26,000。"
+                "CF自走性（参考値） = 26,000 ÷ 20,000(実績返済額の代用値) = 1.3倍だが、"
+                "由来がactual_proxyのためjudgment=None・screening_only・"
+                "warning_code=ANNUAL_PRINCIPAL_REPAYMENT_ACTUAL_PROXY_USEDを返す"
+                "（zoneの正式区分語は表示しない）。"
+            ),
+        },
+        {
+            # 追加仕様・検品要件①②の回帰テスト（manual_estimate側）。
+            "case_id": "annual_principal_repayment_manual_estimate_blocks_formal_judgment",
+            "description": (
+                "年間元本返済予定額に手動見積額を使用した場合、cf_self_sufficiency"
+                "の参考値は返すが、judgment=None・screening_only・"
+                "ANNUAL_PRINCIPAL_REPAYMENT_MANUAL_ESTIMATE_USEDを返すことを確認する"
+            ),
+            "inputs": {
+                "net_income": 26000.0,
+                "depreciation_total": 20000.0,
+                "delta_ar": 0.0,
+                "delta_inv": 0.0,
+                "delta_ap": 0.0,
+                "maintenance_investment": 20000.0,
+                "annual_principal_repayment_manual_estimate": 20000.0,
+            },
+            "expected": {
+                "ocf_source": "estimated",
+                "capex_source": "maintenance_actual",
+                "estimated_operating_cf": 46000.0,
+                "fcf": 26000.0,
+                "cf_self_sufficiency": 1.3,
+                "cf_self_sufficiency_zone": None,
+                "judgment_blocked": True,
+                "judgment_status": "screening_only",
+                "warning_code": "ANNUAL_PRINCIPAL_REPAYMENT_MANUAL_ESTIMATE_USED",
+            },
+            "formula": (
+                "推計営業CF = 26,000 + 20,000 − 0 − 0 + 0 = 46,000。"
+                "FCF = 46,000 − 20,000(維持投資) = 26,000。"
+                "CF自走性（参考値） = 26,000 ÷ 20,000(手動見積額) = 1.3倍だが、"
+                "由来がmanual_estimateのためjudgment=None・screening_only・"
+                "warning_code=ANNUAL_PRINCIPAL_REPAYMENT_MANUAL_ESTIMATE_USEDを返す。"
+            ),
+        },
+        {
+            # 2026-07-12追加（追加仕様・検品要件③の回帰テスト）：
+            # total_capex_proxy（成長投資混在の疑いがある総capex等）を渡した
+            # 場合、基本計算（capex_maintenance_actualベース）・正式判定を
+            # 上書きせず、保守シナリオ（conservative_scenario）として分離
+            # して返すことを確認する。
+            "case_id": "total_capex_proxy_conservative_scenario_does_not_override_formal",
+            "description": (
+                "維持投資の実額（確認済み）に加えて、成長投資混在の疑いがある"
+                "総capex参考値（total_capex_proxy）を渡した場合、基本計算・"
+                "formal判定はcapex_maintenance_actualのみで行われ、"
+                "total_capex_proxyは保守シナリオ（conservative_scenario）として"
+                "別枠で返ることを確認する"
+            ),
+            "inputs": {
+                "net_income": 26000.0,
+                "depreciation_total": 20000.0,
+                "delta_ar": 0.0,
+                "delta_inv": 0.0,
+                "delta_ap": 0.0,
+                "maintenance_investment": 20000.0,
+                "total_capex_proxy": 40000.0,
+                "annual_principal_repayment_scheduled": 20000.0,
+            },
+            "expected": {
+                "ocf_source": "estimated",
+                "capex_source": "maintenance_actual",
+                "estimated_operating_cf": 46000.0,
+                "fcf": 26000.0,
+                "cf_self_sufficiency": 1.3,
+                "cf_self_sufficiency_zone": "標準（銀行の融資目安圏）",
+                "judgment_blocked": False,
+                "judgment_status": "formal",
+                "warning_code": None,
+                "conservative_total_capex_proxy": 40000.0,
+                "conservative_fcf": 6000.0,
+                "conservative_cf_self_sufficiency": 0.3,
+            },
+            "formula": (
+                "基本計算：推計営業CF=46,000。FCF = 46,000 − 20,000"
+                "(維持・更新投資として確認済みの実額) = 26,000。"
+                "CF自走性 = 26,000 ÷ 20,000 = 1.3倍・formal・標準"
+                "（total_capex_proxyはこの基本計算・formal判定を一切上書きしない）。"
+                "保守シナリオ（参考専用）：FCF(保守) = 46,000 − 40,000"
+                "(total_capex_proxy) = 6,000。CF自走性(保守・参考) = 6,000 ÷ 20,000"
+                " = 0.3倍（judgment・judgment_statusを持たず、常に参考値として"
+                "基本結果と分離して表示する）。"
             ),
         },
     ]

@@ -90,6 +90,25 @@
   - 既存4体の登録方法や設定場所に、新たな客観的情報が判明した場合。
   - 上記いずれかの時点で正式登録を再確認し、登録された場合のみ既存Eタスク6ケースを正式実行する。
 
+### DEC-007｜のぞみ薬局初回適用で判明した入力由来管理をfinancial-analysis標準仕様へ還流する
+- 日付：2026-07-12
+- 状態：確定
+- 対象：`docs/financial-analysis_指標定義書_v0.2.md` §18、`financial_calc.py`（`calc_cf_self_sufficiency`・`resolve_annual_principal_repayment`・`resolve_maintenance_investment`）、`.claude/skills/financial-analysis/SKILL.md`、`tests/`配下のfixture・回帰テスト
+- 決定：
+  - 年間元本返済予定額は、返済予定表に基づく正式値（`scheduled`）・当期実績返済額の代用値（`actual_proxy`）・手動見積額（`manual_estimate`）・欠落（`missing`）を入力項目として分離する。formal判定は`scheduled`が入力された場合に限り、それ以外は`judgment_status=screening_only`とし、由来ごとに警告コードを分ける（`actual_proxy`と`missing`は別警告）。
+  - 維持投資の実額は、維持・更新投資として確認済みの場合のみ`capex_source=maintenance_actual`とする。旧称`actual`は廃止する。成長投資混在の疑いがある総capexは`total_capex_proxy`として保守参考シナリオ専用とし、基本計算・正式判定（`judgment`・`judgment_status`）を上書きしない。
+  - CF自走性の正式判定は、営業CFが`actual`または`estimated`であり、かつ返済額が`scheduled`である場合に限る。`simplified`営業CFは正式判定に使用しない（既存ルールを維持）。
+  - 顧客データ・実数・BAST参照実数・Dropboxパス・分析ドラフトはgrow3-knowledgeへ保存しない。回帰テスト・fixture・eval素材は架空データのみとする。
+- 理由：
+  - のぞみ薬局への初回適用で、返済予定表未提供の実績返済額を分母に代入したまま`judgment_status=formal`相当の表示に近づく誤り、および固定資産増減実額を「維持投資確認済み」とみなしすぎるリスクが顕在化した。入力の由来と判定可否をAPI・定義書・テストで機械的に分離しないと、初回スクリーニング段階で正式判定に見える出力が生成される。
+  - 本判断はorganization-diagnosis設計の参照元となるfinancial-analysis基盤の確定条件であり、個別案件の分析結論そのものではない。
+- 採用しなかった案：
+  - 返済額・capexの由来をレポート文言のみで区別し、`financial_calc.py`の入出力契約は変更しない案（後工程・別コンテキストで再発するため不採用）。
+  - `actual_proxy`でも参考値が算出できれば、警告なしでゾーン名を表示する案（正式判定の定義と矛盾するため不採用）。
+- 見直し条件：
+  - 返済予定表・固定資産台帳等の入力契約をorganization-diagnosis側へ拡張する際、本仕様と矛盾する要求が生じた場合。
+  - 同種の由来混同が別指標で再発した場合、standards-authoring経由で横断ルールへ昇格させる。
+
 ## 2026-07-11 AI運用の判断基準を grow3-judgment スキルとして確立
 1. 承認済み最新版を正とし、依頼範囲外を善意で変更しない（第0原則）。
    改善案は本文反映ではなく別途提案とする。

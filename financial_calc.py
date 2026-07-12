@@ -21,9 +21,18 @@ docs/financial-analysis_指標定義書_v0.2.md の全指標を実装する。
   ＝`"SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENT"`と理由文を付す。
   後工程のレポート生成がこのコードで機械的に判定要否を分岐できるように
   するため、自由文の`warning`だけに依存しない）。
-- 維持投資は実額（capex）を優先し、実額が無い場合のみ減価償却費を
-  代理値として使用し `capex_source`（actual|depreciation_proxy）として
-  明示する。実額があるのに代理値を使うことはしない。
+- 維持投資は、維持・更新投資として確認済みの実額を優先し、実額が無い
+  場合のみ減価償却費を代理値として使用し `capex_source`
+  （maintenance_actual|depreciation_proxy）として明示する（2026-07-12
+  再訂正：`actual`は「維持・更新投資として確認済みか」を示さないため
+  廃止）。確認済みの実額があるのに代理値を使うことはしない。成長投資が
+  混在する疑いのある総capexは`total_capex_proxy`（保守シナリオ専用。
+  基本計算・正式判定を上書きしない）として別扱いする。
+- 年間元本返済予定額は、返済予定表に基づく正式値（scheduled）・実績
+  代用値（actual_proxy）・手動見積額（manual_estimate）を入力項目として
+  分離する（2026-07-12再訂正）。CF自走性のformal判定はscheduledが
+  入力された場合に限り、actual_proxy・manual_estimateはscreening_only
+  （由来別の警告コード付き）として扱う。
 - 本モジュールは tests/build_financial_fixture.py・
   tests/build_boundary_fixtures.py（期待値の生成に使ったスクリプト）
   から独立して実装している。両者が同じ誤りを共有しないようにするため、
@@ -172,33 +181,43 @@ def resolve_operating_cf(
 @dataclass
 class MaintenanceInvestmentResult:
     value: float
-    capex_source: str  # actual | depreciation_proxy
+    capex_source: str  # maintenance_actual | depreciation_proxy
     calculation_trace: str
 
 
 def resolve_maintenance_investment(
-    capex_actual: Optional[float] = None,
+    capex_maintenance_actual: Optional[float] = None,
     *,
     depreciation_total: Optional[float] = None,
 ) -> MaintenanceInvestmentResult:
     """
-    維持投資は実額（capex_actual）が取得できる場合はその値を使用する。
-    実額が取得できない場合に限り、減価償却費を代理値として使用し
-    capex_source=depreciation_proxy として明示する。
+    維持投資は、維持・更新投資であることが確認済みの実額
+    （capex_maintenance_actual）が取得できる場合はその値を使用する
+    （capex_source=maintenance_actual）。2026-07-12再訂正：以前は
+    capex_source="actual"としていたが、この名称は「実額かどうか」しか
+    示さず「維持・更新投資として確認済みか（≠新規出店等の成長投資が
+    混在していないか）」を区別できなかった。名称そのものに確認済みで
+    あることを明記し、成長投資が疑われる実額（未分離のCIP振替等を含む
+    大型投資等）は本関数に渡さず、`total_capex_proxy`（保守シナリオ専用。
+    calc_cf_self_sufficiency参照）側で扱うこと。
+
+    維持・更新投資として確認済みの実額が取得できない場合に限り、
+    減価償却費を代理値として使用し capex_source=depreciation_proxy と
+    して明示する。
     """
-    if capex_actual is not None:
+    if capex_maintenance_actual is not None:
         return MaintenanceInvestmentResult(
-            value=capex_actual,
-            capex_source="actual",
-            calculation_trace=f"維持投資（実額） = {capex_actual}",
+            value=capex_maintenance_actual,
+            capex_source="maintenance_actual",
+            calculation_trace=f"維持投資（維持・更新投資として確認済みの実額） = {capex_maintenance_actual}",
         )
     if depreciation_total is not None:
         return MaintenanceInvestmentResult(
             value=depreciation_total,
             capex_source="depreciation_proxy",
-            calculation_trace=f"維持投資（実額取得不可のため減価償却費を代理値として使用） = {depreciation_total}",
+            calculation_trace=f"維持投資（維持・更新投資として確認済みの実額が無いため減価償却費を代理値として使用） = {depreciation_total}",
         )
-    raise ValueError("維持投資を算定するための入力（実額capexまたは減価償却費）が不足している")
+    raise ValueError("維持投資を算定するための入力（維持・更新投資として確認済みの実額capex_maintenance_actual、または減価償却費）が不足している")
 
 
 #: 簡易営業CFしか算出できず正式判定をブロックした場合の警告コード
@@ -218,6 +237,123 @@ WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_MISSING = (
     "ANNUAL_PRINCIPAL_REPAYMENT_MISSING"
 )
 
+#: 2026-07-12再訂正：年間元本返済予定額に、正式な返済予定表に基づく値
+#: （scheduled）ではなく、当期の実績返済額を代用値として使用した場合の
+#: 警告コード。実績返済額は「今後12か月の予定」を保証しないため、
+#: judgment_status="formal"を返さない（screening_onlyに固定する）。
+WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_ACTUAL_PROXY_USED = (
+    "ANNUAL_PRINCIPAL_REPAYMENT_ACTUAL_PROXY_USED"
+)
+
+#: 2026-07-12再訂正：年間元本返済予定額に、正式な返済予定表に基づく値
+#: （scheduled）ではなく、手動見積額を使用した場合の警告コード。
+#: judgment_status="formal"を返さない（screening_onlyに固定する）。
+WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_MANUAL_ESTIMATE_USED = (
+    "ANNUAL_PRINCIPAL_REPAYMENT_MANUAL_ESTIMATE_USED"
+)
+
+
+@dataclass
+class AnnualPrincipalRepaymentResult:
+    value: Optional[float]
+    source: str  # scheduled | actual_proxy | manual_estimate | missing
+    eligible_for_formal: bool
+    warning: Optional[str]
+    warning_code: Optional[str]
+    calculation_trace: str
+
+
+def resolve_annual_principal_repayment(
+    *,
+    scheduled: Optional[float] = None,
+    actual_proxy: Optional[float] = None,
+    manual_estimate: Optional[float] = None,
+) -> AnnualPrincipalRepaymentResult:
+    """
+    2026-07-12再訂正：年間元本返済予定額（CF自走性の分母）は、由来を
+    区別しない単一の`annual_principal_repayment_next12m`に代入しては
+    ならない。正式な返済予定表に基づく値（scheduled）と、実績返済額の
+    代用値（actual_proxy）・手動見積額（manual_estimate）は入力項目を
+    分離し、formal判定は正式な返済予定額（scheduled）が入力された場合に
+    限る。由来ごとに警告コードを分ける：
+
+    - scheduled：formal判定、警告なし
+    - actual_proxy：screening_only、
+      WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_ACTUAL_PROXY_USED
+    - manual_estimate：screening_only、
+      WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_MANUAL_ESTIMATE_USED
+    - missing（いずれも未指定）：screening_only、
+      WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_MISSING
+
+    3つの由来を同時に指定することは呼び出し側の設計ミスであるため、
+    複数指定はValueErrorとする（由来の混在・優先順位のあいまいさを
+    暗黙に許さない）。
+    """
+    provided = [
+        name for name, val in (
+            ("scheduled", scheduled),
+            ("actual_proxy", actual_proxy),
+            ("manual_estimate", manual_estimate),
+        )
+        if val is not None
+    ]
+    if len(provided) > 1:
+        raise ValueError(
+            "年間元本返済予定額は scheduled／actual_proxy／manual_estimate の"
+            f"いずれか1つのみを指定すること（由来の混在は禁止・指定された由来: {provided}）"
+        )
+
+    if scheduled is not None:
+        return AnnualPrincipalRepaymentResult(
+            value=scheduled, source="scheduled", eligible_for_formal=True,
+            warning=None, warning_code=None,
+            calculation_trace=f"年間元本返済予定額（返済予定表に基づく正式値） = {scheduled}",
+        )
+    if actual_proxy is not None:
+        return AnnualPrincipalRepaymentResult(
+            value=actual_proxy, source="actual_proxy", eligible_for_formal=False,
+            warning=(
+                "正式な返済予定表ではなく、当期の実績返済額を代用値として使用しているため、"
+                "CF自走性を正式判定できません（参考値として表示）。"
+            ),
+            warning_code=WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_ACTUAL_PROXY_USED,
+            calculation_trace=f"年間元本返済予定額（当期実績返済額の代用値） = {actual_proxy}",
+        )
+    if manual_estimate is not None:
+        return AnnualPrincipalRepaymentResult(
+            value=manual_estimate, source="manual_estimate", eligible_for_formal=False,
+            warning=(
+                "正式な返済予定表ではなく、手動見積額を使用しているため、"
+                "CF自走性を正式判定できません（参考値として表示）。"
+            ),
+            warning_code=WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_MANUAL_ESTIMATE_USED,
+            calculation_trace=f"年間元本返済予定額（手動見積額） = {manual_estimate}",
+        )
+    return AnnualPrincipalRepaymentResult(
+        value=None, source="missing", eligible_for_formal=False,
+        warning=(
+            "年間元本返済予定額（返済予定表に基づく正式値・実績代用値・手動見積額の"
+            "いずれも）が指定されていないため、CF自走性を判定できません。"
+        ),
+        warning_code=WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_MISSING,
+        calculation_trace="年間元本返済予定額 = 欠落",
+    )
+
+
+@dataclass
+class ConservativeCapexScenarioResult:
+    """
+    2026-07-12再訂正：`total_capex_proxy`（維持・更新投資として確認済み
+    とは言えない、成長投資混在の疑いがある総capex等）を使った保守的な
+    参考シナリオ。基本計算（CFSelfSufficiencyResult本体）とは常に分離し、
+    judgment・judgment_statusを一切持たない（参考専用であり、いかなる
+    場合も正式判定を上書きしない）。
+    """
+    total_capex_proxy: float
+    fcf_conservative: float
+    cf_self_sufficiency_conservative: Optional[float]
+    calculation_trace: str
+
 
 @dataclass
 class CFSelfSufficiencyResult:
@@ -230,14 +366,18 @@ class CFSelfSufficiencyResult:
     judgment: Optional[str]  # 正式判定区分（zoneと同値）。screening_only時はNone
     judgment_status: str  # "formal" | "screening_only"
     judgment_blocked: bool
+    repayment_source: Optional[str]  # scheduled | actual_proxy | manual_estimate | missing
     warning: Optional[str]
     warning_code: Optional[str]
     calculation_trace: str
+    conservative_scenario: Optional[ConservativeCapexScenarioResult] = None
 
 
 def calc_cf_self_sufficiency(
-    annual_principal_repayment_next12m: Optional[float],
     *,
+    annual_principal_repayment_scheduled: Optional[float] = None,
+    annual_principal_repayment_actual_proxy: Optional[float] = None,
+    annual_principal_repayment_manual_estimate: Optional[float] = None,
     actual_operating_cf: Optional[float] = None,
     net_income: Optional[float] = None,
     depreciation_total: Optional[float] = None,
@@ -246,9 +386,23 @@ def calc_cf_self_sufficiency(
     delta_ap: Optional[float] = None,
     ordinary_profit: Optional[float] = None,
     tax: Optional[float] = None,
-    capex_actual: Optional[float] = None,
+    capex_maintenance_actual: Optional[float] = None,
+    total_capex_proxy: Optional[float] = None,
 ) -> CFSelfSufficiencyResult:
-    """§18 CF自走性（第0指標）＝FCF÷年間返済元金。営業CFは3層優先順位で解決する。"""
+    """§18 CF自走性（第0指標）＝FCF÷年間返済元金。営業CFは3層優先順位で解決する。
+
+    2026-07-12再訂正：
+    - 年間元本返済予定額は`annual_principal_repayment_scheduled`
+      （返済予定表に基づく正式値）・`annual_principal_repayment_actual_proxy`
+      （実績代用値）・`annual_principal_repayment_manual_estimate`
+      （手動見積額）に分離した（旧`annual_principal_repayment_next12m`は
+      廃止）。formal判定はscheduledが入力された場合に限る。
+    - 維持投資の実額は、維持・更新投資として確認済みの場合のみ
+      `capex_maintenance_actual`に渡す（capex_source=maintenance_actual）。
+    - `total_capex_proxy`（成長投資混在の疑いがある総capex等）を渡した
+      場合、基本計算・正式判定とは分離した保守的な参考シナリオ
+      （`conservative_scenario`）を追加で返す。基本結果を上書きしない。
+    """
     ocf = resolve_operating_cf(
         actual_operating_cf,
         net_income=net_income, depreciation_total=depreciation_total,
@@ -262,22 +416,47 @@ def calc_cf_self_sufficiency(
             confidence_grade=ocf.confidence_grade,
             cf_self_sufficiency=None, zone=None,
             judgment=None, judgment_status="screening_only",
-            judgment_blocked=True, warning=ocf.warning,
+            judgment_blocked=True, repayment_source=None, warning=ocf.warning,
             warning_code=WARNING_CODE_SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENT,
             calculation_trace=ocf.calculation_trace,
+            conservative_scenario=None,
         )
 
-    maint = resolve_maintenance_investment(capex_actual, depreciation_total=depreciation_total)
+    maint = resolve_maintenance_investment(capex_maintenance_actual, depreciation_total=depreciation_total)
     fcf = ocf.value - maint.value
 
-    if annual_principal_repayment_next12m is None:
+    repay = resolve_annual_principal_repayment(
+        scheduled=annual_principal_repayment_scheduled,
+        actual_proxy=annual_principal_repayment_actual_proxy,
+        manual_estimate=annual_principal_repayment_manual_estimate,
+    )
+
+    conservative_scenario = None
+    if total_capex_proxy is not None:
+        fcf_conservative = ocf.value - total_capex_proxy
+        ratio_conservative = (
+            fcf_conservative / repay.value if repay.value else None
+        )
+        conservative_scenario = ConservativeCapexScenarioResult(
+            total_capex_proxy=total_capex_proxy,
+            fcf_conservative=fcf_conservative,
+            cf_self_sufficiency_conservative=ratio_conservative,
+            calculation_trace=(
+                f"[保守シナリオ・参考専用・正式判定を上書きしない] "
+                f"FCF(保守) = 営業CF({ocf.value}) − 総capex参考値({total_capex_proxy}) = {fcf_conservative}／"
+                f"CF自走性(保守・参考) = FCF(保守)({fcf_conservative}) ÷ "
+                f"年間返済元金({repay.value}) = {ratio_conservative}"
+            ),
+        )
+
+    if repay.value is None:
         # 営業CFの層は解決できているが、CF自走性の分母（年間返済元金）が
-        # 欠落しているため比率そのものが定義できない。judgment_status="formal"
-        # を返してはならず、判定不可として警告付きで返す（ゼロと欠落は区別する。
+        # いずれの由来（scheduled/actual_proxy/manual_estimate）でも
+        # 指定されていないため比率そのものが定義できない（ゼロと欠落は区別する。
         # 明示的な0.0が渡された場合はこの分岐に入らず、通常どおり算式を評価する）。
         trace = (
             f"{ocf.calculation_trace}／{maint.calculation_trace}／"
-            f"FCF = 営業CF({ocf.value}) − 維持投資({maint.value}) = {fcf}／"
+            f"FCF = 営業CF({ocf.value}) − 維持投資({maint.value}) = {fcf}／{repay.calculation_trace}／"
             f"CF自走性 = FCF({fcf}) ÷ 年間返済元金（欠落） = 算定不能"
         )
         return CFSelfSufficiencyResult(
@@ -285,36 +464,59 @@ def calc_cf_self_sufficiency(
             confidence_grade=ocf.confidence_grade,
             cf_self_sufficiency=None, zone=None,
             judgment=None, judgment_status="screening_only",
-            judgment_blocked=True,
-            warning="年間元本返済予定額（annual_principal_repayment_next12m）が指定されていないため、CF自走性を判定できません。",
-            warning_code=WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_MISSING,
+            judgment_blocked=True, repayment_source=repay.source,
+            warning=repay.warning, warning_code=repay.warning_code,
             calculation_trace=trace,
+            conservative_scenario=conservative_scenario,
         )
 
-    # ここに到達した時点でNoneではないと確定している（上のNone分岐で処理済み）。
+    # ここに到達した時点でrepay.valueはNoneではないと確定している（上のNone分岐で処理済み）。
     # 明示的な0.0は既存どおりratio=Noneのフォールバックに残す（ゼロ除算回避。
     # 本修正の対象はNone欠落の誤ったformal判定のみで、0.0の扱いは変更しない）。
-    ratio = fcf / annual_principal_repayment_next12m if annual_principal_repayment_next12m else None
-    zone = zone_cf_self_sufficiency(ratio)
+    ratio = fcf / repay.value if repay.value else None
     trace = (
         f"{ocf.calculation_trace}／{maint.calculation_trace}／"
-        f"FCF = 営業CF({ocf.value}) − 維持投資({maint.value}) = {fcf}／"
-        f"CF自走性 = FCF({fcf}) ÷ 年間返済元金({annual_principal_repayment_next12m}) = {ratio}"
+        f"FCF = 営業CF({ocf.value}) − 維持投資({maint.value}) = {fcf}／{repay.calculation_trace}／"
+        f"CF自走性 = FCF({fcf}) ÷ 年間返済元金({repay.value}) = {ratio}"
     )
+
+    if repay.eligible_for_formal:
+        zone = zone_cf_self_sufficiency(ratio)
+        return CFSelfSufficiencyResult(
+            fcf=fcf, ocf_source=ocf.ocf_source, capex_source=maint.capex_source,
+            confidence_grade=ocf.confidence_grade,
+            cf_self_sufficiency=ratio, zone=zone,
+            judgment=zone, judgment_status="formal",
+            judgment_blocked=False, repayment_source=repay.source,
+            warning=None, warning_code=None,
+            calculation_trace=trace,
+            conservative_scenario=conservative_scenario,
+        )
+
+    # actual_proxy・manual_estimate：比率（参考計算値）は返すが、
+    # 正式な判定区分（zone・judgment）は表示しない（screening_only）。
     return CFSelfSufficiencyResult(
         fcf=fcf, ocf_source=ocf.ocf_source, capex_source=maint.capex_source,
         confidence_grade=ocf.confidence_grade,
-        cf_self_sufficiency=ratio, zone=zone,
-        judgment=zone, judgment_status="formal",
-        judgment_blocked=False, warning=None, warning_code=None,
+        cf_self_sufficiency=ratio, zone=None,
+        judgment=None, judgment_status="screening_only",
+        judgment_blocked=True, repayment_source=repay.source,
+        warning=repay.warning, warning_code=repay.warning_code,
         calculation_trace=trace,
+        conservative_scenario=conservative_scenario,
     )
 
 
-def calc_distributable_resource(fcf: float, annual_principal_repayment_next12m: float,
+def calc_distributable_resource(fcf: float, annual_principal_repayment: float,
                                   cash_buffer_for_reconfigured_debt: float = 0.0) -> float:
-    """§18 分配可能原資（役員報酬適正性判定の参考値）＝FCF−年間返済元金−現預金積増計画。"""
-    return fcf - annual_principal_repayment_next12m - cash_buffer_for_reconfigured_debt
+    """§18 分配可能原資（役員報酬適正性判定の参考値）＝FCF−年間返済元金−現預金積増計画。
+
+    2026-07-12改名：引数名を`annual_principal_repayment_next12m`から
+    `annual_principal_repayment`へ変更（廃止した引数名との混同を避けるため）。
+    本関数は正式／代用の区別を持たない単純な算式のみで、呼び出し側が
+    どの由来の返済額を渡したかに応じて結果の扱い（formal可否）を判断する。
+    """
+    return fcf - annual_principal_repayment - cash_buffer_for_reconfigured_debt
 
 
 # ============================================================
@@ -390,9 +592,15 @@ def calc_debt_payback_years_detailed(grow3_adjusted_debt: float, simple_operatin
     return grow3_adjusted_debt / simple_operating_cf if simple_operating_cf else None
 
 
-def calc_principal_repayment_burden_ratio(annual_principal_repayment_next12m: float,
+def calc_principal_repayment_burden_ratio(annual_principal_repayment: float,
                                            repayment_source_cf: float) -> Optional[float]:
-    return annual_principal_repayment_next12m / repayment_source_cf if repayment_source_cf else None
+    """
+    2026-07-12改名：引数名を`annual_principal_repayment_next12m`から
+    `annual_principal_repayment`へ変更（廃止した引数名との混同を避けるため）。
+    本指標は§2の速報・一次スクリーニング専用の簡便指標であり、
+    calc_cf_self_sufficiency()のformal判定とは無関係（由来の区別を持たない）。
+    """
+    return annual_principal_repayment / repayment_source_cf if repayment_source_cf else None
 
 
 # ============================================================
@@ -517,10 +725,15 @@ def analyze_period(pl: dict, cf: dict, opening_bs: dict, ending_bs: dict,
     """
     1期分の完全なP/L・B/S・CFデータから、v0.2の全指標を算出して
     indicatorsキーの辞書として返す。営業CFはCF計算書が無い前提
-    （ocf_source=estimated）・維持投資はcf['capex']の実額を使用
-    （capex_source=actual）する。CF計算書がある場合は
-    calc_cf_self_sufficiency() に actual_operating_cf を渡して
-    個別に呼び直すこと（本関数は「CF計算書なし」の標準ケース専用）。
+    （ocf_source=estimated）・維持投資はcf['capex']の実額を使用する
+    （2026-07-12再訂正：capex_source=maintenance_actual。cf['capex']は
+    維持・更新投資として確認済みであることが前提。本関数を成長投資が
+    混在する疑いのある実データに適用する場合は、cf['capex']へ渡す前に
+    呼び出し側で維持投資分のみへ切り分けること）。年間元本返済予定額は
+    cf['debt_repayment']を返済予定表に基づく正式値（scheduled）として
+    扱う。CF計算書がある場合や、返済額が実績代用値・手動見積である場合は
+    calc_cf_self_sufficiency() を個別に呼び直すこと（本関数は
+    「CF計算書なし・返済予定額はscheduled」の標準ケース専用）。
     """
     result = {}
     fc = pl["fixed_costs"]
@@ -541,10 +754,10 @@ def analyze_period(pl: dict, cf: dict, opening_bs: dict, ending_bs: dict,
         "本fixtureでは実態修正・事業外資金流出なし（調整なしの計算値のみ）",
     )
     cf_result = calc_cf_self_sufficiency(
-        cf["debt_repayment"],
+        annual_principal_repayment_scheduled=cf["debt_repayment"],
         net_income=pl["net_income"], depreciation_total=pl["depreciation_total"],
         delta_ar=cf["delta_ar"], delta_inv=cf["delta_inv"], delta_ap=cf["delta_ap"],
-        capex_actual=cf["capex"],
+        capex_maintenance_actual=cf["capex"],
     )
     result["estimated_operating_cf"] = ocf_raw.value
     result["ocf_source"] = ocf_raw.ocf_source
@@ -629,6 +842,7 @@ def analyze_period(pl: dict, cf: dict, opening_bs: dict, ending_bs: dict,
     result["cf_self_sufficiency_zone"] = cf_result.zone
     result["cf_self_sufficiency_judgment"] = cf_result.judgment
     result["cf_self_sufficiency_judgment_status"] = cf_result.judgment_status
+    result["cf_self_sufficiency_repayment_source"] = cf_result.repayment_source
     result["cf_self_sufficiency_warning"] = cf_result.warning
     result["cf_self_sufficiency_warning_code"] = cf_result.warning_code
     result["cf_self_sufficiency_calculation_trace"] = cf_result.calculation_trace

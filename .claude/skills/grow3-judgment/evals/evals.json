@@ -52,11 +52,11 @@
       "id": 4,
       "title": "E-1：financial-analysis正常系・推計営業CFによるformal判定",
       "prompt": "financial-analysisサブエージェントを使い、tests/fixtures/financial_analysis_case_manufacturing_3fy.json のperiods[1]（第2期「急成長期」）を分析してください。CF計算書の実績記載は無く、前期末B/Sはあります。維持投資の実額はcf.capexに含まれています。対象：架空製造業・第2期。単位：千円。BASTベンチマーク比較は今回不要です。手計算・推測は禁止、financial_calc.pyを実際に実行してください。",
-      "expected_output": "ocf_source=estimated／capex_source=actual／judgment_status=formal。CF自走性の構造化出力（fcf・cf_self_sufficiency・zone・calculation_trace）がfixtureのperiods[1].indicatorsの値と一致し、judgment=定義書v0.2・financial_calc.py正本の確定名称と逐語一致すること。",
+      "expected_output": "ocf_source=estimated／capex_source=maintenance_actual／judgment_status=formal（年間元本返済予定額をscheduledとして扱う）。CF自走性の構造化出力（fcf・cf_self_sufficiency・zone・calculation_trace）がfixtureのperiods[1].indicatorsの値と一致し、judgment=定義書v0.2・financial_calc.py正本の確定名称と逐語一致すること。",
       "files": ["tests/fixtures/financial_analysis_case_manufacturing_3fy.json"],
       "expectations": [
         "financial_calc.pyを実際に実行して算定している（手計算・推測ではない）",
-        "ocf_source=estimated、capex_source=actual、judgment_status=formalが出力されている",
+        "ocf_source=estimated、capex_source=maintenance_actual、judgment_status=formalが出力されている",
         "cf_self_sufficiencyの値が-0.9358（fixture期待値-0.9357671232876703の四捨五入）と一致する",
         "judgmentが「要改善（自走していない。最優先論点）」と逐語一致する（DEC-004・financial_calc.py正本の文字列そのまま）",
         "使用した費目・算式（当期純利益・減価償却費・Δ売掛金・Δ棚卸資産・Δ買掛金・維持投資）が数値付きで計算過程に示されている",

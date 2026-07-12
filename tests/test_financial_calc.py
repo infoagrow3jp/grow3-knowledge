@@ -74,9 +74,9 @@ class TestBoundaryCases(unittest.TestCase):
             with self.subTest(case_id=case["case_id"]):
                 inputs = case["inputs"]
                 result = fc.calc_cf_self_sufficiency(
-                    inputs["annual_principal_repayment_next12m"],
+                    annual_principal_repayment_scheduled=inputs["annual_principal_repayment_scheduled"],
                     actual_operating_cf=inputs["operating_cf_input"],
-                    capex_actual=inputs["maintenance_investment"],
+                    capex_maintenance_actual=inputs["maintenance_investment"],
                 )
                 self.assertAlmostEqual(result.fcf, case["expected"]["fcf"], places=6)
                 self.assertAlmostEqual(
@@ -129,7 +129,7 @@ class TestOcfSourceSafetyCases(unittest.TestCase):
         inputs = case["inputs"]
         expected = case["expected"]
         result = fc.calc_cf_self_sufficiency(
-            inputs["annual_principal_repayment_next12m"],
+            annual_principal_repayment_scheduled=inputs["annual_principal_repayment_scheduled"],
             ordinary_profit=inputs["ordinary_profit"],
             depreciation_total=inputs["depreciation_total"],
             tax=inputs["tax"],
@@ -158,13 +158,13 @@ class TestOcfSourceSafetyCases(unittest.TestCase):
         inputs = case["inputs"]
         expected = case["expected"]
         result = fc.calc_cf_self_sufficiency(
-            inputs["annual_principal_repayment_next12m"],
+            annual_principal_repayment_scheduled=inputs["annual_principal_repayment_scheduled"],
             net_income=inputs["net_income"],
             depreciation_total=inputs["depreciation_total"],
             delta_ar=inputs["delta_ar"],
             delta_inv=inputs["delta_inv"],
             delta_ap=inputs["delta_ap"],
-            capex_actual=inputs["maintenance_investment"],
+            capex_maintenance_actual=inputs["maintenance_investment"],
         )
         self.assertEqual(result.ocf_source, expected["ocf_source"])
         self.assertFalse(result.judgment_blocked)
@@ -174,6 +174,7 @@ class TestOcfSourceSafetyCases(unittest.TestCase):
         self.assertEqual(result.zone, expected["cf_self_sufficiency_zone"])
         self.assertEqual(result.judgment, expected["cf_self_sufficiency_zone"])
         self.assertEqual(result.judgment_status, "formal")
+        self.assertEqual(result.repayment_source, "scheduled")
         self.assertIsNone(result.warning_code)
         self.assertIsNone(result.warning)
 
@@ -183,14 +184,14 @@ class TestOcfSourceSafetyCases(unittest.TestCase):
         inputs = case["inputs"]
         expected = case["expected"]
         result = fc.calc_cf_self_sufficiency(
-            inputs["annual_principal_repayment_next12m"],
+            annual_principal_repayment_scheduled=inputs["annual_principal_repayment_scheduled"],
             actual_operating_cf=inputs["actual_operating_cf"],
             net_income=inputs["net_income"],
             depreciation_total=inputs["depreciation_total"],
             delta_ar=inputs["delta_ar"],
             delta_inv=inputs["delta_inv"],
             delta_ap=inputs["delta_ap"],
-            capex_actual=inputs["maintenance_investment"],
+            capex_maintenance_actual=inputs["maintenance_investment"],
         )
         self.assertEqual(result.ocf_source, expected["ocf_source"])
         self.assertEqual(result.confidence_grade, expected["confidence_grade"])
@@ -215,10 +216,10 @@ class TestOcfSourceSafetyCases(unittest.TestCase):
         inputs = case["inputs"]
         expected = case["expected"]
         result = fc.calc_cf_self_sufficiency(
-            inputs["annual_principal_repayment_next12m"],
+            annual_principal_repayment_scheduled=inputs["annual_principal_repayment_scheduled"],
             actual_operating_cf=inputs["actual_operating_cf"],
             depreciation_total=inputs["depreciation_total"],
-            # capex_actual を渡さない＝維持投資の実額が欠落している状況
+            # capex_maintenance_actual を渡さない＝維持投資の実額が欠落している状況
         )
         self.assertEqual(result.ocf_source, expected["ocf_source"])
         self.assertEqual(result.capex_source, expected["capex_source"])
@@ -232,13 +233,13 @@ class TestOcfSourceSafetyCases(unittest.TestCase):
         inputs = case["inputs"]
         expected = case["expected"]
         result = fc.calc_cf_self_sufficiency(
-            inputs["annual_principal_repayment_next12m"],
+            annual_principal_repayment_scheduled=inputs["annual_principal_repayment_scheduled"],
             net_income=inputs["net_income"],
             depreciation_total=inputs["depreciation_total"],
             delta_ar=inputs["delta_ar"],  # 明示的な0.0（欠落ではない）
             delta_inv=inputs["delta_inv"],
             delta_ap=inputs["delta_ap"],
-            capex_actual=inputs["maintenance_investment"],
+            capex_maintenance_actual=inputs["maintenance_investment"],
         )
         self.assertEqual(result.ocf_source, expected["ocf_source"])
         self.assertFalse(result.judgment_blocked)
@@ -258,7 +259,7 @@ class TestOcfSourceSafetyCases(unittest.TestCase):
         inputs = case["inputs"]
         expected = case["expected"]
         result = fc.calc_cf_self_sufficiency(
-            inputs["annual_principal_repayment_next12m"],
+            annual_principal_repayment_scheduled=inputs["annual_principal_repayment_scheduled"],
             net_income=inputs["net_income"],
             depreciation_total=inputs["depreciation_total"],
             # delta_ar を渡さない（=None・欠落）。delta_inv・delta_apは0.0で渡す。
@@ -284,13 +285,13 @@ class TestOcfSourceSafetyCases(unittest.TestCase):
         inputs = case["inputs"]
         expected = case["expected"]
         result = fc.calc_cf_self_sufficiency(
-            inputs.get("annual_principal_repayment_next12m"),  # キー自体が無い＝None
+            # scheduled／actual_proxy／manual_estimateのいずれも渡さない＝欠落
             net_income=inputs["net_income"],
             depreciation_total=inputs["depreciation_total"],
             delta_ar=inputs["delta_ar"],
             delta_inv=inputs["delta_inv"],
             delta_ap=inputs["delta_ap"],
-            capex_actual=inputs["maintenance_investment"],
+            capex_maintenance_actual=inputs["maintenance_investment"],
         )
         self.assertEqual(result.ocf_source, expected["ocf_source"])
         self.assertEqual(result.capex_source, expected["capex_source"])
@@ -300,9 +301,116 @@ class TestOcfSourceSafetyCases(unittest.TestCase):
         self.assertIsNone(result.judgment)
         self.assertEqual(result.judgment_status, expected["judgment_status"])
         self.assertTrue(result.judgment_blocked)
+        self.assertEqual(result.repayment_source, "missing")
         self.assertEqual(result.warning_code, expected["warning_code"])
         self.assertEqual(result.warning_code, fc.WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_MISSING)
         self.assertIsNotNone(result.warning)
+
+    def test_actual_proxy_repayment_blocks_formal_judgment_but_returns_reference_ratio(self):
+        """追加仕様・検品要件①②の回帰テスト：実績返済額の代用値はformalにしてはならない。
+
+        比率自体は参考計算値として返すが、judgment・zoneはNoneのまま、
+        judgment_status=screening_only・専用warning_codeを返すことを確認する。
+        """
+        case = self.cases["annual_principal_repayment_actual_proxy_blocks_formal_judgment"]
+        inputs = case["inputs"]
+        expected = case["expected"]
+        result = fc.calc_cf_self_sufficiency(
+            annual_principal_repayment_actual_proxy=inputs["annual_principal_repayment_actual_proxy"],
+            net_income=inputs["net_income"],
+            depreciation_total=inputs["depreciation_total"],
+            delta_ar=inputs["delta_ar"],
+            delta_inv=inputs["delta_inv"],
+            delta_ap=inputs["delta_ap"],
+            capex_maintenance_actual=inputs["maintenance_investment"],
+        )
+        self.assertEqual(result.ocf_source, expected["ocf_source"])
+        self.assertEqual(result.capex_source, expected["capex_source"])
+        self.assertAlmostEqual(result.fcf, expected["fcf"], places=6)
+        self.assertAlmostEqual(result.cf_self_sufficiency, expected["cf_self_sufficiency"], places=6)
+        self.assertIsNone(result.zone)
+        self.assertIsNone(result.judgment)
+        self.assertEqual(result.judgment_status, "screening_only")
+        self.assertTrue(result.judgment_blocked)
+        self.assertEqual(result.repayment_source, "actual_proxy")
+        self.assertEqual(result.warning_code, fc.WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_ACTUAL_PROXY_USED)
+        self.assertIsNotNone(result.warning)
+
+    def test_manual_estimate_repayment_blocks_formal_judgment_but_returns_reference_ratio(self):
+        """追加仕様・検品要件①②の回帰テスト（manual_estimate側）。"""
+        case = self.cases["annual_principal_repayment_manual_estimate_blocks_formal_judgment"]
+        inputs = case["inputs"]
+        expected = case["expected"]
+        result = fc.calc_cf_self_sufficiency(
+            annual_principal_repayment_manual_estimate=inputs["annual_principal_repayment_manual_estimate"],
+            net_income=inputs["net_income"],
+            depreciation_total=inputs["depreciation_total"],
+            delta_ar=inputs["delta_ar"],
+            delta_inv=inputs["delta_inv"],
+            delta_ap=inputs["delta_ap"],
+            capex_maintenance_actual=inputs["maintenance_investment"],
+        )
+        self.assertEqual(result.ocf_source, expected["ocf_source"])
+        self.assertEqual(result.capex_source, expected["capex_source"])
+        self.assertAlmostEqual(result.fcf, expected["fcf"], places=6)
+        self.assertAlmostEqual(result.cf_self_sufficiency, expected["cf_self_sufficiency"], places=6)
+        self.assertIsNone(result.zone)
+        self.assertIsNone(result.judgment)
+        self.assertEqual(result.judgment_status, "screening_only")
+        self.assertTrue(result.judgment_blocked)
+        self.assertEqual(result.repayment_source, "manual_estimate")
+        self.assertEqual(result.warning_code, fc.WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_MANUAL_ESTIMATE_USED)
+        self.assertIsNotNone(result.warning)
+
+    def test_multiple_repayment_sources_given_simultaneously_raises(self):
+        """由来の混在（scheduledとactual_proxyを同時指定等）はValueErrorとする。"""
+        with self.assertRaises(ValueError):
+            fc.calc_cf_self_sufficiency(
+                annual_principal_repayment_scheduled=20000.0,
+                annual_principal_repayment_actual_proxy=18000.0,
+                net_income=26000.0, depreciation_total=20000.0,
+                delta_ar=0.0, delta_inv=0.0, delta_ap=0.0,
+                capex_maintenance_actual=20000.0,
+            )
+
+    def test_total_capex_proxy_conservative_scenario_does_not_override_formal(self):
+        """追加仕様・検品要件③の回帰テスト：total_capex_proxyは基本計算・formal判定を上書きしない。"""
+        case = self.cases["total_capex_proxy_conservative_scenario_does_not_override_formal"]
+        inputs = case["inputs"]
+        expected = case["expected"]
+        result = fc.calc_cf_self_sufficiency(
+            annual_principal_repayment_scheduled=inputs["annual_principal_repayment_scheduled"],
+            net_income=inputs["net_income"],
+            depreciation_total=inputs["depreciation_total"],
+            delta_ar=inputs["delta_ar"],
+            delta_inv=inputs["delta_inv"],
+            delta_ap=inputs["delta_ap"],
+            capex_maintenance_actual=inputs["maintenance_investment"],
+            total_capex_proxy=inputs["total_capex_proxy"],
+        )
+        # 基本結果（total_capex_proxyの影響を一切受けない）
+        self.assertEqual(result.capex_source, expected["capex_source"])
+        self.assertAlmostEqual(result.fcf, expected["fcf"], places=6)
+        self.assertAlmostEqual(result.cf_self_sufficiency, expected["cf_self_sufficiency"], places=6)
+        self.assertEqual(result.zone, expected["cf_self_sufficiency_zone"])
+        self.assertEqual(result.judgment, expected["cf_self_sufficiency_zone"])
+        self.assertEqual(result.judgment_status, "formal")
+        self.assertFalse(result.judgment_blocked)
+        self.assertIsNone(result.warning_code)
+        # 保守シナリオ（基本結果と分離。judgment・judgment_statusを持たない）
+        self.assertIsNotNone(result.conservative_scenario)
+        self.assertAlmostEqual(
+            result.conservative_scenario.total_capex_proxy, expected["conservative_total_capex_proxy"], places=6,
+        )
+        self.assertAlmostEqual(
+            result.conservative_scenario.fcf_conservative, expected["conservative_fcf"], places=6,
+        )
+        self.assertAlmostEqual(
+            result.conservative_scenario.cf_self_sufficiency_conservative,
+            expected["conservative_cf_self_sufficiency"], places=6,
+        )
+        self.assertFalse(hasattr(result.conservative_scenario, "judgment"))
+        self.assertFalse(hasattr(result.conservative_scenario, "judgment_status"))
 
 
 if __name__ == "__main__":

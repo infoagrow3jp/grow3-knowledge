@@ -86,7 +86,8 @@ def run_case_1_estimated_ocf_period2():
     # Step4：judgment_statusに応じた表示分岐の確認（本ケースは formal のはず）
     assert actual["cf_self_sufficiency_judgment_status"] == "formal"
     assert actual["ocf_source"] == "estimated", "使用されたocf_sourceが期待（estimated）と不一致"
-    assert actual["capex_source"] == "actual", "使用されたcapex_sourceが期待（actual）と不一致"
+    assert actual["capex_source"] == "maintenance_actual", "使用されたcapex_sourceが期待（maintenance_actual）と不一致"
+    assert actual["cf_self_sufficiency_repayment_source"] == "scheduled", "使用されたrepayment_sourceが期待（scheduled）と不一致"
     assert actual["cf_self_sufficiency_warning_code"] is None, "formal判定なのに警告コードが設定されている"
 
     # financial_calc.pyの直接実行結果（＝test_financial_calc.pyが使う期待値）との一致確認
@@ -127,7 +128,7 @@ def run_case_2_simplified_only_screening():
     # 本ケースは経常利益・減価償却費・法人税等のみが有効値として存在する。
     # Step2：financial_calc.pyの実行（直接financial_calc.py関数を呼ぶ＝スキルの手順）
     result = fc.calc_cf_self_sufficiency(
-        inputs["annual_principal_repayment_next12m"],
+        annual_principal_repayment_scheduled=inputs["annual_principal_repayment_scheduled"],
         ordinary_profit=inputs["ordinary_profit"],
         depreciation_total=inputs["depreciation_total"],
         tax=inputs["tax"],

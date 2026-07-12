@@ -260,7 +260,7 @@ def compute_period(prev_bs, p):
         "estimated_operating_cf": estimated_operating_cf,  # ＝推計営業CF（CF計算書なし。ocf_source=estimated）
         "investing_cf": investing_cf,
         "financing_cf": financing_cf,
-        "capex": p["capex"],                   # 実額の維持投資（本fixtureでは減価償却費と一致するよう設計。capex_source=actual）
+        "capex": p["capex"],                   # 維持・更新投資として確認済みの実額（本fixtureでは減価償却費と一致するよう設計。capex_source=maintenance_actual）
         "debt_repayment": p["debt_repayment"],
         "debt_new_borrowing": p["debt_new_borrowing"],
     }
@@ -280,10 +280,12 @@ def compute_indicators(pl, cf, bs_end, prev_bs):
     estimated_operating_cf = cf["estimated_operating_cf"]
     simple_operating_cf = pl["ordinary_profit"] + pl["depreciation_total"] - pl["tax"]  # 簡易営業CF（補正なし＝補正後と同値。速報・一次スクリーニング専用）
     broad_fcf = estimated_operating_cf + cf["investing_cf"]  # 広義FCF（投資CFは負数のまま加算）
-    # 維持投資：実額（capex）が取得できるため実額を使用する（capex_source=actual）。
-    # 減価償却費への代理は行わない（実額があるのに代理値を使うのは禁止のため）。
+    # 維持投資：維持・更新投資として確認済みの実額（capex）が取得できるため
+    # 実額を使用する（2026-07-12再訂正：capex_source=maintenance_actual。
+    # 旧称"actual"は「維持・更新投資として確認済みか」を示さないため廃止）。
+    # 減価償却費への代理は行わない（確認済みの実額があるのに代理値を使うのは禁止のため）。
     maintenance_investment_actual = cf["capex"]
-    capex_source = "actual"
+    capex_source = "maintenance_actual"
     # 返済原資CF＝補正後簡易営業CF−維持投資−事業外資金流出（本fixtureでは調整項目・事業外流出=0）
     repayment_source_cf = simple_operating_cf - maintenance_investment_actual - 0.0
     result["estimated_operating_cf"] = estimated_operating_cf
@@ -387,8 +389,8 @@ def compute_indicators(pl, cf, bs_end, prev_bs):
     # §18 CF自走性（第0指標）
     # 2026-07-12訂正：営業CFは3層優先順位の第2層「推計営業CF」
     # （ocf_source=estimated）を使用。維持投資は実額capexを使用
-    # （capex_source=actual。減価償却費への代理は実額がある本fixtureでは
-    #  行わない＝実額があるのに代理値を使うことは禁止のルールに従う）。
+    # （capex_source=maintenance_actual。減価償却費への代理は実額がある本fixtureでは
+    #  行わない＝確認済みの実額があるのに代理値を使うことは禁止のルールに従う）。
     # ============================================================
     fcf = estimated_operating_cf - maintenance_investment_actual
     cf_self_sufficiency = fcf / annual_principal_next12m if annual_principal_next12m else None
