@@ -1,0 +1,987 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grow3.jp/schemas/organization-diagnosis/v0.1/evidence.schema.json",
+  "title": "organization-diagnosis evidence register v0.1",
+  "description": "Evidence ledger register schema. Cross-register reference integrity, ID uniqueness, and content truthfulness are validator responsibilities.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "common.schema.json#/$defs/registerEnvelope"
+    }
+  ],
+  "properties": {
+    "register_type": {
+      "const": "evidence"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidenceItem"
+      }
+    }
+  },
+  "unevaluatedProperties": false,
+  "$defs": {
+    "evidenceType": {
+      "type": "string",
+      "enum": [
+        "REPORTED",
+        "DOCUMENTED",
+        "OBSERVED",
+        "MEASURED"
+      ]
+    },
+    "reviewStatus": {
+      "type": "string",
+      "enum": [
+        "unreviewed",
+        "spot_checked",
+        "verified",
+        "rejected"
+      ],
+      "description": "Review procedure state. verified indicates defined review steps were completed, not that the evidence content is true."
+    },
+    "occurrenceKeyApplicability": {
+      "type": "string",
+      "enum": [
+        "applicable",
+        "not_applicable"
+      ]
+    },
+    "speakerCategory": {
+      "type": "string",
+      "enum": [
+        "client_manager",
+        "client_member",
+        "consultant",
+        "unknown"
+      ]
+    },
+    "speakerAttributionStatus": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "inferred",
+        "unattributed"
+      ]
+    },
+    "elicitationContext": {
+      "type": "string",
+      "enum": [
+        "spontaneous",
+        "open_question",
+        "leading_question",
+        "unknown"
+      ]
+    },
+    "observerCategory": {
+      "type": "string",
+      "enum": [
+        "consultant",
+        "client_observer",
+        "external_observer",
+        "unknown"
+      ]
+    },
+    "nullableDate": {
+      "oneOf": [
+        {
+          "$ref": "common.schema.json#/$defs/date"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Calendar date (YYYY-MM-DD) or null when occurrence date has not yet been reviewed."
+    },
+    "nullableOccurrenceKey": {
+      "oneOf": [
+        {
+          "$ref": "common.schema.json#/$defs/occurrenceKeyId"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Occurrence key ID or null when applicable but not yet confirmed."
+    },
+    "nullableSpeakerCategory": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/speakerCategory"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "nullableSpeakerRoleLabel": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Role label such as department head, or unknown when not identifiable, or null when not yet reviewed."
+    },
+    "nullableSpeakerAttributionStatus": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/speakerAttributionStatus"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "nullableElicitationContext": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/elicitationContext"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "timeOfDay": {
+      "type": "string",
+      "pattern": "^[0-9]{2}:[0-9]{2}:[0-9]{2}$",
+      "description": "Relative time within the MTG session (HH:MM:SS)."
+    },
+    "sourcePointerTimestamp": {
+      "type": "object",
+      "required": [
+        "type",
+        "start",
+        "end"
+      ],
+      "properties": {
+        "type": {
+          "const": "timestamp"
+        },
+        "start": {
+          "$ref": "#/$defs/timeOfDay"
+        },
+        "end": {
+          "$ref": "#/$defs/timeOfDay"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourcePointerMinutes": {
+      "type": "object",
+      "required": [
+        "type",
+        "section",
+        "paragraph",
+        "line"
+      ],
+      "properties": {
+        "type": {
+          "const": "minutes"
+        },
+        "section": {
+          "type": "string"
+        },
+        "paragraph": {
+          "type": "integer"
+        },
+        "line": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourcePointerDocument": {
+      "type": "object",
+      "required": [
+        "type",
+        "page",
+        "item"
+      ],
+      "properties": {
+        "type": {
+          "const": "document"
+        },
+        "page": {
+          "type": "integer"
+        },
+        "item": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourcePointerNote": {
+      "type": "object",
+      "required": [
+        "type",
+        "section"
+      ],
+      "properties": {
+        "type": {
+          "const": "note"
+        },
+        "section": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourcePointerMeasurement": {
+      "type": "object",
+      "required": [
+        "type",
+        "instrument",
+        "field"
+      ],
+      "properties": {
+        "type": {
+          "const": "measurement"
+        },
+        "instrument": {
+          "type": "string"
+        },
+        "field": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourcePointerDerived": {
+      "type": "object",
+      "required": [
+        "type",
+        "source_evidence_ids"
+      ],
+      "properties": {
+        "type": {
+          "const": "derived"
+        },
+        "source_evidence_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/$defs/evidenceId"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Derived summary pointer. Referenced evidence IDs must exist and traceability is validated separately."
+    },
+    "sourcePointer": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/sourcePointerTimestamp"
+        },
+        {
+          "$ref": "#/$defs/sourcePointerMinutes"
+        },
+        {
+          "$ref": "#/$defs/sourcePointerDocument"
+        },
+        {
+          "$ref": "#/$defs/sourcePointerNote"
+        },
+        {
+          "$ref": "#/$defs/sourcePointerMeasurement"
+        },
+        {
+          "$ref": "#/$defs/sourcePointerDerived"
+        }
+      ]
+    },
+    "evidenceItemBase": {
+      "type": "object",
+      "properties": {
+        "evidence_id": {
+          "$ref": "common.schema.json#/$defs/evidenceId"
+        },
+        "evidence_type": {
+          "$ref": "#/$defs/evidenceType"
+        },
+        "mtg_session_id": {
+          "$ref": "common.schema.json#/$defs/mtgSessionId"
+        },
+        "source_file": {
+          "type": "string",
+          "description": "Source file relative path within the case workspace."
+        },
+        "source_date": {
+          "$ref": "common.schema.json#/$defs/date"
+        },
+        "source_pointer": {
+          "$ref": "#/$defs/sourcePointer"
+        },
+        "normalized_statement": {
+          "type": "string"
+        },
+        "source_form": {
+          "$ref": "common.schema.json#/$defs/sourceForm"
+        },
+        "review_status": {
+          "$ref": "#/$defs/reviewStatus"
+        },
+        "sensitivity": {
+          "$ref": "common.schema.json#/$defs/sensitivity"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Supplementary notes. Empty string is allowed."
+        },
+        "occurrence_key_applicability": {
+          "$ref": "#/$defs/occurrenceKeyApplicability"
+        },
+        "occurrence_key": {
+          "$ref": "#/$defs/nullableOccurrenceKey"
+        },
+        "occurrence_date": {
+          "$ref": "#/$defs/nullableDate"
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "evidence_type",
+        "mtg_session_id",
+        "source_file",
+        "source_date",
+        "source_pointer",
+        "normalized_statement",
+        "source_form",
+        "review_status",
+        "sensitivity",
+        "notes"
+      ]
+    },
+    "evidenceItemOccurrenceRules": {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "occurrence_key_applicability": {
+                "const": "not_applicable"
+              }
+            },
+            "required": [
+              "occurrence_key_applicability"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "occurrence_key"
+                  ]
+                },
+                {
+                  "required": [
+                    "occurrence_date"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "occurrence_key_applicability": {
+                "const": "applicable"
+              }
+            },
+            "required": [
+              "occurrence_key_applicability"
+            ]
+          },
+          "then": {
+            "required": [
+              "occurrence_key"
+            ],
+            "properties": {
+              "occurrence_key": {
+                "$ref": "#/$defs/nullableOccurrenceKey"
+              },
+              "occurrence_date": {
+                "$ref": "#/$defs/nullableDate"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "evidenceItemSourcePointerRules": {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source_form": {
+                "enum": [
+                  "verbatim_transcript",
+                  "original_audio"
+                ]
+              }
+            },
+            "required": [
+              "source_form"
+            ]
+          },
+          "then": {
+            "properties": {
+              "source_pointer": {
+                "$ref": "#/$defs/sourcePointerTimestamp"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source_form": {
+                "const": "summary_minutes"
+              }
+            },
+            "required": [
+              "source_form"
+            ]
+          },
+          "then": {
+            "properties": {
+              "source_pointer": {
+                "$ref": "#/$defs/sourcePointerMinutes"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source_form": {
+                "const": "original_document"
+              }
+            },
+            "required": [
+              "source_form"
+            ]
+          },
+          "then": {
+            "properties": {
+              "source_pointer": {
+                "$ref": "#/$defs/sourcePointerDocument"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source_form": {
+                "const": "observer_note"
+              }
+            },
+            "required": [
+              "source_form"
+            ]
+          },
+          "then": {
+            "properties": {
+              "source_pointer": {
+                "$ref": "#/$defs/sourcePointerNote"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source_form": {
+                "const": "measured_raw"
+              }
+            },
+            "required": [
+              "source_form"
+            ]
+          },
+          "then": {
+            "properties": {
+              "source_pointer": {
+                "$ref": "#/$defs/sourcePointerMeasurement"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source_form": {
+                "const": "derived_summary"
+              }
+            },
+            "required": [
+              "source_form"
+            ]
+          },
+          "then": {
+            "properties": {
+              "source_pointer": {
+                "$ref": "#/$defs/sourcePointerDerived"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "forbiddenDocumentedObservedMeasuredFields": {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "document_type"
+            ]
+          },
+          {
+            "required": [
+              "document_issuer"
+            ]
+          },
+          {
+            "required": [
+              "observation_record"
+            ]
+          },
+          {
+            "required": [
+              "observer_category"
+            ]
+          },
+          {
+            "required": [
+              "observed_at"
+            ]
+          },
+          {
+            "required": [
+              "raw_measurement"
+            ]
+          },
+          {
+            "required": [
+              "instrument_name"
+            ]
+          },
+          {
+            "required": [
+              "instrument_version"
+            ]
+          },
+          {
+            "required": [
+              "measurement_date"
+            ]
+          },
+          {
+            "required": [
+              "population"
+            ]
+          },
+          {
+            "required": [
+              "value"
+            ]
+          },
+          {
+            "required": [
+              "unit"
+            ]
+          }
+        ]
+      }
+    },
+    "forbiddenObservedMeasuredFields": {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "observation_record"
+            ]
+          },
+          {
+            "required": [
+              "observer_category"
+            ]
+          },
+          {
+            "required": [
+              "observed_at"
+            ]
+          },
+          {
+            "required": [
+              "raw_measurement"
+            ]
+          },
+          {
+            "required": [
+              "instrument_name"
+            ]
+          },
+          {
+            "required": [
+              "instrument_version"
+            ]
+          },
+          {
+            "required": [
+              "measurement_date"
+            ]
+          },
+          {
+            "required": [
+              "population"
+            ]
+          },
+          {
+            "required": [
+              "value"
+            ]
+          },
+          {
+            "required": [
+              "unit"
+            ]
+          }
+        ]
+      }
+    },
+    "forbiddenReportedDocumentedMeasuredFields": {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "verbatim_excerpt"
+            ]
+          },
+          {
+            "required": [
+              "document_type"
+            ]
+          },
+          {
+            "required": [
+              "document_issuer"
+            ]
+          },
+          {
+            "required": [
+              "raw_measurement"
+            ]
+          },
+          {
+            "required": [
+              "instrument_name"
+            ]
+          },
+          {
+            "required": [
+              "instrument_version"
+            ]
+          },
+          {
+            "required": [
+              "measurement_date"
+            ]
+          },
+          {
+            "required": [
+              "population"
+            ]
+          },
+          {
+            "required": [
+              "value"
+            ]
+          },
+          {
+            "required": [
+              "unit"
+            ]
+          }
+        ]
+      }
+    },
+    "forbiddenReportedDocumentedObservedFields": {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "verbatim_excerpt"
+            ]
+          },
+          {
+            "required": [
+              "document_type"
+            ]
+          },
+          {
+            "required": [
+              "document_issuer"
+            ]
+          },
+          {
+            "required": [
+              "observation_record"
+            ]
+          },
+          {
+            "required": [
+              "observer_category"
+            ]
+          },
+          {
+            "required": [
+              "observed_at"
+            ]
+          }
+        ]
+      }
+    },
+    "forbiddenSpeakerAndElicitationFields": {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "speaker_category"
+            ]
+          },
+          {
+            "required": [
+              "speaker_role_label"
+            ]
+          },
+          {
+            "required": [
+              "speaker_attribution_status"
+            ]
+          },
+          {
+            "required": [
+              "elicitation_context"
+            ]
+          }
+        ]
+      }
+    },
+    "evidenceItemReported": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/evidenceItemBase"
+        },
+        {
+          "$ref": "#/$defs/evidenceItemOccurrenceRules"
+        },
+        {
+          "$ref": "#/$defs/evidenceItemSourcePointerRules"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "evidence_type": {
+              "const": "REPORTED"
+            },
+            "verbatim_excerpt": {
+              "type": "string"
+            },
+            "speaker_category": {
+              "$ref": "#/$defs/nullableSpeakerCategory"
+            },
+            "speaker_role_label": {
+              "$ref": "#/$defs/nullableSpeakerRoleLabel"
+            },
+            "speaker_attribution_status": {
+              "$ref": "#/$defs/nullableSpeakerAttributionStatus"
+            },
+            "elicitation_context": {
+              "$ref": "#/$defs/nullableElicitationContext"
+            }
+          },
+          "required": [
+            "verbatim_excerpt",
+            "speaker_category",
+            "speaker_role_label",
+            "speaker_attribution_status",
+            "elicitation_context"
+          ]
+        },
+        {
+          "$ref": "#/$defs/forbiddenDocumentedObservedMeasuredFields"
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "evidenceItemDocumented": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/evidenceItemBase"
+        },
+        {
+          "$ref": "#/$defs/evidenceItemOccurrenceRules"
+        },
+        {
+          "$ref": "#/$defs/evidenceItemSourcePointerRules"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "evidence_type": {
+              "const": "DOCUMENTED"
+            },
+            "verbatim_excerpt": {
+              "type": "string"
+            },
+            "document_type": {
+              "type": "string"
+            },
+            "document_issuer": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "verbatim_excerpt",
+            "document_type",
+            "document_issuer"
+          ]
+        },
+        {
+          "$ref": "#/$defs/forbiddenSpeakerAndElicitationFields"
+        },
+        {
+          "$ref": "#/$defs/forbiddenObservedMeasuredFields"
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "evidenceItemObserved": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/evidenceItemBase"
+        },
+        {
+          "$ref": "#/$defs/evidenceItemOccurrenceRules"
+        },
+        {
+          "$ref": "#/$defs/evidenceItemSourcePointerRules"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "evidence_type": {
+              "const": "OBSERVED"
+            },
+            "observation_record": {
+              "type": "string"
+            },
+            "observer_category": {
+              "$ref": "#/$defs/observerCategory"
+            },
+            "observed_at": {
+              "$ref": "common.schema.json#/$defs/dateTime"
+            }
+          },
+          "required": [
+            "observation_record",
+            "observer_category",
+            "observed_at"
+          ]
+        },
+        {
+          "$ref": "#/$defs/forbiddenSpeakerAndElicitationFields"
+        },
+        {
+          "$ref": "#/$defs/forbiddenReportedDocumentedMeasuredFields"
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "evidenceItemMeasured": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/evidenceItemBase"
+        },
+        {
+          "$ref": "#/$defs/evidenceItemOccurrenceRules"
+        },
+        {
+          "$ref": "#/$defs/evidenceItemSourcePointerRules"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "evidence_type": {
+              "const": "MEASURED"
+            },
+            "raw_measurement": {
+              "type": "string"
+            },
+            "instrument_name": {
+              "type": "string"
+            },
+            "instrument_version": {
+              "type": "string"
+            },
+            "measurement_date": {
+              "$ref": "common.schema.json#/$defs/date"
+            },
+            "population": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            },
+            "unit": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "raw_measurement",
+            "instrument_name",
+            "instrument_version",
+            "measurement_date",
+            "population",
+            "value",
+            "unit"
+          ]
+        },
+        {
+          "$ref": "#/$defs/forbiddenSpeakerAndElicitationFields"
+        },
+        {
+          "$ref": "#/$defs/forbiddenReportedDocumentedObservedFields"
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "evidenceItem": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/evidenceItemReported"
+        },
+        {
+          "$ref": "#/$defs/evidenceItemDocumented"
+        },
+        {
+          "$ref": "#/$defs/evidenceItemObserved"
+        },
+        {
+          "$ref": "#/$defs/evidenceItemMeasured"
+        }
+      ]
+    }
+  }
+}
