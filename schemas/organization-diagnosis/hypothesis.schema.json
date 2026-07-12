@@ -1,0 +1,482 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grow3.jp/schemas/organization-diagnosis/v0.1/hypothesis.schema.json",
+  "title": "organization-diagnosis hypothesis register v0.1",
+  "description": "Hypothesis register schema for interpretive claims supported by Evidence and Patterns. This schema validates structure, vocabulary, and traceability only, not whether a hypothesis is true, causally valid, or supported in content.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "common.schema.json#/$defs/registerEnvelope"
+    }
+  ],
+  "properties": {
+    "register_type": {
+      "const": "hypotheses"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/hypothesisItem"
+      }
+    }
+  },
+  "unevaluatedProperties": false,
+  "$defs": {
+    "hypothesisLayer": {
+      "type": "string",
+      "enum": [
+        "structure",
+        "mental_model"
+      ],
+      "description": "Hypothesis layer. structure for structural hypotheses; mental_model for mental-model hypotheses."
+    },
+    "hypothesisStatus": {
+      "type": "string",
+      "enum": [
+        "DRAFT",
+        "TO_CONFIRM",
+        "SUPPORTED",
+        "WEAKENED",
+        "REJECTED",
+        "SUPERSEDED"
+      ],
+      "description": "Hypothesis lifecycle state. CONFIRMED and REVISED are not valid status values. Status transition history is a validator responsibility."
+    },
+    "counterEvidenceReviewStatus": {
+      "type": "string",
+      "enum": [
+        "found",
+        "none_found_in_reviewed_sources",
+        "not_reviewed"
+      ]
+    },
+    "alternativeHypothesisReviewStatus": {
+      "type": "string",
+      "enum": [
+        "considered",
+        "none_identified_after_review",
+        "not_reviewed"
+      ]
+    },
+    "evidenceIdList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/evidenceId"
+      },
+      "description": "Evidence identifier list. Existence, case scope, and rejected Evidence exclusion are validator responsibilities."
+    },
+    "primaryEvidenceIdList": {
+      "type": "array",
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/evidenceId"
+      },
+      "description": "Primary supporting Evidence identifiers (0-3 for DRAFT/REJECTED/SUPERSEDED; 1-3 for TO_CONFIRM/SUPPORTED/WEAKENED). Selection criteria and subset-of-supporting checks are validator responsibilities."
+    },
+    "patternIdList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/patternId"
+      },
+      "description": "Supporting Pattern identifiers. Existence, case scope, and Pattern status checks are validator responsibilities."
+    },
+    "counterEvidenceReview": {
+      "type": "object",
+      "required": [
+        "status",
+        "reviewed_sources",
+        "note"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/counterEvidenceReviewStatus"
+        },
+        "reviewed_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Sources reviewed for counter-evidence. Empty array only when status is not_reviewed."
+        },
+        "note": {
+          "type": "string",
+          "description": "Counter-evidence review note. Empty string is allowed."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "found"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "reviewed_sources": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "none_found_in_reviewed_sources"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "reviewed_sources": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "not_reviewed"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "reviewed_sources": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "alternativeHypothesisReview": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/alternativeHypothesisReviewStatus"
+        },
+        "reviewed_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Sources reviewed for alternative hypotheses."
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Alternative hypotheses considered."
+        },
+        "note": {
+          "type": "string",
+          "description": "Alternative-hypothesis review note. Empty string is allowed."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "none_identified_after_review"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "reviewed_sources"
+            ],
+            "properties": {
+              "reviewed_sources": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "considered"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "alternatives"
+            ],
+            "properties": {
+              "alternatives": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "none_identified_after_review"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "alternatives": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "not_reviewed"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "reviewed_sources": {
+                "maxItems": 0
+              },
+              "alternatives": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "confirmationQuestions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Open confirmation questions for the hypothesis. Empty array is allowed."
+    },
+    "hypothesisItem": {
+      "type": "object",
+      "required": [
+        "hypothesis_id",
+        "layer",
+        "claim",
+        "supporting_evidence_ids",
+        "primary_supporting_evidence_ids",
+        "supporting_pattern_ids",
+        "counter_evidence_review",
+        "alternative_hypothesis_review",
+        "status",
+        "sensitivity",
+        "confirmation_questions",
+        "next_review_trigger",
+        "created_at",
+        "last_reviewed_at"
+      ],
+      "properties": {
+        "hypothesis_id": {
+          "$ref": "common.schema.json#/$defs/hypothesisId"
+        },
+        "layer": {
+          "$ref": "#/$defs/hypothesisLayer"
+        },
+        "claim": {
+          "type": "string",
+          "description": "Hypothesis statement."
+        },
+        "supporting_evidence_ids": {
+          "$ref": "#/$defs/evidenceIdList"
+        },
+        "primary_supporting_evidence_ids": {
+          "$ref": "#/$defs/primaryEvidenceIdList"
+        },
+        "supporting_pattern_ids": {
+          "$ref": "#/$defs/patternIdList"
+        },
+        "counter_evidence_review": {
+          "$ref": "#/$defs/counterEvidenceReview"
+        },
+        "alternative_hypothesis_review": {
+          "$ref": "#/$defs/alternativeHypothesisReview"
+        },
+        "status": {
+          "$ref": "#/$defs/hypothesisStatus"
+        },
+        "sensitivity": {
+          "$ref": "common.schema.json#/$defs/sensitivity"
+        },
+        "confirmation_questions": {
+          "$ref": "#/$defs/confirmationQuestions"
+        },
+        "next_review_trigger": {
+          "type": "string",
+          "description": "When or under what condition to review this hypothesis next."
+        },
+        "created_at": {
+          "$ref": "common.schema.json#/$defs/dateTime"
+        },
+        "last_reviewed_at": {
+          "$ref": "common.schema.json#/$defs/dateTime"
+        },
+        "supersedes": {
+          "$ref": "common.schema.json#/$defs/hypothesisId",
+          "description": "Prior hypothesis identifier replaced by this item. Bidirectional integrity is a validator responsibility."
+        },
+        "superseded_by": {
+          "$ref": "common.schema.json#/$defs/hypothesisId",
+          "description": "Successor hypothesis identifier that replaced this item. Bidirectional integrity is a validator responsibility."
+        },
+        "revision_reason": {
+          "type": "string",
+          "description": "Reason for revision when issuing a new hypothesis_id. Empty string is allowed."
+        },
+        "rejection_reason": {
+          "type": "string",
+          "description": "Reason for rejection when status is REJECTED."
+        },
+        "rejection_evidence_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common.schema.json#/$defs/evidenceId"
+          },
+          "description": "Evidence identifiers supporting rejection. Required when status is REJECTED."
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "TO_CONFIRM",
+                  "SUPPORTED",
+                  "WEAKENED"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "supporting_evidence_ids": {
+                "minItems": 1
+              },
+              "primary_supporting_evidence_ids": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "REJECTED"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "rejection_reason",
+              "rejection_evidence_ids"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "SUPERSEDED"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "superseded_by",
+              "revision_reason"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "supersedes"
+            ]
+          },
+          "then": {
+            "required": [
+              "revision_reason"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "superseded_by"
+            ]
+          },
+          "then": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "SUPERSEDED",
+                  "REJECTED"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    }
+  }
+}
