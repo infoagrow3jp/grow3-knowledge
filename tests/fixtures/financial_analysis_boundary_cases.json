@@ -1,0 +1,197 @@
+{
+  "_disclaimer": "本fixtureの数値はすべて架空である。実在の企業・決算データではない。",
+  "_purpose": "docs/financial-analysis_指標定義書_v0.2.md で確定済みの閾値境界を単体で検証するためのミニケース群。本体3期ケース（financial_analysis_case_manufacturing_3fy.json）を補完する。B/S全体の整合は要さず、各指標の計算に必要な項目のみで構成する。",
+  "unit": "千円",
+  "cf_self_sufficiency_boundary_cases": [
+    {
+      "case_id": "cf_self_sufficiency_0.95",
+      "target_ratio": 0.95,
+      "inputs": {
+        "actual_operating_cf": 14500.0,
+        "maintenance_capex_proxy_depreciation": 5000.0,
+        "annual_principal_repayment_next12m": 10000.0
+      },
+      "expected": {
+        "fcf": 9500.0,
+        "cf_self_sufficiency": 0.95,
+        "zone": "要改善（自走していない。最優先論点）"
+      },
+      "formula": "CF自走性 = FCF ÷ 年間返済元金、FCF = 実績営業CF − 維持投資（≒減価償却費）"
+    },
+    {
+      "case_id": "cf_self_sufficiency_1.0",
+      "target_ratio": 1.0,
+      "inputs": {
+        "actual_operating_cf": 15000.0,
+        "maintenance_capex_proxy_depreciation": 5000.0,
+        "annual_principal_repayment_next12m": 10000.0
+      },
+      "expected": {
+        "fcf": 10000.0,
+        "cf_self_sufficiency": 1.0,
+        "zone": "ぎりぎり（自走はしているが、突発的な支出へのショック耐性がない）"
+      },
+      "formula": "CF自走性 = FCF ÷ 年間返済元金、FCF = 実績営業CF − 維持投資（≒減価償却費）"
+    },
+    {
+      "case_id": "cf_self_sufficiency_1.19",
+      "target_ratio": 1.19,
+      "inputs": {
+        "actual_operating_cf": 16900.0,
+        "maintenance_capex_proxy_depreciation": 5000.0,
+        "annual_principal_repayment_next12m": 10000.0
+      },
+      "expected": {
+        "fcf": 11900.0,
+        "cf_self_sufficiency": 1.19,
+        "zone": "ぎりぎり（自走はしているが、突発的な支出へのショック耐性がない）"
+      },
+      "formula": "CF自走性 = FCF ÷ 年間返済元金、FCF = 実績営業CF − 維持投資（≒減価償却費）"
+    },
+    {
+      "case_id": "cf_self_sufficiency_1.2",
+      "target_ratio": 1.2,
+      "inputs": {
+        "actual_operating_cf": 17000.0,
+        "maintenance_capex_proxy_depreciation": 5000.0,
+        "annual_principal_repayment_next12m": 10000.0
+      },
+      "expected": {
+        "fcf": 12000.0,
+        "cf_self_sufficiency": 1.2,
+        "zone": "標準（銀行の融資目安圏）"
+      },
+      "formula": "CF自走性 = FCF ÷ 年間返済元金、FCF = 実績営業CF − 維持投資（≒減価償却費）"
+    },
+    {
+      "case_id": "cf_self_sufficiency_1.5",
+      "target_ratio": 1.5,
+      "inputs": {
+        "actual_operating_cf": 20000.0,
+        "maintenance_capex_proxy_depreciation": 5000.0,
+        "annual_principal_repayment_next12m": 10000.0
+      },
+      "expected": {
+        "fcf": 15000.0,
+        "cf_self_sufficiency": 1.5,
+        "zone": "余裕（銀行評価良好圏）"
+      },
+      "formula": "CF自走性 = FCF ÷ 年間返済元金、FCF = 実績営業CF − 維持投資（≒減価償却費）"
+    }
+  ],
+  "debt_payback_ebitda_boundary_cases": [
+    {
+      "case_id": "debt_payback_ebitda_9.9",
+      "target_years": 9.9,
+      "inputs": {
+        "operating_profit": 8000.0,
+        "depreciation_total": 2000.0,
+        "cash": 20000.0,
+        "borrowings": 119000.0
+      },
+      "expected": {
+        "ebitda": 10000.0,
+        "net_interest_bearing_debt": 99000.0,
+        "debt_payback_years_ebitda": 9.9,
+        "zone": "標準（公的制度基準10年/10倍以内）"
+      },
+      "formula": "債務償還年数（EBITDA倍率型） = （有利子負債 − 現預金） ÷ （営業利益 ＋ 減価償却費）"
+    },
+    {
+      "case_id": "debt_payback_ebitda_10.0",
+      "target_years": 10.0,
+      "inputs": {
+        "operating_profit": 8000.0,
+        "depreciation_total": 2000.0,
+        "cash": 20000.0,
+        "borrowings": 120000.0
+      },
+      "expected": {
+        "ebitda": 10000.0,
+        "net_interest_bearing_debt": 100000.0,
+        "debt_payback_years_ebitda": 10.0,
+        "zone": "注意（中小企業平均圏内だが制度基準外）"
+      },
+      "formula": "債務償還年数（EBITDA倍率型） = （有利子負債 − 現預金） ÷ （営業利益 ＋ 減価償却費）"
+    },
+    {
+      "case_id": "debt_payback_ebitda_13.1",
+      "target_years": 13.1,
+      "inputs": {
+        "operating_profit": 8000.0,
+        "depreciation_total": 2000.0,
+        "cash": 20000.0,
+        "borrowings": 151000.0
+      },
+      "expected": {
+        "ebitda": 10000.0,
+        "net_interest_bearing_debt": 131000.0,
+        "debt_payback_years_ebitda": 13.1,
+        "zone": "要改善（改善論点として必ず提示）"
+      },
+      "formula": "債務償還年数（EBITDA倍率型） = （有利子負債 − 現預金） ÷ （営業利益 ＋ 減価償却費）"
+    }
+  ],
+  "cash_months_boundary_cases": [
+    {
+      "case_id": "cash_months_0.9",
+      "target_months": 0.9,
+      "inputs": {
+        "cash": 9000.0,
+        "monthly_sales": 10000.0,
+        "normal_working_capital": 15000.0
+      },
+      "expected": {
+        "cash_to_monthly_sales_ratio": 0.9,
+        "zone": "危険水域（資金繰りリスク・最優先論点）",
+        "surplus_cash": -36000.0
+      },
+      "formula": "ゾーン判定 = 現預金 ÷ 月商。余剰現預金 = 現預金 − （正常運転資金 ＋ 月商 × 3）"
+    },
+    {
+      "case_id": "cash_months_1.0",
+      "target_months": 1.0,
+      "inputs": {
+        "cash": 10000.0,
+        "monthly_sales": 10000.0,
+        "normal_working_capital": 15000.0
+      },
+      "expected": {
+        "cash_to_monthly_sales_ratio": 1.0,
+        "zone": "最低確保ゾーン（世間目安の下限圏。増強を推奨）",
+        "surplus_cash": -35000.0
+      },
+      "formula": "ゾーン判定 = 現預金 ÷ 月商。余剰現預金 = 現預金 − （正常運転資金 ＋ 月商 × 3）"
+    },
+    {
+      "case_id": "cash_months_2.9",
+      "target_months": 2.9,
+      "inputs": {
+        "cash": 29000.0,
+        "monthly_sales": 10000.0,
+        "normal_working_capital": 15000.0
+      },
+      "expected": {
+        "cash_to_monthly_sales_ratio": 2.9,
+        "zone": "標準ゾーン（通常運転として許容）",
+        "surplus_cash": -16000.0
+      },
+      "formula": "ゾーン判定 = 現預金 ÷ 月商。余剰現預金 = 現預金 − （正常運転資金 ＋ 月商 × 3）"
+    },
+    {
+      "case_id": "cash_months_3.0",
+      "target_months": 3.0,
+      "inputs": {
+        "cash": 30000.0,
+        "monthly_sales": 10000.0,
+        "normal_working_capital": 15000.0
+      },
+      "expected": {
+        "cash_to_monthly_sales_ratio": 3.0,
+        "zone": "安全〜戦略判断ゾーン（余剰現預金を算出し戦略論点化）",
+        "surplus_cash": -15000.0
+      },
+      "formula": "ゾーン判定 = 現預金 ÷ 月商。余剰現預金 = 現預金 − （正常運転資金 ＋ 月商 × 3）"
+    }
+  ]
+}
