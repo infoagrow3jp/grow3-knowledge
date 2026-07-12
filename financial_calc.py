@@ -261,7 +261,8 @@ def calc_distributable_resource(fcf: float, annual_principal_repayment_next12m: 
 
 
 # ============================================================
-# §1 キャッシュフロー系指標（実績営業CF・簡易営業CF・広義FCF・返済原資CF）
+# §1 キャッシュフロー系指標（実績営業CF・推計営業CF・簡易営業CF・広義FCF・返済原資CF）
+# 実績／推計営業CFの3層優先順位ロジックは resolve_operating_cf() に実装している
 # ============================================================
 
 def calc_simple_operating_cf(ordinary_profit: float, depreciation_total: float, tax: float) -> float:
