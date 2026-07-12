@@ -333,6 +333,30 @@
         "warning": "運転資本変動を確認できないため正式判定不可。2期分のB/SまたはCF計算書が必要"
       },
       "formula": "Δ売掛金が欠落（フィールドなし）のため推計層を構成できず、簡易営業CF = 40,000 + 10,000 − 14,000 = 36,000 にフォールバック。簡易営業CFは正式判定に使用しないため judgment_blocked=True。"
+    },
+    {
+      "case_id": "annual_principal_repayment_missing_blocks_formal_judgment",
+      "description": "推計営業CFは正常に算出できる入力だが、CF自走性の分母である年間元本返済予定額のフィールド自体が欠落している場合、judgment_status=formalを返さず、judgment=None・screening_only・専用warning_codeで判定不可を明示することを確認する",
+      "inputs": {
+        "net_income": 26000.0,
+        "depreciation_total": 20000.0,
+        "delta_ar": 0.0,
+        "delta_inv": 0.0,
+        "delta_ap": 0.0,
+        "maintenance_investment": 20000.0
+      },
+      "expected": {
+        "ocf_source": "estimated",
+        "capex_source": "actual",
+        "estimated_operating_cf": 46000.0,
+        "fcf": 26000.0,
+        "cf_self_sufficiency": null,
+        "cf_self_sufficiency_zone": null,
+        "judgment_blocked": true,
+        "judgment_status": "screening_only",
+        "warning_code": "ANNUAL_PRINCIPAL_REPAYMENT_MISSING"
+      },
+      "formula": "推計営業CF = 26,000 + 20,000 − 0 − 0 + 0 = 46,000。FCF = 46,000 − 20,000(維持投資) = 26,000。年間元本返済予定額が欠落しているため、CF自走性 = 26,000 ÷ (欠落) は算定不能。judgment_status=formalを返さず、screening_only・warning_code=ANNUAL_PRINCIPAL_REPAYMENT_MISSINGで判定不可を明示する。"
     }
   ]
 }

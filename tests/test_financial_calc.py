@@ -273,6 +273,37 @@ class TestOcfSourceSafetyCases(unittest.TestCase):
         self.assertIsNone(result.zone)
         self.assertEqual(result.warning, expected["warning"])
 
+    def test_missing_annual_principal_repayment_blocks_formal_judgment(self):
+        """2026-07-12追加（Eタスクeval E-3で発見した不具合の回帰テスト）。
+
+        営業CFの層（推計層）は正常に解決できても、CF自走性の分母
+        （年間元本返済予定額）自体が欠落している場合、judgment_status="formal"
+        を誤って返してはならない（旧実装は無警告でformalを返していた）。
+        """
+        case = self.cases["annual_principal_repayment_missing_blocks_formal_judgment"]
+        inputs = case["inputs"]
+        expected = case["expected"]
+        result = fc.calc_cf_self_sufficiency(
+            inputs.get("annual_principal_repayment_next12m"),  # キー自体が無い＝None
+            net_income=inputs["net_income"],
+            depreciation_total=inputs["depreciation_total"],
+            delta_ar=inputs["delta_ar"],
+            delta_inv=inputs["delta_inv"],
+            delta_ap=inputs["delta_ap"],
+            capex_actual=inputs["maintenance_investment"],
+        )
+        self.assertEqual(result.ocf_source, expected["ocf_source"])
+        self.assertEqual(result.capex_source, expected["capex_source"])
+        self.assertAlmostEqual(result.fcf, expected["fcf"], places=6)
+        self.assertIsNone(result.cf_self_sufficiency)
+        self.assertIsNone(result.zone)
+        self.assertIsNone(result.judgment)
+        self.assertEqual(result.judgment_status, expected["judgment_status"])
+        self.assertTrue(result.judgment_blocked)
+        self.assertEqual(result.warning_code, expected["warning_code"])
+        self.assertEqual(result.warning_code, fc.WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_MISSING)
+        self.assertIsNotNone(result.warning)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

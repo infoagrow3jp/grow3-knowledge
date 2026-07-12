@@ -209,6 +209,15 @@ WARNING_CODE_SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENT = (
     "SIMPLIFIED_OCF_NOT_ELIGIBLE_FOR_FORMAL_JUDGMENT"
 )
 
+#: 2026-07-12追加（Eタスクeval E-3で発見）：営業CFの層は解決できても、
+#: CF自走性の分母（年間元本返済予定額）自体が欠落している場合の警告コード。
+#: 分母が無ければ比率は定義できないため、judgment_status="formal"を
+#: 返してはならない（従来はこの分岐が無く、judgment=None・warning=None
+#: のまま誤ってjudgment_status="formal"を返していた）。
+WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_MISSING = (
+    "ANNUAL_PRINCIPAL_REPAYMENT_MISSING"
+)
+
 
 @dataclass
 class CFSelfSufficiencyResult:
@@ -260,6 +269,31 @@ def calc_cf_self_sufficiency(
 
     maint = resolve_maintenance_investment(capex_actual, depreciation_total=depreciation_total)
     fcf = ocf.value - maint.value
+
+    if annual_principal_repayment_next12m is None:
+        # 営業CFの層は解決できているが、CF自走性の分母（年間返済元金）が
+        # 欠落しているため比率そのものが定義できない。judgment_status="formal"
+        # を返してはならず、判定不可として警告付きで返す（ゼロと欠落は区別する。
+        # 明示的な0.0が渡された場合はこの分岐に入らず、通常どおり算式を評価する）。
+        trace = (
+            f"{ocf.calculation_trace}／{maint.calculation_trace}／"
+            f"FCF = 営業CF({ocf.value}) − 維持投資({maint.value}) = {fcf}／"
+            f"CF自走性 = FCF({fcf}) ÷ 年間返済元金（欠落） = 算定不能"
+        )
+        return CFSelfSufficiencyResult(
+            fcf=fcf, ocf_source=ocf.ocf_source, capex_source=maint.capex_source,
+            confidence_grade=ocf.confidence_grade,
+            cf_self_sufficiency=None, zone=None,
+            judgment=None, judgment_status="screening_only",
+            judgment_blocked=True,
+            warning="年間元本返済予定額（annual_principal_repayment_next12m）が指定されていないため、CF自走性を判定できません。",
+            warning_code=WARNING_CODE_ANNUAL_PRINCIPAL_REPAYMENT_MISSING,
+            calculation_trace=trace,
+        )
+
+    # ここに到達した時点でNoneではないと確定している（上のNone分岐で処理済み）。
+    # 明示的な0.0は既存どおりratio=Noneのフォールバックに残す（ゼロ除算回避。
+    # 本修正の対象はNone欠落の誤ったformal判定のみで、0.0の扱いは変更しない）。
     ratio = fcf / annual_principal_repayment_next12m if annual_principal_repayment_next12m else None
     zone = zone_cf_self_sufficiency(ratio)
     trace = (

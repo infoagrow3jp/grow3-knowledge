@@ -348,6 +348,47 @@ def build_ocf_source_safety_cases():
                 "簡易営業CFは正式判定に使用しないため judgment_blocked=True。"
             ),
         },
+        {
+            # 2026-07-12追加（financial-analysis Eタスクeval E-3で発見した不具合の
+            # 回帰テスト用ケース）：営業CFの層（推計層）は正常に解決できても、
+            # CF自走性の分母（年間元本返済予定額）自体が欠落している場合、
+            # judgment_status="formal"を誤って返してはならない
+            # （欠落=annual_principal_repayment_next12mキー自体を与えない）。
+            "case_id": "annual_principal_repayment_missing_blocks_formal_judgment",
+            "description": (
+                "推計営業CFは正常に算出できる入力だが、CF自走性の分母である"
+                "年間元本返済予定額のフィールド自体が欠落している場合、"
+                "judgment_status=formalを返さず、judgment=None・screening_only・"
+                "専用warning_codeで判定不可を明示することを確認する"
+            ),
+            "inputs": {
+                "net_income": 26000.0,
+                "depreciation_total": 20000.0,
+                "delta_ar": 0.0,
+                "delta_inv": 0.0,
+                "delta_ap": 0.0,
+                "maintenance_investment": 20000.0,
+                # annual_principal_repayment_next12m キー自体を与えない＝欠落
+            },
+            "expected": {
+                "ocf_source": "estimated",
+                "capex_source": "actual",
+                "estimated_operating_cf": 46000.0,
+                "fcf": 26000.0,
+                "cf_self_sufficiency": None,
+                "cf_self_sufficiency_zone": None,
+                "judgment_blocked": True,
+                "judgment_status": "screening_only",
+                "warning_code": "ANNUAL_PRINCIPAL_REPAYMENT_MISSING",
+            },
+            "formula": (
+                "推計営業CF = 26,000 + 20,000 − 0 − 0 + 0 = 46,000。"
+                "FCF = 46,000 − 20,000(維持投資) = 26,000。"
+                "年間元本返済予定額が欠落しているため、CF自走性 = 26,000 ÷ (欠落) は"
+                "算定不能。judgment_status=formalを返さず、screening_only・"
+                "warning_code=ANNUAL_PRINCIPAL_REPAYMENT_MISSINGで判定不可を明示する。"
+            ),
+        },
     ]
     return cases
 
