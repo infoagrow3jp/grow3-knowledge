@@ -5,28 +5,21 @@
 #   bash scripts/pre-delivery-check.sh <ファイルまたはディレクトリ>...
 #   bash scripts/pre-delivery-check.sh --staged   # git addされたファイルを検査
 # 終了コード: 0 = 合格（WARNのみ含む） / 1 = FAILあり（出荷不可）
-# 判定できるのは文字列レベルのみ。CPマスター準拠・視覚的なブランド適合は
-# compliance-checker（裁量判定）で確認すること。
-#
-# 未確定表記（【要確認】/TODO/仮置き/未確定）の扱い:
-#   frontmatter の status: draft|reviewed → WARN
-#   status: final または frontmatterなし → FAIL
-# 公開禁止事例・★★・XXX は status に関係なく常に FAIL。
-#
-# 設計思想（2026-07-12追記）：この検品は「緩すぎて本物の未確定表記を見逃す」より
-# 「厳しすぎて時々誤検知で止まる」方を選ぶ。誤検知は直しやすいが、見逃しは
-# 気づかないまま出荷される。DECISIONS.mdのテンプレート例示（DEC-XXX）を
-# 本文の未確定表記と誤って同一視した2026-07-12の誤検知はその代償だが、
-# 対応は「文字列個別の例外リスト」ではなく「テンプレート/例示という構造」を
-# 検出する形にし、本物の未確定表記を見逃す穴を作らないようにしている
-# （下記 strip_template_and_fences を参照）。
 # =============================================================
 set -u
 FAIL=0
 WARN=0
 
-# ---- 自己言及除外（検品の仕組み自身が検品に引っかかるのを防ぐ） ----
-# scripts/・.claude/・.githooks/ 配下、および導入手順.md は対象外。
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REGISTRY="${PRE_DELIVERY_UNCERTAINTY_REGISTRY:-$SCRIPT_DIR/pre-delivery-intentional-uncertainty.tsv}"
+VALID_CLASSIFICATIONS="history|data_state|deferred_v0.2|implementation_detail|meta_check"
+
+declare -A REG_EXPECTED
+declare -A REG_CLASS
+declare -A REG_FOUND
+
+# ---- 自己言及除外 ----
 is_excluded() {
   case "$1" in
     scripts/*|*/scripts/*|.claude/*|*/.claude/*|.githooks/*|*/.githooks/*|導入手順.md|*/導入手順.md)
@@ -36,29 +29,183 @@ is_excluded() {
   esac
 }
 
-# ---- テンプレート／例示ブロックの除外（構造的境界のみ。文字列個別の例外はしない） ----
-# 未確定表記チェック（【要確認】/TODO/仮置き/未確定/★★/XXX）は、以下2種の
-# 構造的に判定できる範囲のみを除外して検査する。個別の文字列（例："DEC-XXX"）
-# をファイル全体・リポジトリ全体で例外扱いにすることはしない。
-#   (a) Markdownコードフェンス（```...```）内
-#   (b) 見出し「## 記録形式」から次の「## 」見出し直前までの節
-#       （DECISIONS.mdの記録フォーマット例示部。本文の判断ログとは
-#       構造的に区切られているため対象外にできる）
-# これ以外の未確定表記（本文中に実際に残った「DEC-XXX」等）は従来どおり検出する。
+normalize_rel_path() {
+  local p="$1" rel root_abs abs
+  if git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    rel=$(git -C "$REPO_ROOT" -c core.quotepath=false ls-files --full-name -- "$p" 2>/dev/null | head -1)
+    if [ -n "$rel" ]; then
+      echo "$rel"
+      return
+    fi
+  fi
+  abs=$(cd "$(dirname "$p")" 2>/dev/null && pwd)
+  abs="${abs//\\//}/$(basename "$p")"
+  root_abs=$(cd "$REPO_ROOT" 2>/dev/null && pwd)
+  root_abs="${root_abs//\\//}"
+  case "$abs" in
+    "$root_abs"/*)
+      echo "${abs#"$root_abs"/}"
+      return
+      ;;
+  esac
+  basename "$p"
+}
+
+report() { # $1=LEVEL $2=file $3=message
+  echo "[$1] $2 : $3"
+  [ "$1" = "FAIL" ] && FAIL=$((FAIL+1)) || WARN=$((WARN+1))
+}
+
+registry_key() {
+  printf '%s\t%s' "$1" "$2"
+}
+
+load_registry() {
+  local line_no=0 registry_fail=0
+  [ -f "$REGISTRY" ] || { report FAIL "$REGISTRY" "台帳ファイルが存在しません"; return 1; }
+
+  while IFS= read -r raw_line || [ -n "$raw_line" ]; do
+    line_no=$((line_no + 1))
+    [[ "$raw_line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "${raw_line//[[:space:]]/}" ]] && continue
+
+    local rel_path expected class exact_line rest
+    rel_path="${raw_line%%$'\t'*}"
+    rest="${raw_line#*$'\t'}"
+    expected="${rest%%$'\t'*}"
+    rest="${rest#*$'\t'}"
+    class="${rest%%$'\t'*}"
+    exact_line="${rest#*$'\t'}"
+    rel_path="${rel_path%%$'\r'}"
+    expected="${expected%%$'\r'}"
+    class="${class%%$'\r'}"
+    exact_line="${exact_line%%$'\r'}"
+
+    if [ -z "$rel_path" ] || [ -z "$expected" ] || [ -z "$class" ] || [ -z "$exact_line" ]; then
+      report FAIL "$REGISTRY" "台帳エラー：列不足（行${line_no}）"
+      registry_fail=1
+      continue
+    fi
+    if ! [[ "$expected" =~ ^[0-9]+$ ]] || [ "$expected" -le 0 ]; then
+      report FAIL "$REGISTRY" "台帳エラー：expected_countが不正（行${line_no}：${expected}）"
+      registry_fail=1
+      continue
+    fi
+    if ! [[ "$class" =~ ^(${VALID_CLASSIFICATIONS})$ ]]; then
+      report FAIL "$REGISTRY" "台帳エラー：classificationが不正（行${line_no}：${class}）"
+      registry_fail=1
+      continue
+    fi
+
+    local key
+    key=$(registry_key "$rel_path" "$exact_line")
+    if [ -n "${REG_EXPECTED[$key]+x}" ]; then
+      report FAIL "$REGISTRY" "台帳エラー：重複登録（${rel_path}）"
+      registry_fail=1
+      continue
+    fi
+
+    REG_EXPECTED[$key]=$expected
+    REG_CLASS[$key]=$class
+    REG_FOUND[$key]=0
+  done < "$REGISTRY"
+
+  [ "$registry_fail" -eq 1 ] && return 1
+  return 0
+}
+
+# コードフェンス／記録形式節を除外した行のうち「未確定」を含む行を NR<TAB>line で出力
+scan_mitei_prose_lines() {
+  awk '
+    BEGIN { in_fence = 0; in_template = 0 }
+    {
+      line = $0
+      sub(/\r$/, "", line)
+      if (line ~ /^```/) { in_fence = (in_fence == 0) ? 1 : 0; next }
+      if (in_fence) next
+      if (line ~ /^## 記録形式[[:space:]]*$/) { in_template = 1; next }
+      if (in_template && line ~ /^## /) { in_template = 0 }
+      if (in_template) next
+      if (index(line, "未確定") > 0) print NR "\t" line
+    }
+  ' "$1"
+}
+
+# 除外節を除いた本文テキスト（他キーワード用・従来互換）
 strip_template_and_fences() {
   awk '
     BEGIN { in_fence = 0; in_template = 0 }
     {
       line = $0
       if (line ~ /^```/) { in_fence = (in_fence == 0) ? 1 : 0; next }
-      if (in_fence) { next }
+      if (in_fence) next
       if (line ~ /^## 記録形式[[:space:]]*$/) { in_template = 1; next }
       if (in_template && line ~ /^## /) { in_template = 0 }
-      if (in_template) { next }
+      if (in_template) next
       print line
     }
   '
 }
+
+count_prose_exact_line() {
+  local file="$1" exact="$2"
+  awk -v target="$exact" '
+    BEGIN { in_fence = 0; in_template = 0; n = 0 }
+    {
+      line = $0
+      sub(/\r$/, "", line)
+      if (line ~ /^```/) { in_fence = (in_fence == 0) ? 1 : 0; next }
+      if (in_fence) next
+      if (line ~ /^## 記録形式[[:space:]]*$/) { in_template = 1; next }
+      if (in_template && line ~ /^## /) { in_template = 0 }
+      if (in_template) next
+      if (line == target) n++
+    }
+    END { print n }
+  ' "$file"
+}
+
+check_mitei_lines() {
+  local f="$1" rel="$2" uncertain_level="$3"
+  declare -A line_hits=()
+
+  while IFS=$'\t' read -r lineno content || [ -n "$lineno" ]; do
+    [ -z "$lineno" ] && continue
+    line_hits["$content"]=$((${line_hits["$content"]:-0} + 1))
+    local key hit_count reg_expected reg_class
+    key=$(registry_key "$rel" "$content")
+    hit_count=${line_hits["$content"]}
+
+    if [ -n "${REG_EXPECTED[$key]+x}" ]; then
+      reg_expected=${REG_EXPECTED[$key]}
+      reg_class=${REG_CLASS[$key]}
+      REG_FOUND[$key]=$((${REG_FOUND[$key]:-0} + 1))
+      if [ "$hit_count" -le "$reg_expected" ]; then
+        report WARN "$f" "行${lineno} 意図的な未確定表記（${reg_class}・台帳登録済み）"
+      else
+        report FAIL "$f" "行${lineno} 未確定表記が台帳許可件数を超過（${hit_count}/${reg_expected}）"
+      fi
+    else
+      report "$uncertain_level" "$f" "行${lineno} 未確定表記が残存：未確定"
+    fi
+  done < <(scan_mitei_prose_lines "$f")
+}
+
+check_stale_registry_entries() {
+  local key rel exact found
+  for key in "${!REG_EXPECTED[@]}"; do
+    rel="${key%%$'\t'*}"
+    exact="${key#*$'\t'}"
+    local abs="$REPO_ROOT/$rel"
+    [ -f "$abs" ] || continue
+    found=$(count_prose_exact_line "$abs" "$exact")
+    if [ "${found:-0}" -eq 0 ]; then
+      report WARN "$REGISTRY" "台帳陳腐化：登録行がファイルに存在しません（${rel}）"
+    fi
+  done
+}
+
+load_registry || exit 1
 
 # ---- 検査対象の収集 ----
 TARGETS=()
@@ -82,7 +229,6 @@ else
 fi
 [ ${#TARGETS[@]} -eq 0 ] && { echo "検査対象がありません"; exit 0; }
 
-# ---- ファイル内容の取得（OOXMLはzip展開してテキスト化） ----
 get_text() {
   case "$1" in
     *.pptx|*.docx|*.xlsx)
@@ -91,7 +237,6 @@ get_text() {
   esac
 }
 
-# 先頭YAML frontmatterの status 値を返す（なければ空）。
 get_doc_status() {
   local first
   first=$(head -n 1 "$1" 2>/dev/null | tr -d '\r')
@@ -113,17 +258,13 @@ get_doc_status() {
   ' "$1"
 }
 
-report() { # $1=LEVEL $2=file $3=message
-  echo "[$1] $2 : $3"
-  [ "$1" = "FAIL" ] && FAIL=$((FAIL+1)) || WARN=$((WARN+1))
-}
-
 BRAND_COLORS="0F3D96|EEF3FA|1F2937|E5E7EB|FFFFFF|000000|FFF|000"
 
 for f in "${TARGETS[@]}"; do
   TEXT=$(get_text "$f")
   PROSE_TEXT=$(printf '%s\n' "$TEXT" | strip_template_and_fences)
   DOC_STATUS=$(get_doc_status "$f")
+  REL_PATH=$(normalize_rel_path "$f")
   if [ "$DOC_STATUS" = "draft" ] || [ "$DOC_STATUS" = "reviewed" ]; then
     UNCERTAIN_LEVEL=WARN
   else
@@ -131,9 +272,6 @@ for f in "${TARGETS[@]}"; do
   fi
 
   # ===== FAIL（出荷不可） =====
-  # 1) 公開禁止事例：介護施設の離職率改善事例（statusに関係なく常にFAIL）
-  #    「介護」×「離職率」は近接共起（前後80行以内）のみFAIL。
-  #    数値パターン（30%台→5%台）はファイル全体でFAILを維持。
   if echo "$TEXT" | grep -Eq "30％?台.{0,20}5％?台|30%台.{0,20}5%台"; then
     report FAIL "$f" "公開禁止事例の疑い：離職率30%台→5%台の数値パターン"
   fi
@@ -154,14 +292,16 @@ for f in "${TARGETS[@]}"; do
   if [ -n "$NEAR_HIT" ]; then
     report FAIL "$f" "公開禁止事例の疑い：「介護」と「離職率」が近接共起（前後80行以内・行${NEAR_HIT}）"
   fi
-  # 2) 未確定表記の残存（テンプレート／例示ブロックを除いた本文のみ検査）
-  #    draft/reviewed → WARN / final・frontmatterなし → FAIL
-  for kw in "【要確認】" "TODO" "仮置き" "未確定"; do
+
+  # 「未確定」：行単位＋台帳（draft/reviewedでも未登録はFAIL）
+  check_mitei_lines "$f" "$REL_PATH" "$UNCERTAIN_LEVEL"
+
+  # その他未確定語：従来どおり（台帳対象外）
+  for kw in "【要確認】" "TODO" "仮置き"; do
     if echo "$PROSE_TEXT" | grep -qF "$kw"; then
       report "$UNCERTAIN_LEVEL" "$f" "未確定表記が残存：${kw}"
     fi
   done
-  # ★★ / XXX は status に関係なく FAIL
   for kw in "★★" "XXX"; do
     if echo "$PROSE_TEXT" | grep -qF "$kw"; then
       report FAIL "$f" "未確定表記が残存：${kw}"
@@ -169,7 +309,6 @@ for f in "${TARGETS[@]}"; do
   done
 
   # ===== WARN（要レビュー） =====
-  # 3) ブランド外カラーコード（html/css/js/svgのみ）
   case "$f" in
     *.html|*.htm|*.css|*.js|*.svg)
       OFFBRAND=$(grep -oiE "#[0-9a-f]{6}|#[0-9a-f]{3}\b" "$f" 2>/dev/null \
@@ -179,20 +318,16 @@ for f in "${TARGETS[@]}"; do
         report WARN "$f" "ブランド外カラーコード：$(echo $OFFBRAND | tr '\n' ' ')（診断ツール4象限色なら対象外・要目視）"
       fi ;;
   esac
-  # 4) 改行直前の読点（md/html/txtのみ）
   case "$f" in
     *.md|*.html|*.htm|*.txt)
       LINES=$(grep -nE "、[[:space:]]*$" "$f" 2>/dev/null | cut -d: -f1 | head -10 | tr '\n' ',')
       [ -n "$LINES" ] && report WARN "$f" "改行直前の読点：行 ${LINES%,}"
-      # 5) AI語候補（禁止語ではない・要レビュー）
       for w in "寄り添" "最大化" "変容を促" "本質的な価値" "唯一無二"; do
         if grep -qF "$w" "$f" 2>/dev/null; then
           report WARN "$f" "AI語候補：「${w}」（文脈上必要なら問題なし）"
         fi
       done ;;
   esac
-  # 6) HTML構造タグの開閉個数不一致（補助検査・WARNのみ）
-  #    個数一致でも入れ子誤りは保証できず、コメント内文字列で誤検出しうる。
   case "$f" in
     *.html|*.htm)
       for tag in div section article main; do
@@ -204,6 +339,8 @@ for f in "${TARGETS[@]}"; do
       done ;;
   esac
 done
+
+check_stale_registry_entries
 
 echo "----------------------------------------"
 echo "検品結果: FAIL ${FAIL}件 / WARN ${WARN}件（対象 ${#TARGETS[@]}ファイル）"
