@@ -595,7 +595,9 @@ def analyze_period(pl: dict, cf: dict, opening_bs: dict, ending_bs: dict,
     result["cf_self_sufficiency_zone"] = cf_result.zone
     result["cf_self_sufficiency_judgment"] = cf_result.judgment
     result["cf_self_sufficiency_judgment_status"] = cf_result.judgment_status
+    result["cf_self_sufficiency_warning"] = cf_result.warning
     result["cf_self_sufficiency_warning_code"] = cf_result.warning_code
+    result["cf_self_sufficiency_calculation_trace"] = cf_result.calculation_trace
     result["distributable_resource_for_executive_comp"] = calc_distributable_resource(
         cf_result.fcf, annual_principal, cash_buffer_for_reconfigured_debt,
     )
