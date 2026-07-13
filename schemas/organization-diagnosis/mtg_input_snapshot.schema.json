@@ -82,7 +82,7 @@
             "pattern": "^[A-Za-z]:[\\\\/]"
           },
           {
-            "pattern": "^https?://"
+            "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:"
           },
           {
             "pattern": "\\\\"
