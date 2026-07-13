@@ -1,0 +1,367 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grow3.jp/schemas/organization-diagnosis/v0.1/causal.schema.json",
+  "title": "organization-diagnosis causal register v0.1",
+  "description": "Causal register schema for causal_hypothesis edges, chains, loop candidates, and validated loops. Validates structure, vocabulary, reference formats, and type-specific constraints only—not causal truth, edge connectivity, loop closure, polarity consistency, or classification correctness.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "common.schema.json#/$defs/registerEnvelope"
+    }
+  ],
+  "properties": {
+    "register_type": {
+      "const": "causal"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/causalItem"
+      }
+    }
+  },
+  "unevaluatedProperties": false,
+  "$defs": {
+    "causalTypeCausalHypothesis": {
+      "type": "string",
+      "const": "causal_hypothesis"
+    },
+    "causalTypeChain": {
+      "type": "string",
+      "const": "chain"
+    },
+    "causalTypeLoopCandidate": {
+      "type": "string",
+      "const": "loop_candidate"
+    },
+    "causalTypeLoop": {
+      "type": "string",
+      "const": "loop"
+    },
+    "edgePolarity": {
+      "type": "string",
+      "enum": [
+        "positive",
+        "negative",
+        "unknown"
+      ]
+    },
+    "edgeDelay": {
+      "type": "string",
+      "enum": [
+        "none",
+        "possible",
+        "confirmed",
+        "unknown"
+      ]
+    },
+    "causalHypothesisStatus": {
+      "type": "string",
+      "enum": [
+        "DRAFT",
+        "TO_CONFIRM",
+        "SUPPORTED",
+        "WEAKENED",
+        "REJECTED",
+        "SUPERSEDED"
+      ],
+      "description": "Causal hypothesis lifecycle state. Form validity for closed loops is expressed by loop VALID_FORM, not causal_hypothesis SUPPORTED."
+    },
+    "loopCandidateStatus": {
+      "type": "string",
+      "enum": [
+        "DRAFT",
+        "INVALID_FORM",
+        "SUPERSEDED"
+      ]
+    },
+    "loopCandidateResolutionStatus": {
+      "type": "string",
+      "enum": [
+        "UNRESOLVED",
+        "PROMOTED_TO_LOOP",
+        "REJECTED"
+      ],
+      "description": "Loop candidate processing outcome. Default authoring value is UNRESOLVED and must be recorded explicitly."
+    },
+    "loopStatus": {
+      "type": "string",
+      "enum": [
+        "VALID_FORM",
+        "SUPERSEDED"
+      ],
+      "description": "Loop form-check status. VALID_FORM means formal conditions are met, not causal truth."
+    },
+    "loopClassification": {
+      "type": "string",
+      "enum": [
+        "reinforcing",
+        "balancing"
+      ],
+      "description": "Loop classification per design memo section 11. Consistency with negative edge count is a validator responsibility."
+    },
+    "evidenceIdList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/evidenceId"
+      },
+      "description": "Supporting Evidence identifiers. Existence, case scope, and rejected Evidence exclusion are validator responsibilities."
+    },
+    "hypothesisIdList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/hypothesisId"
+      },
+      "description": "Supporting Hypothesis identifiers. Existence, case scope, and rejected Hypothesis exclusion are validator responsibilities."
+    },
+    "edgeIdListMinTwo": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/causalEdgeId"
+      },
+      "description": "Ordered causal edge identifier list with at least two edges. Connectivity and closure are validator responsibilities."
+    },
+    "edgeIdListMinOne": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/causalEdgeId"
+      },
+      "description": "Ordered causal edge identifier list for incomplete loop candidates. Connectivity, closure, polarity, and evidence are validator responsibilities."
+    },
+    "causalHypothesisItem": {
+      "type": "object",
+      "required": [
+        "causal_type",
+        "edge_id",
+        "from_variable",
+        "to_variable",
+        "polarity",
+        "delay",
+        "supporting_evidence_ids",
+        "supporting_hypothesis_ids",
+        "status",
+        "sensitivity",
+        "notes"
+      ],
+      "properties": {
+        "causal_type": {
+          "$ref": "#/$defs/causalTypeCausalHypothesis"
+        },
+        "edge_id": {
+          "$ref": "common.schema.json#/$defs/causalEdgeId"
+        },
+        "from_variable": {
+          "type": "string",
+          "description": "Source variable name for the directed causal edge."
+        },
+        "to_variable": {
+          "type": "string",
+          "description": "Target variable name for the directed causal edge."
+        },
+        "polarity": {
+          "$ref": "#/$defs/edgePolarity"
+        },
+        "delay": {
+          "$ref": "#/$defs/edgeDelay"
+        },
+        "supporting_evidence_ids": {
+          "$ref": "#/$defs/evidenceIdList"
+        },
+        "supporting_hypothesis_ids": {
+          "$ref": "#/$defs/hypothesisIdList"
+        },
+        "status": {
+          "$ref": "#/$defs/causalHypothesisStatus"
+        },
+        "sensitivity": {
+          "$ref": "common.schema.json#/$defs/sensitivity"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Supplementary notes. Empty string is allowed."
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "unevaluatedProperties": false
+    },
+    "chainItem": {
+      "type": "object",
+      "required": [
+        "causal_type",
+        "edge_ids",
+        "sensitivity",
+        "notes"
+      ],
+      "properties": {
+        "causal_type": {
+          "$ref": "#/$defs/causalTypeChain"
+        },
+        "edge_ids": {
+          "$ref": "#/$defs/edgeIdListMinTwo"
+        },
+        "sequence_note": {
+          "type": "string",
+          "description": "Optional chain-only note for edge order, connectivity intent, or open questions. Empty string is allowed."
+        },
+        "sensitivity": {
+          "$ref": "common.schema.json#/$defs/sensitivity"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Supplementary notes. Empty string is allowed."
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "unevaluatedProperties": false
+    },
+    "loopCandidateItem": {
+      "type": "object",
+      "required": [
+        "causal_type",
+        "loop_id",
+        "edge_ids",
+        "status",
+        "resolution_status",
+        "sensitivity",
+        "notes"
+      ],
+      "properties": {
+        "causal_type": {
+          "$ref": "#/$defs/causalTypeLoopCandidate"
+        },
+        "loop_id": {
+          "$ref": "common.schema.json#/$defs/causalLoopId"
+        },
+        "edge_ids": {
+          "$ref": "#/$defs/edgeIdListMinOne"
+        },
+        "status": {
+          "$ref": "#/$defs/loopCandidateStatus"
+        },
+        "resolution_status": {
+          "$ref": "#/$defs/loopCandidateResolutionStatus"
+        },
+        "promoted_loop_id": {
+          "$ref": "common.schema.json#/$defs/causalLoopId",
+          "description": "Promotion target loop identifier. Required only when resolution_status is PROMOTED_TO_LOOP."
+        },
+        "sensitivity": {
+          "$ref": "common.schema.json#/$defs/sensitivity"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Supplementary notes. Empty string is allowed."
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "resolution_status": {
+                "const": "PROMOTED_TO_LOOP"
+              }
+            },
+            "required": [
+              "resolution_status"
+            ]
+          },
+          "then": {
+            "required": [
+              "promoted_loop_id"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "resolution_status": {
+                "enum": [
+                  "UNRESOLVED",
+                  "REJECTED"
+                ]
+              }
+            },
+            "required": [
+              "resolution_status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "promoted_loop_id": false
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "loopItem": {
+      "type": "object",
+      "required": [
+        "causal_type",
+        "loop_id",
+        "edge_ids",
+        "loop_classification",
+        "status",
+        "sensitivity",
+        "notes"
+      ],
+      "properties": {
+        "causal_type": {
+          "$ref": "#/$defs/causalTypeLoop"
+        },
+        "loop_id": {
+          "$ref": "common.schema.json#/$defs/causalLoopId"
+        },
+        "edge_ids": {
+          "$ref": "#/$defs/edgeIdListMinTwo"
+        },
+        "loop_classification": {
+          "$ref": "#/$defs/loopClassification"
+        },
+        "status": {
+          "$ref": "#/$defs/loopStatus"
+        },
+        "sensitivity": {
+          "$ref": "common.schema.json#/$defs/sensitivity"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Supplementary notes. Empty string is allowed."
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "unevaluatedProperties": false
+    },
+    "causalItem": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/causalHypothesisItem"
+        },
+        {
+          "$ref": "#/$defs/chainItem"
+        },
+        {
+          "$ref": "#/$defs/loopCandidateItem"
+        },
+        {
+          "$ref": "#/$defs/loopItem"
+        }
+      ]
+    }
+  }
+}
