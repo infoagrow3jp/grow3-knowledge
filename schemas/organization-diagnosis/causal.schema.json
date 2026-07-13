@@ -82,6 +82,7 @@
         "PROMOTED_TO_LOOP",
         "REJECTED"
       ],
+      "default": "UNRESOLVED",
       "description": "Loop candidate processing outcome. Default authoring value is UNRESOLVED and must be recorded explicitly."
     },
     "loopStatus": {
