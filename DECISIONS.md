@@ -294,7 +294,7 @@
   - `diagnosis_cycle` の場合、`source_mtg_session_ids` は1件以上とする。
   - brief固有IDと `diagnosis_cycle_id` はv0.1では追加しない。
   - briefはManifest内の `relative_path` によって識別する。
-  - `register_snapshot_hash` は任意の非空文字列として場所だけ予約する。
+  - `register_snapshot_hash` は任意で、少なくとも1文字の非空白文字を含むopaque stringとして場所だけ予約する。空白のみは認めない。
   - hash算法、対象register、結合順、canonicalization、encodingは固定しない。
   - `case_id` / `relative_path` / `sensitivity` / `filter_profile` 等をfrontmatterへ追加しない。
   - root `extensions` のみ許可する。
@@ -303,7 +303,7 @@
   - frontmatterはブリーフファイル先頭に必須とする。
   - frontmatter抽出・YAML構文・duplicate key検出はschema外責務とする。
 
-  **frontmatter抽出契約（v0.1候補・extractor実装は別工程）：**
+  **frontmatter抽出契約（v0.1確定・extractor実装は別工程）：**
   - brief metadataを検査するMarkdownはfrontmatter必須。
   - UTF-8テキストとして扱う。
   - 1行目は単独の `---`。

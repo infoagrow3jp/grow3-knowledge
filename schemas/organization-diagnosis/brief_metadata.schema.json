@@ -79,7 +79,8 @@
     "registerSnapshotHash": {
       "type": "string",
       "minLength": 1,
-      "description": "Optional opaque register snapshot hash value. Hash algorithm, source material, ordering, canonicalization, and encoding are intentionally unspecified in v0.1."
+      "pattern": "\\S",
+      "description": "Optional opaque register snapshot hash value. When present, it must contain at least one non-whitespace character. Hash algorithm, source material, ordering, canonicalization, and encoding are intentionally unspecified in v0.1."
     }
   }
 }
