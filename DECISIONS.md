@@ -204,6 +204,63 @@
   - organization-diagnosis schema群の公開配布方針が変わり、別の公式名前空間へ移行する必要が生じた場合。
   - 相対 `$ref` 解決が、採用validatorまたは配布環境で再現不能と判明した場合。
 
+### DEC-011｜organization-diagnosis Manifestを非正本の再構築可能索引として固定する
+- 日付：2026-07-13
+- 状態：確定
+- 対象：`organization_diagnosis_manifest.schema.json`、将来のManifest validator／builder、mtg_input_snapshot／brief_metadataとの責務境界
+- 決定：
+
+  **既存凍結仕様（schema設計メモv0.1・DEC-008/009より。今回新規発明ではない）：**
+  - Manifestは顧客単位の索引であり、内容の正本ではない。
+  - Manifestなしでもregister単体のschema検査が可能である。
+  - トップレベル管理項目は `schema_version` / `case_id` / `registers` / `mtg_sessions` / `briefs` / `created_at` の6項目である。
+  - `registers` は各registerファイルパスと `last_updated_at`（RFC3339）を持つ。
+  - `briefs` はブリーフファイルパスと `generated_at` を持つ。
+  - `created_at` はManifest初回作成日時である。
+  - `mtg_session_id` はinput snapshotの識別子を兼ねる。snapshotファイル名は `inputs/MTG-YYYYMMDD-NNN.json` である。
+  - Manifestはcommonの `registerEnvelope` を使用しない。
+  - `last_seq` はv0.1 Manifestの正式管理項目リストに含まれない（§8-2の連番方式比較表の「manifestまたはregister内」は実装コスト候補の併記であり、Manifest採用を意味しない）。
+  - `register_snapshot_hash` と `generated_from_registers_at` はbrief frontmatter側の項目である。
+
+  **今回の合成判断（凍結規則の組み合わせ）：**
+  - register JSON本体、mtg_input_snapshot JSON本体、brief frontmatterが各情報の正本である。
+  - Manifestに記録する `relative_path` / `last_updated_at` / `mtg_session_id` / `generated_at` は発見性・一覧性のための非正本キャッシュである。矛盾時は常に本体を正とし、Manifest値で本体を上書きしない。
+  - Manifestの索引内容（registers／mtg_sessions／briefsの構成）は本体ファイルとディレクトリ構成から再構築可能とする。byte-for-byte完全一致の再生成は要求しない。
+  - `mtg_sessions` はMTG session ID文字列の配列とする。snapshot path・session_date・input_files等はsnapshot本体に存在するためManifestへ重複保持しない。
+  - register entryの `last_updated_at` およびbrief entryの `generated_at` は本体値のキャッシュである。
+
+  **今回の新規判断（凍結文書に具体構造がなく人間判断で確定）：**
+  - `created_at` のみManifest固有の運用メタデータとする。再構築時は既存の有効な `created_at` を保持する。ファイル喪失時のみ新しい `created_at` を記録する。
+  - v0.1ではManifestの手動作成・手動修復を許可する。将来の専用builderが索引内容の再構築を担当する。validatorは不一致を検出・報告するのみで、Manifestや本体を自動変更しない。
+  - `registers` は固定5キーobject（`evidence` / `patterns` / `hypotheses` / `causal` / `verification_actions`）とし、5キーすべてをrequiredとする。
+  - 各register entryは `relative_path` と `last_updated_at` をrequiredとし、パスフィールド名を `relative_path` とする。
+  - 各registerの `relative_path` は `_org_diagnosis/` 基準の固定値とする（`registers/evidence.json` 等）。
+  - `briefs` は `relative_path` と `generated_at` の最小object配列とする。brief pathは `^briefs/[^/\\]+\.md$` パターンとする。
+  - `mtg_sessions` と `briefs` は空配列を許可する（`minItems` は設けない）。
+  - rootの `extensions` のみ許可し、register／mtg／brief entry単位のextensionsは許可しない。
+  - Manifestトップに `last_updated_at` / `updated_at` / 再生成日時を追加しない。
+  - キャッシュ日時不一致・未索引ファイルは原則WARN候補。参照先ファイル不存在・case／ID不一致はManifest整合性ERROR候補とする。
+
+- 理由：
+  - 二重管理された真実を作らないため。
+  - Manifest破損が診断データ本体の喪失にならないようにするため。
+  - snapshot／brief metadataとの責務重複を避けるため。
+  - fixed structureにより重複registerや表記ゆれをschemaで防ぐため。
+  - 将来のManifest builder実装を可能にするため。
+- 採用しなかった案：
+  - Manifestを独立した内容正本とする。
+  - registersを自由配列にする。
+  - MTG snapshot pathやsession_dateをManifestへ複製する。
+  - brief entryへMTG関連情報やregister hashを追加する。
+  - ManifestへID採番用 `last_seq` を置く。
+  - entryごとにextensionsを許可する。
+- 見直し条件：
+  - register種類が5種類から変更される。
+  - データファイル配置規則が変更される。
+  - Manifest builderの実装で固定パス運用が困難と判明する。
+  - 複数brief階層が必要になる。
+  - Manifestを外部システムとの同期正本として使用する必要が生じる。
+
 ## 2026-07-11 AI運用の判断基準を grow3-judgment スキルとして確立
 1. 承認済み最新版を正とし、依頼範囲外を善意で変更しない（第0原則）。
    改善案は本文反映ではなく別途提案とする。

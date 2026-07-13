@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grow3.jp/schemas/organization-diagnosis/v0.1/organization_diagnosis_manifest.schema.json",
+  "title": "organization-diagnosis manifest v0.1",
+  "description": "Customer-level non-authoritative file index for organization-diagnosis. Validates structure and cached index fields only—not file existence, case consistency, or cache reconciliation with register bodies, input snapshots, or brief frontmatter.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "case_id",
+    "registers",
+    "mtg_sessions",
+    "briefs",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/schemaVersion"
+    },
+    "case_id": {
+      "$ref": "common.schema.json#/$defs/caseId"
+    },
+    "registers": {
+      "$ref": "#/$defs/registerIndex"
+    },
+    "mtg_sessions": {
+      "$ref": "#/$defs/mtgSessionIndex"
+    },
+    "briefs": {
+      "$ref": "#/$defs/briefIndex"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/dateTime"
+    },
+    "extensions": {
+      "$ref": "common.schema.json#/$defs/extensions"
+    }
+  },
+  "unevaluatedProperties": false,
+  "$defs": {
+    "registerEntryBase": {
+      "type": "object",
+      "required": [
+        "relative_path",
+        "last_updated_at"
+      ],
+      "properties": {
+        "relative_path": {
+          "type": "string"
+        },
+        "last_updated_at": {
+          "$ref": "common.schema.json#/$defs/dateTime"
+        }
+      },
+      "unevaluatedProperties": false
+    },
+    "evidenceRegisterEntry": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/registerEntryBase"
+        },
+        {
+          "properties": {
+            "relative_path": {
+              "const": "registers/evidence.json"
+            }
+          }
+        }
+      ]
+    },
+    "patternsRegisterEntry": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/registerEntryBase"
+        },
+        {
+          "properties": {
+            "relative_path": {
+              "const": "registers/patterns.json"
+            }
+          }
+        }
+      ]
+    },
+    "hypothesesRegisterEntry": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/registerEntryBase"
+        },
+        {
+          "properties": {
+            "relative_path": {
+              "const": "registers/hypotheses.json"
+            }
+          }
+        }
+      ]
+    },
+    "causalRegisterEntry": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/registerEntryBase"
+        },
+        {
+          "properties": {
+            "relative_path": {
+              "const": "registers/causal.json"
+            }
+          }
+        }
+      ]
+    },
+    "verificationActionsRegisterEntry": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/registerEntryBase"
+        },
+        {
+          "properties": {
+            "relative_path": {
+              "const": "registers/verification_actions.json"
+            }
+          }
+        }
+      ]
+    },
+    "registerIndex": {
+      "type": "object",
+      "required": [
+        "evidence",
+        "patterns",
+        "hypotheses",
+        "causal",
+        "verification_actions"
+      ],
+      "properties": {
+        "evidence": {
+          "$ref": "#/$defs/evidenceRegisterEntry"
+        },
+        "patterns": {
+          "$ref": "#/$defs/patternsRegisterEntry"
+        },
+        "hypotheses": {
+          "$ref": "#/$defs/hypothesesRegisterEntry"
+        },
+        "causal": {
+          "$ref": "#/$defs/causalRegisterEntry"
+        },
+        "verification_actions": {
+          "$ref": "#/$defs/verificationActionsRegisterEntry"
+        }
+      },
+      "unevaluatedProperties": false
+    },
+    "mtgSessionIndex": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/mtgSessionId"
+      }
+    },
+    "briefRelativePath": {
+      "type": "string",
+      "pattern": "^briefs/[^/\\\\]+\\.md$"
+    },
+    "briefEntry": {
+      "type": "object",
+      "required": [
+        "relative_path",
+        "generated_at"
+      ],
+      "properties": {
+        "relative_path": {
+          "$ref": "#/$defs/briefRelativePath"
+        },
+        "generated_at": {
+          "$ref": "common.schema.json#/$defs/dateTime"
+        }
+      },
+      "unevaluatedProperties": false
+    },
+    "briefIndex": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/briefEntry"
+      }
+    }
+  }
+}
