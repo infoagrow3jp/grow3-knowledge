@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grow3.jp/schemas/organization-diagnosis/v0.1/verification_action.schema.json",
+  "title": "organization-diagnosis verification action register v0.1",
+  "description": "Verification action register schema for hypothesis verification plans. Validates structure, vocabulary, and reference formats only—not action execution status, results, or whether signals are well-formed.",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "common.schema.json#/$defs/registerEnvelope"
+    }
+  ],
+  "properties": {
+    "register_type": {
+      "const": "verification_actions"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/verificationActionItem"
+      }
+    }
+  },
+  "unevaluatedProperties": false,
+  "$defs": {
+    "actionType": {
+      "type": "string",
+      "enum": [
+        "confirmation_question",
+        "small_experiment",
+        "additional_interview",
+        "data_collection",
+        "observation"
+      ],
+      "description": "Verification action category. All five values share the same item shape in v0.1."
+    },
+    "hypothesisIdListMinOne": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/hypothesisId"
+      },
+      "description": "Target Hypothesis identifiers. Existence, case scope, and status suitability are validator responsibilities."
+    },
+    "verificationActionItem": {
+      "type": "object",
+      "required": [
+        "action_id",
+        "action_type",
+        "action_description",
+        "target_hypothesis_ids",
+        "support_signal",
+        "weaken_signal",
+        "next_review_trigger",
+        "sensitivity",
+        "created_at",
+        "mtg_session_id"
+      ],
+      "properties": {
+        "action_id": {
+          "$ref": "common.schema.json#/$defs/verificationActionId"
+        },
+        "action_type": {
+          "$ref": "#/$defs/actionType"
+        },
+        "action_description": {
+          "type": "string",
+          "description": "What will be done to verify the target hypotheses."
+        },
+        "target_hypothesis_ids": {
+          "$ref": "#/$defs/hypothesisIdListMinOne"
+        },
+        "support_signal": {
+          "type": "string",
+          "description": "What observation would move target hypotheses toward support."
+        },
+        "weaken_signal": {
+          "type": "string",
+          "description": "What observation would move target hypotheses toward weakening or rejection."
+        },
+        "next_review_trigger": {
+          "type": "string",
+          "description": "When or under what condition results should be reviewed. Not limited to date-time."
+        },
+        "sensitivity": {
+          "$ref": "common.schema.json#/$defs/sensitivity"
+        },
+        "created_at": {
+          "$ref": "common.schema.json#/$defs/dateTime"
+        },
+        "mtg_session_id": {
+          "$ref": "common.schema.json#/$defs/mtgSessionId"
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "unevaluatedProperties": false
+    }
+  }
+}
