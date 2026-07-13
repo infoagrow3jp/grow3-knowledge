@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grow3.jp/schemas/organization-diagnosis/v0.1/mtg_input_snapshot.schema.json",
+  "title": "organization-diagnosis MTG input snapshot v0.1",
+  "description": "Immutable per-MTG input snapshot used to trace Evidence extraction sources. Validates structure and formats only—not file existence, hash or size matching, MTG date-time consistency, or cross-file references.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "mtg_session_id",
+    "session_date",
+    "session_started_at",
+    "input_files"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/schemaVersion"
+    },
+    "mtg_session_id": {
+      "$ref": "common.schema.json#/$defs/mtgSessionId"
+    },
+    "session_date": {
+      "$ref": "common.schema.json#/$defs/date"
+    },
+    "session_started_at": {
+      "$ref": "common.schema.json#/$defs/dateTime"
+    },
+    "session_ended_at": {
+      "$ref": "#/$defs/nullableDateTime"
+    },
+    "input_files": {
+      "$ref": "#/$defs/inputFileList"
+    },
+    "extraction_notes": {
+      "$ref": "#/$defs/nullableString"
+    },
+    "extensions": {
+      "$ref": "common.schema.json#/$defs/extensions"
+    }
+  },
+  "unevaluatedProperties": false,
+  "$defs": {
+    "nullableDateTime": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "common.schema.json#/$defs/dateTime"
+        }
+      ],
+      "description": "Optional end time. Omitted means not used; null means not yet confirmed; date-time means confirmed."
+    },
+    "nullableString": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "Optional free text. Omitted means none; null means not yet confirmed; string means confirmed notes. Empty string is allowed."
+    },
+    "sha256Hex": {
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{64}$",
+      "description": "SHA-256 content hash as 64 hexadecimal characters. Match against actual file content is a validator responsibility."
+    },
+    "orgDiagnosisRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Non-empty relative path below _org_diagnosis/. Existence and boundary checks are validator responsibilities.",
+      "not": {
+        "anyOf": [
+          {
+            "pattern": "^/"
+          },
+          {
+            "pattern": "^\\\\"
+          },
+          {
+            "pattern": "^[A-Za-z]:[\\\\/]"
+          },
+          {
+            "pattern": "^https?://"
+          },
+          {
+            "pattern": "\\\\"
+          },
+          {
+            "pattern": "//"
+          },
+          {
+            "pattern": "(^|/)\\.(\\/|$)"
+          },
+          {
+            "pattern": "(^|/)\\.\\.(\\/|$)"
+          }
+        ]
+      }
+    },
+    "inputFile": {
+      "type": "object",
+      "required": [
+        "relative_path",
+        "source_form",
+        "content_sha256",
+        "captured_at",
+        "size_bytes"
+      ],
+      "properties": {
+        "relative_path": {
+          "$ref": "#/$defs/orgDiagnosisRelativePath"
+        },
+        "source_form": {
+          "$ref": "common.schema.json#/$defs/sourceForm"
+        },
+        "content_sha256": {
+          "$ref": "#/$defs/sha256Hex"
+        },
+        "captured_at": {
+          "$ref": "common.schema.json#/$defs/dateTime"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "unevaluatedProperties": false
+    },
+    "inputFileList": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/inputFile"
+      },
+      "description": "Input files captured for this MTG session. At least one file is required."
+    }
+  }
+}
