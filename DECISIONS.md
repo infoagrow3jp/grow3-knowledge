@@ -261,6 +261,86 @@
   - 複数brief階層が必要になる。
   - Manifestを外部システムとの同期正本として使用する必要が生じる。
 
+### DEC-012｜organization-diagnosis brief metadataをfrontmatter生成情報に限定する
+- 日付：2026-07-13
+- 状態：確定
+- 対象：`brief_metadata.schema.json`、将来のbrief generator／validator／frontmatter extractor／YAML parser、Manifestとの責務境界
+- 決定：
+
+  **既存凍結仕様（schema設計メモv0.1・DEC-011より。今回新規発明ではない）：**
+  - 内部診断ブリーフはMarkdown生成物であり、register JSONが診断内容の正本である。
+  - brief_metadataはMarkdown本文ではなくfrontmatter用schemaである。
+  - frontmatterに `generated_from_registers_at` を付与する。
+  - frontmatterに `register_snapshot_hash` を置く構想がある。
+  - `register_snapshot_hash` の算法はbrief_generator実装時に確定する。
+  - 本文構造schemaの要否はbrief_generator実装時の将来判断である。
+  - briefs/の粒度はMTGまたは診断サイクル単位である。
+  - restricted_hr継承項目は通常ブリーフへ出力しない。
+  - 秘匿情報の出力制御はbrief_generator＋validator責務である。
+
+  **今回の合成判断（凍結規則の組み合わせ）：**
+  - DEC-011によりManifest `briefs[].generated_at` は本体値の非正本キャッシュである。
+  - brief frontmatterがbrief生成情報の正本である。
+  - よってfrontmatterに `generated_at` を必須で持たせる。
+  - `generated_at` はブリーフを生成した日時である。
+  - `generated_from_registers_at` は、生成に使用したregister集合の基準時点である。
+  - `generated_at` と `generated_from_registers_at` は別の意味を持つ。
+  - Manifestには `generated_at` だけをキャッシュし、`generated_from_registers_at` やhashを複製しない。
+
+  **今回の新規判断（凍結文書に具体構造がなく人間判断で確定）：**
+  - schemaの必須項目を `schema_version` / `generated_at` / `generated_from_registers_at` / `brief_scope` / `source_mtg_session_ids` とする。
+  - `brief_scope` は `mtg_session` / `diagnosis_cycle` の2値とする。
+  - `mtg_session` の場合、`source_mtg_session_ids` は1件だけとする。
+  - `diagnosis_cycle` の場合、`source_mtg_session_ids` は1件以上とする。
+  - brief固有IDと `diagnosis_cycle_id` はv0.1では追加しない。
+  - briefはManifest内の `relative_path` によって識別する。
+  - `register_snapshot_hash` は任意の非空文字列として場所だけ予約する。
+  - hash算法、対象register、結合順、canonicalization、encodingは固定しない。
+  - `case_id` / `relative_path` / `sensitivity` / `filter_profile` 等をfrontmatterへ追加しない。
+  - root `extensions` のみ許可する。
+  - schemaはYAML parse後のJSON互換objectだけを検査する。
+  - Markdown本文はschema検査対象外とする。
+  - frontmatterはブリーフファイル先頭に必須とする。
+  - frontmatter抽出・YAML構文・duplicate key検出はschema外責務とする。
+
+  **frontmatter抽出契約（v0.1候補・extractor実装は別工程）：**
+  - brief metadataを検査するMarkdownはfrontmatter必須。
+  - UTF-8テキストとして扱う。
+  - 1行目は単独の `---`。
+  - BOM、先頭空行、先頭コメントは許可しない。
+  - 次に現れる単独行の `---` を終了区切りとする。
+  - 終了区切り欠落はextractor ERROR。
+  - 空frontmatterはINVALID。
+  - frontmatterはYAML mappingでなければINVALID。
+  - 本文中に後から現れる `---` はMarkdown本文として扱う。
+  - 2つ目以降のfrontmatter風ブロックは再抽出しない。
+  - Markdown本文は空でもよい。
+
+- 理由：
+  - registerとブリーフを独立正本にしないため。
+  - Manifestを再構築可能な索引として維持するため。
+  - hash算法を凍結文書に反して先取りしないため。
+  - 新しいdiagnosis_cycle ID体系を善意に増やさないため。
+  - Markdown本文構造をv0.1 schemaへ膨張させないため。
+  - frontmatterへ実顧客情報や機微情報を重複保持しないため。
+- 採用しなかった案：
+  - `register_snapshot_hash` を必須にする。
+  - `register_snapshot_hash` をSHA-256へ固定する。
+  - common schemaへhash定義を追加する。
+  - `brief_id` を新設する。
+  - `diagnosis_cycle_id` を新設する。
+  - `case_id` をfrontmatterへ複製する。
+  - sensitivityやfilter結果をfrontmatterへ持たせる。
+  - Markdown本文をschema対象にする。
+  - registerEnvelopeを使用する。
+- 見直し条件：
+  - brief_generatorを実装する。
+  - register_snapshot_hash算法を正式決定する。
+  - 診断サイクル固有IDが必要になる。
+  - 顧客提示版／HR限定版等の複数brief種別を正式運用する。
+  - Markdown本文構造を機械検査する必要が生じる。
+  - frontmatter parserの正式実装を決定する。
+
 ## 2026-07-11 AI運用の判断基準を grow3-judgment スキルとして確立
 1. 承認済み最新版を正とし、依頼範囲外を善意で変更しない（第0原則）。
    改善案は本文反映ではなく別途提案とする。

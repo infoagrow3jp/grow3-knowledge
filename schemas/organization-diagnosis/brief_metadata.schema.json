@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grow3.jp/schemas/organization-diagnosis/v0.1/brief_metadata.schema.json",
+  "title": "organization-diagnosis brief metadata v0.1",
+  "description": "Validates YAML frontmatter from Markdown briefs after safe parsing into a JSON-compatible object. Covers brief generation metadata only—not Markdown body content. register_snapshot_hash algorithm and content reconciliation, and Manifest consistency, are future generator/validator responsibilities.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "generated_from_registers_at",
+    "brief_scope",
+    "source_mtg_session_ids"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common.schema.json#/$defs/schemaVersion"
+    },
+    "generated_at": {
+      "description": "When the brief file itself was generated. Authoritative source for Manifest briefs[].generated_at cache.",
+      "$ref": "common.schema.json#/$defs/dateTime"
+    },
+    "generated_from_registers_at": {
+      "description": "Reference timestamp when the register set used for brief generation was obtained or fixed. Not a substitute for register_snapshot_hash; tracks the generation-source time.",
+      "$ref": "common.schema.json#/$defs/dateTime"
+    },
+    "brief_scope": {
+      "$ref": "#/$defs/briefScope"
+    },
+    "source_mtg_session_ids": {
+      "$ref": "#/$defs/sourceMtgSessionIdList"
+    },
+    "register_snapshot_hash": {
+      "$ref": "#/$defs/registerSnapshotHash"
+    },
+    "extensions": {
+      "$ref": "common.schema.json#/$defs/extensions"
+    }
+  },
+  "unevaluatedProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "brief_scope"
+        ],
+        "properties": {
+          "brief_scope": {
+            "const": "mtg_session"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "source_mtg_session_ids": {
+            "maxItems": 1
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "briefScope": {
+      "type": "string",
+      "enum": [
+        "mtg_session",
+        "diagnosis_cycle"
+      ],
+      "description": "Whether the brief covers a single MTG session or a diagnosis cycle spanning one or more MTG sessions."
+    },
+    "sourceMtgSessionIdList": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/mtgSessionId"
+      },
+      "description": "MTG session IDs that sourced this brief. Exactly one when brief_scope is mtg_session; one or more when diagnosis_cycle."
+    },
+    "registerSnapshotHash": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional opaque register snapshot hash value. Hash algorithm, source material, ordering, canonicalization, and encoding are intentionally unspecified in v0.1."
+    }
+  }
+}
