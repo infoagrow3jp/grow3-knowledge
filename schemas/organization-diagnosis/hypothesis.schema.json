@@ -85,6 +85,7 @@
     },
     "counterEvidenceReview": {
       "type": "object",
+      "description": "Counter-evidence review records that review was performed, not that counter-evidence exists. When status is found, the identified counter-evidence is tracked via reviewed_sources (traceable source identifiers) together with note; no separate counter-evidence ID field is defined in v0.1.",
       "required": [
         "status",
         "reviewed_sources",
@@ -99,11 +100,11 @@
           "items": {
             "type": "string"
           },
-          "description": "Sources reviewed for counter-evidence. Empty array only when status is not_reviewed."
+          "description": "Traceable sources reviewed for counter-evidence (Evidence ID strings, transcript references, or other source identifiers). When status is found, record where counter-evidence was identified (minItems 1). When status is none_found_in_reviewed_sources, record the reviewed scope (minItems 1). When status is not_reviewed, must be empty. Rejected Evidence used as counter-evidence is a validator rejection."
         },
         "note": {
           "type": "string",
-          "description": "Counter-evidence review note. Empty string is allowed."
+          "description": "Counter-evidence review note. When status is found, may describe the counter-evidence finding alongside reviewed_sources. Empty string is allowed."
         }
       },
       "allOf": [
