@@ -341,6 +341,46 @@
   - Markdown本文構造を機械検査する必要が生じる。
   - frontmatter parserの正式実装を決定する。
 
+### DEC-015｜organization-diagnosis validator v0.1の思想層凍結と実装境界
+- 日付：2026-07-18
+- 状態：確定
+- 対象：`docs/organization-diagnosis_validator設計メモ_v0.1.md`、将来のorganization-diagnosis validator実装境界
+- 決定：
+  1. validator設計メモv0.1の思想層をfrozenとする。
+  2. 文書全体は実装パラメータ確定までdraftとする。
+  3. パラメータ層はimplementation-time decisionとする。
+  4. 確定済み100責務をv0.1実装対象とする。
+  5. NJ-01〜NJ-09はv0.1実装対象外とする。
+  6. validatorは独立Pythonスクリプトとして実装する。
+  7. pre-commitへ連携しない。
+  8. validator全体三値（PASS／FAIL／UNVERIFIABLE）、rule evaluation outcome（適合／違反／検査不能／非該当／未実施）、finding emissionを分離する。
+  9. 思想層は実装から変更しない。
+  10. 思想層の変更が必要な場合は新しい設計判断を経る。
+  11. machine-readableなJSON結果を出力する（正式schemaは実装段階）。
+  12. 架空fixture検証後に実案件で検証する。
+- 理由：
+  - 判断前の論点をコードで先取りしないため。
+  - 設計が実装から逆流して決まることを防ぐため。
+  - リポジトリ検品と顧客データ検証を分離するため。
+  - Dropbox等の外部filesystem依存をpre-commitへ持ち込まないため。
+  - 思想を安定させつつ、実装でしか決められないパラメータを残すため。
+  - 文書全体の完成状態と思想層の凍結状態を分ける方が正確なため。
+- 採用しなかった案：
+  - NJを含む109項目すべてをv0.1で実装する案。
+  - validatorをpre-commitへ組み込む案。
+  - rule evaluationをPASS／FAIL／UNVERIFIABLEの三値だけで表現する案。
+  - CLIやJSON schemaを実装前にすべて固定する案。
+  - WARNを0件にしてから凍結する案。
+  - 意図的に残したパラメータ層のWARN 17件を例外台帳へ即時登録し、文書全体をfrozenにする案。
+    - 不採用理由：例外台帳の識別粒度が決まっていない。凍結文書の当該表記を一括例外化すると検品を弱めるため。文書全体の完成状態と思想層の凍結状態を分ける方が正確なため。
+- 見直し条件：
+  - 実装で思想層の矛盾が発見された場合。
+  - 初弾実案件で責務不足または過剰検査が判明した場合。
+  - Dropbox等の外部filesystem挙動により実行方式の変更が必要になった場合。
+  - NJ-01〜NJ-09のいずれかを採用する場合。
+  - 他ツールからvalidatorを呼び出す正式契約が必要になった場合。
+  - 実装パラメータが確定し、文書全体をfrozenへ移行する場合。
+
 ## 2026-07-11 AI運用の判断基準を grow3-judgment スキルとして確立
 1. 承認済み最新版を正とし、依頼範囲外を善意で変更しない（第0原則）。
    改善案は本文反映ではなく別途提案とする。
