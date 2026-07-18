@@ -66,23 +66,40 @@ load_registry() {
 
   while IFS= read -r raw_line || [ -n "$raw_line" ]; do
     line_no=$((line_no + 1))
+    # コメント行・空行（空白のみ）はスキップ
     [[ "$raw_line" =~ ^[[:space:]]*# ]] && continue
     [[ -z "${raw_line//[[:space:]]/}" ]] && continue
 
-    local rel_path expected class exact_line rest
+    local tab_count rel_path expected class reason exact_line rest
+    tab_count=$(printf '%s' "$raw_line" | awk -F '\t' '{print NF-1}')
+    if [ "${tab_count:-0}" -lt 4 ]; then
+      report FAIL "$REGISTRY" "台帳エラー：列不足（行${line_no}）"
+      registry_fail=1
+      continue
+    fi
+
+    # 最初の4個のTABで5論理列へ分解（exact_lineは4個目以降の全体）
     rel_path="${raw_line%%$'\t'*}"
     rest="${raw_line#*$'\t'}"
     expected="${rest%%$'\t'*}"
     rest="${rest#*$'\t'}"
     class="${rest%%$'\t'*}"
+    rest="${rest#*$'\t'}"
+    reason="${rest%%$'\t'*}"
     exact_line="${rest#*$'\t'}"
     rel_path="${rel_path%%$'\r'}"
     expected="${expected%%$'\r'}"
     class="${class%%$'\r'}"
+    reason="${reason%%$'\r'}"
     exact_line="${exact_line%%$'\r'}"
 
-    if [ -z "$rel_path" ] || [ -z "$expected" ] || [ -z "$class" ] || [ -z "$exact_line" ]; then
-      report FAIL "$REGISTRY" "台帳エラー：列不足（行${line_no}）"
+    if [ -z "$rel_path" ]; then
+      report FAIL "$REGISTRY" "台帳エラー：pathが空です（行${line_no}）"
+      registry_fail=1
+      continue
+    fi
+    if [ -z "$expected" ]; then
+      report FAIL "$REGISTRY" "台帳エラー：expected_countが空です（行${line_no}）"
       registry_fail=1
       continue
     fi
@@ -91,8 +108,28 @@ load_registry() {
       registry_fail=1
       continue
     fi
+    if [ -z "$class" ]; then
+      report FAIL "$REGISTRY" "台帳エラー：classificationが空です（行${line_no}）"
+      registry_fail=1
+      continue
+    fi
     if ! [[ "$class" =~ ^(${VALID_CLASSIFICATIONS})$ ]]; then
       report FAIL "$REGISTRY" "台帳エラー：classificationが不正（行${line_no}：${class}）"
+      registry_fail=1
+      continue
+    fi
+    if [[ "$reason" =~ ^[[:space:]]*$ ]]; then
+      report FAIL "$REGISTRY" "台帳エラー：reasonが空です（行${line_no}）"
+      registry_fail=1
+      continue
+    fi
+    if [ -z "$exact_line" ]; then
+      report FAIL "$REGISTRY" "台帳エラー：exact_lineが空です（行${line_no}）"
+      registry_fail=1
+      continue
+    fi
+    if [[ "$exact_line" == *"★★"* ]] || [[ "$exact_line" == *"XXX"* ]]; then
+      report FAIL "$REGISTRY" "台帳エラー：exact_lineにhard検出語が含まれます（行${line_no}）"
       registry_fail=1
       continue
     fi
@@ -192,15 +229,24 @@ check_mitei_lines() {
 }
 
 check_stale_registry_entries() {
-  local key rel exact found
+  local key rel exact found expected abs
   for key in "${!REG_EXPECTED[@]}"; do
     rel="${key%%$'\t'*}"
     exact="${key#*$'\t'}"
-    local abs="$REPO_ROOT/$rel"
-    [ -f "$abs" ] || continue
+    expected="${REG_EXPECTED[$key]}"
+    abs="$REPO_ROOT/$rel"
+    if [ ! -f "$abs" ]; then
+      report FAIL "$REGISTRY" "台帳エラー：登録先ファイルが存在しません（${rel}）"
+      continue
+    fi
     found=$(count_prose_exact_line "$abs" "$exact")
-    if [ "${found:-0}" -eq 0 ]; then
-      report WARN "$REGISTRY" "台帳陳腐化：登録行がファイルに存在しません（${rel}）"
+    found="${found:-0}"
+    if [ "$found" -eq 0 ]; then
+      report FAIL "$REGISTRY" "台帳エラー：登録行が本文に存在しません（${rel}）"
+    elif [ "$found" -lt "$expected" ]; then
+      report FAIL "$REGISTRY" "台帳エラー：実件数がexpected_count未満です（${rel}：${found}/${expected}）"
+    elif [ "$found" -gt "$expected" ]; then
+      report FAIL "$REGISTRY" "台帳エラー：実件数がexpected_countを超過しています（${rel}：${found}/${expected}）"
     fi
   done
 }
@@ -227,7 +273,9 @@ else
     fi
   done
 fi
-[ ${#TARGETS[@]} -eq 0 ] && { echo "検査対象がありません"; exit 0; }
+if [ ${#TARGETS[@]} -eq 0 ]; then
+  echo "検査対象がありません"
+fi
 
 get_text() {
   case "$1" in
@@ -260,86 +308,89 @@ get_doc_status() {
 
 BRAND_COLORS="0F3D96|EEF3FA|1F2937|E5E7EB|FFFFFF|000000|FFF|000"
 
-for f in "${TARGETS[@]}"; do
-  TEXT=$(get_text "$f")
-  PROSE_TEXT=$(printf '%s\n' "$TEXT" | strip_template_and_fences)
-  DOC_STATUS=$(get_doc_status "$f")
-  REL_PATH=$(normalize_rel_path "$f")
-  if [ "$DOC_STATUS" = "draft" ] || [ "$DOC_STATUS" = "reviewed" ]; then
-    UNCERTAIN_LEVEL=WARN
-  else
-    UNCERTAIN_LEVEL=FAIL
-  fi
+if [ ${#TARGETS[@]} -gt 0 ]; then
+  for f in "${TARGETS[@]}"; do
+    TEXT=$(get_text "$f")
+    PROSE_TEXT=$(printf '%s\n' "$TEXT" | strip_template_and_fences)
+    DOC_STATUS=$(get_doc_status "$f")
+    REL_PATH=$(normalize_rel_path "$f")
+    if [ "$DOC_STATUS" = "draft" ] || [ "$DOC_STATUS" = "reviewed" ]; then
+      UNCERTAIN_LEVEL=WARN
+    else
+      UNCERTAIN_LEVEL=FAIL
+    fi
 
-  # ===== FAIL（出荷不可） =====
-  if echo "$TEXT" | grep -Eq "30％?台.{0,20}5％?台|30%台.{0,20}5%台"; then
-    report FAIL "$f" "公開禁止事例の疑い：離職率30%台→5%台の数値パターン"
-  fi
-  NEAR_HIT=$(printf '%s\n' "$TEXT" | awk '
-    {
-      if (index($0, "介護") > 0) k[NR] = 1
-      if (index($0, "離職率") > 0) r[NR] = 1
-    }
-    END {
-      for (a in k) {
-        for (b in r) {
-          d = (a > b) ? a - b : b - a
-          if (d <= 80) { print a "/" b; exit }
+    # ===== FAIL（出荷不可） =====
+    if echo "$TEXT" | grep -Eq "30％?台.{0,20}5％?台|30%台.{0,20}5%台"; then
+      report FAIL "$f" "公開禁止事例の疑い：離職率30%台→5%台の数値パターン"
+    fi
+    NEAR_HIT=$(printf '%s\n' "$TEXT" | awk '
+      {
+        if (index($0, "介護") > 0) k[NR] = 1
+        if (index($0, "離職率") > 0) r[NR] = 1
+      }
+      END {
+        for (a in k) {
+          for (b in r) {
+            d = (a > b) ? a - b : b - a
+            if (d <= 80) { print a "/" b; exit }
+          }
         }
       }
-    }
-  ')
-  if [ -n "$NEAR_HIT" ]; then
-    report FAIL "$f" "公開禁止事例の疑い：「介護」と「離職率」が近接共起（前後80行以内・行${NEAR_HIT}）"
-  fi
-
-  # 「未確定」：行単位＋台帳（draft/reviewedでも未登録はFAIL）
-  check_mitei_lines "$f" "$REL_PATH" "$UNCERTAIN_LEVEL"
-
-  # その他未確定語：従来どおり（台帳対象外）
-  for kw in "【要確認】" "TODO" "仮置き"; do
-    if echo "$PROSE_TEXT" | grep -qF "$kw"; then
-      report "$UNCERTAIN_LEVEL" "$f" "未確定表記が残存：${kw}"
+    ')
+    if [ -n "$NEAR_HIT" ]; then
+      report FAIL "$f" "公開禁止事例の疑い：「介護」と「離職率」が近接共起（前後80行以内・行${NEAR_HIT}）"
     fi
-  done
-  for kw in "★★" "XXX"; do
-    if echo "$PROSE_TEXT" | grep -qF "$kw"; then
-      report FAIL "$f" "未確定表記が残存：${kw}"
-    fi
-  done
 
-  # ===== WARN（要レビュー） =====
-  case "$f" in
-    *.html|*.htm|*.css|*.js|*.svg)
-      OFFBRAND=$(grep -oiE "#[0-9a-f]{6}|#[0-9a-f]{3}\b" "$f" 2>/dev/null \
-        | tr 'a-f' 'A-F' | sed 's/#//' | sort -u \
-        | grep -vE "^(${BRAND_COLORS})$" | head -5)
-      if [ -n "$OFFBRAND" ]; then
-        report WARN "$f" "ブランド外カラーコード：$(echo $OFFBRAND | tr '\n' ' ')（診断ツール4象限色なら対象外・要目視）"
-      fi ;;
-  esac
-  case "$f" in
-    *.md|*.html|*.htm|*.txt)
-      LINES=$(grep -nE "、[[:space:]]*$" "$f" 2>/dev/null | cut -d: -f1 | head -10 | tr '\n' ',')
-      [ -n "$LINES" ] && report WARN "$f" "改行直前の読点：行 ${LINES%,}"
-      for w in "寄り添" "最大化" "変容を促" "本質的な価値" "唯一無二"; do
-        if grep -qF "$w" "$f" 2>/dev/null; then
-          report WARN "$f" "AI語候補：「${w}」（文脈上必要なら問題なし）"
-        fi
-      done ;;
-  esac
-  case "$f" in
-    *.html|*.htm)
-      for tag in div section article main; do
-        open_n=$(grep -oiE "<${tag}([[:space:]/>])" "$f" 2>/dev/null | wc -l | tr -d ' ')
-        close_n=$(grep -oiE "</${tag}[[:space:]]*>" "$f" 2>/dev/null | wc -l | tr -d ' ')
-        if [ "${open_n:-0}" != "${close_n:-0}" ]; then
-          report WARN "$f" "HTMLタグ個数不一致：<${tag}> 開${open_n} / 閉${close_n}（入れ子誤りは未検出・コメント内誤検知ありうる）"
-        fi
-      done ;;
-  esac
-done
+    # 「未確定」：行単位＋台帳（draft/reviewedでも未登録はFAIL）
+    check_mitei_lines "$f" "$REL_PATH" "$UNCERTAIN_LEVEL"
 
+    # その他未確定語：従来どおり（台帳対象外）
+    for kw in "【要確認】" "TODO" "仮置き"; do
+      if echo "$PROSE_TEXT" | grep -qF "$kw"; then
+        report "$UNCERTAIN_LEVEL" "$f" "未確定表記が残存：${kw}"
+      fi
+    done
+    for kw in "★★" "XXX"; do
+      if echo "$PROSE_TEXT" | grep -qF "$kw"; then
+        report FAIL "$f" "未確定表記が残存：${kw}"
+      fi
+    done
+
+    # ===== WARN（要レビュー） =====
+    case "$f" in
+      *.html|*.htm|*.css|*.js|*.svg)
+        OFFBRAND=$(grep -oiE "#[0-9a-f]{6}|#[0-9a-f]{3}\b" "$f" 2>/dev/null \
+          | tr 'a-f' 'A-F' | sed 's/#//' | sort -u \
+          | grep -vE "^(${BRAND_COLORS})$" | head -5)
+        if [ -n "$OFFBRAND" ]; then
+          report WARN "$f" "ブランド外カラーコード：$(echo $OFFBRAND | tr '\n' ' ')（診断ツール4象限色なら対象外・要目視）"
+        fi ;;
+    esac
+    case "$f" in
+      *.md|*.html|*.htm|*.txt)
+        LINES=$(grep -nE "、[[:space:]]*$" "$f" 2>/dev/null | cut -d: -f1 | head -10 | tr '\n' ',')
+        [ -n "$LINES" ] && report WARN "$f" "改行直前の読点：行 ${LINES%,}"
+        for w in "寄り添" "最大化" "変容を促" "本質的な価値" "唯一無二"; do
+          if grep -qF "$w" "$f" 2>/dev/null; then
+            report WARN "$f" "AI語候補：「${w}」（文脈上必要なら問題なし）"
+          fi
+        done ;;
+    esac
+    case "$f" in
+      *.html|*.htm)
+        for tag in div section article main; do
+          open_n=$(grep -oiE "<${tag}([[:space:]/>])" "$f" 2>/dev/null | wc -l | tr -d ' ')
+          close_n=$(grep -oiE "</${tag}[[:space:]]*>" "$f" 2>/dev/null | wc -l | tr -d ' ')
+          if [ "${open_n:-0}" != "${close_n:-0}" ]; then
+            report WARN "$f" "HTMLタグ個数不一致：<${tag}> 開${open_n} / 閉${close_n}（入れ子誤りは未検出・コメント内誤検知ありうる）"
+          fi
+        done ;;
+    esac
+  done
+fi
+
+# 本文検査対象が0件でも台帳全登録の整合検査は必ず実行する
 check_stale_registry_entries
 
 echo "----------------------------------------"

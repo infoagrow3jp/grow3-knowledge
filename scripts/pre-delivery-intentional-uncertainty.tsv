@@ -1,6 +1,8 @@
 # 意図的に残す「未確定」表記の監査台帳（完全一致・行番号非依存）
-# 形式: relative_path<TAB>expected_count<TAB>classification<TAB>exact_line
+# 形式: path<TAB>expected_count<TAB>classification<TAB>reason<TAB>exact_line
+# parser: 最初の4個のTABを区切りとし、残り全体をexact_lineとする（exact_lineにTAB可）
 # classification: history | data_state | deferred_v0.2 | implementation_detail | meta_check
+# reason: 例外を残す具体的理由。TAB・改行禁止。trim後空白は禁止。
 #
 # 分類基準（論点のテーマではなく、exact lineを例外として残す現在の理由）:
 # - history: 後続の凍結文書またはDECISIONで解決済みだが、古い文書内に当時の未確定状態を残している行
@@ -8,34 +10,34 @@
 # - implementation_detail: 最新の設計判断が具体化を実装段階へ意図的に委ねている事項に限る
 
 # --- DECISIONS.md ---
-DECISIONS.md	1	history	  - **未確定事項**
-DECISIONS.md	1	history	  - §23の未確定16項目を設計メモ段階で善意に確定する案。
+DECISIONS.md	1	history	DEC-008の判断記録内の項目見出しとして当時の記載を逐語保持するため	  - **未確定事項**
+DECISIONS.md	1	history	設計メモ段階で善意確定する案を不採用とした経緯を改変せず残すため	  - §23の未確定16項目を設計メモ段階で善意に確定する案。
 
 # --- docs/organization-diagnosis_設計メモ_v0.1.md ---
-docs/organization-diagnosis_設計メモ_v0.1.md	1	history	改訂履歴: v0.1（初版）→ v0.1改訂（Evidence型別項目、source_form統一、occurrence_pattern／corroborated event分離、Hypothesis状態遷移・改訂操作、verification_action、§23未確定16項目統合）→ v0.1確定（Evidence型別管理、解釈の由来管理、Hypothesis状態遷移、因果表現の制約、秘匿性継承、validatorと人間確認の役割分担、未確定16項目のschema段階への送出）
-docs/organization-diagnosis_設計メモ_v0.1.md	1	data_state	| 未確定・参考 | screening_only | DRAFT、TO_CONFIRM |
-docs/organization-diagnosis_設計メモ_v0.1.md	2	history	| status | 状態（語彙・遷移は§23未確定） |
-docs/organization-diagnosis_設計メモ_v0.1.md	1	deferred_v0.2	§23の未確定事項として扱います。
-docs/organization-diagnosis_設計メモ_v0.1.md	1	history	v0.1では、新たな独立registerを確定せず、**内部診断ブリーフ内の構造化リスト**として扱う案とします（独立register化は§23未確定）。
-docs/organization-diagnosis_設計メモ_v0.1.md	1	deferred_v0.2	### 未確定事項（v0.1設計メモ時点・本節に統合）
-docs/organization-diagnosis_設計メモ_v0.1.md	1	deferred_v0.2	- Hypothesis更新はインプレースか、新ID＋superseded_byか（設計上は後者推奨、ファイル運用は未確定）
-docs/organization-diagnosis_設計メモ_v0.1.md	1	deferred_v0.2	- 自動取込／手動エクスポート／将来MCP等は未確定
+docs/organization-diagnosis_設計メモ_v0.1.md	1	history	設計メモの改訂履歴に当時の§23未確定表記を逐語保存するため	改訂履歴: v0.1（初版）→ v0.1改訂（Evidence型別項目、source_form統一、occurrence_pattern／corroborated event分離、Hypothesis状態遷移・改訂操作、verification_action、§23未確定16項目統合）→ v0.1確定（Evidence型別管理、解釈の由来管理、Hypothesis状態遷移、因果表現の制約、秘匿性継承、validatorと人間確認の役割分担、未確定16項目のschema段階への送出）
+docs/organization-diagnosis_設計メモ_v0.1.md	1	data_state	screening_only等の現時点データ状態を表上で正確に示すため	| 未確定・参考 | screening_only | DRAFT、TO_CONFIRM |
+docs/organization-diagnosis_設計メモ_v0.1.md	2	history	状態語彙が当時未確定だった表セルを履歴として保持するため	| status | 状態（語彙・遷移は§23未確定） |
+docs/organization-diagnosis_設計メモ_v0.1.md	1	deferred_v0.2	v0.1で確定せず§23へ送った方針を本文上で明示するため	§23の未確定事項として扱います。
+docs/organization-diagnosis_設計メモ_v0.1.md	1	history	後続のschema設計で独立register化が確定したため、設計メモ時点の暫定判断を履歴として保持するため	v0.1では、新たな独立registerを確定せず、**内部診断ブリーフ内の構造化リスト**として扱う案とします（独立register化は§23未確定）。
+docs/organization-diagnosis_設計メモ_v0.1.md	1	deferred_v0.2	v0.1時点の未確定事項節見出しを後続版送付の標識として残すため	### 未確定事項（v0.1設計メモ時点・本節に統合）
+docs/organization-diagnosis_設計メモ_v0.1.md	1	deferred_v0.2	Hypothesis更新方式をv0.2候補へ送った事項を明示するため	- Hypothesis更新はインプレースか、新ID＋superseded_byか（設計上は後者推奨、ファイル運用は未確定）
+docs/organization-diagnosis_設計メモ_v0.1.md	1	deferred_v0.2	取込経路をv0.1対象外として後続版へ送った事項を明示するため	- 自動取込／手動エクスポート／将来MCP等は未確定
 
 # --- docs/organization-diagnosis_schema設計メモ_v0.1.md ---
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	history	改訂履歴: v0.1（初版・設計メモ§23未確定16項目のうちschema開始に必要な10判断を確定）→ v0.1整合修正（ID規則・loop_candidate分離・null/applicability整理・DRAFT Hypothesis・JSON Schema共通契約・出典追跡）→ v0.1確定（occurrence_date正本整理・loop出力条件明文化）
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	残りは引き続き未確定またはv0.2候補として管理する。
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	history	設計メモ§23未確定16項目のうち、今回確定する10項目：
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	| mtg_pipeline.pyとの自動接続 | 未確定（§22参照） |
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	| 打合せDBとの接続 | 未確定（§22参照） |
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	| 裕司さんによる例外承認の重み付け | 未確定（§22参照） |
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	| 複数MTG時の差分自動生成 | 未確定（§22参照） |
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	- 状態（未実施／実施中／完了／中止）→ §22未確定としてv0.2候補
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	| measured_trendをv0.1に含める | 成立条件が未確定。MEASURED Evidenceは別途扱う |
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	history	- **論点：** 設計メモ§23-6はmtg_pipeline接続を未確定としていたが、
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	implementation_detail	- **v0.1暫定判断：** 手動配置のinput snapshot schemaを定義。pipeline接続は未確定のまま。
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	### 22-6. 引き続き未確定とした事項
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	| mtg_pipeline.py自動接続 | 未確定 |
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	| 打合せDB接続 | 未確定 |
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	| 裕司さん例外承認の重み付け | 未確定 |
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	| 複数MTG差分自動生成 | 未確定 |
-docs/organization-diagnosis_schema設計メモ_v0.1.md	1	meta_check	- [x] 未確定事項を勝手に埋めていない（§4・§22-5）
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	history	schema設計メモの改訂履歴に当時の未確定項目参照を逐語保存するため	改訂履歴: v0.1（初版・設計メモ§23未確定16項目のうちschema開始に必要な10判断を確定）→ v0.1整合修正（ID規則・loop_candidate分離・null/applicability整理・DRAFT Hypothesis・JSON Schema共通契約・出典追跡）→ v0.1確定（occurrence_date正本整理・loop出力条件明文化）
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	schema開始後も残る事項をv0.2候補として管理する旨を明示するため	残りは引き続き未確定またはv0.2候補として管理する。
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	history	§23のうちschema開始で確定した範囲を当時の対比として残すため	設計メモ§23未確定16項目のうち、今回確定する10項目：
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	mtg_pipeline自動接続をv0.1外へ送った表行を明示するため	| mtg_pipeline.pyとの自動接続 | 未確定（§22参照） |
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	打合せDB接続をv0.1外へ送った表行を明示するため	| 打合せDBとの接続 | 未確定（§22参照） |
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	例外承認の重み付けをv0.1外へ送った表行を明示するため	| 裕司さんによる例外承認の重み付け | 未確定（§22参照） |
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	複数MTG差分自動生成をv0.1外へ送った表行を明示するため	| 複数MTG時の差分自動生成 | 未確定（§22参照） |
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	verification状態語彙をv0.2候補へ送った箇条を明示するため	- 状態（未実施／実施中／完了／中止）→ §22未確定としてv0.2候補
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	measured_trend採用条件をv0.1外とした表行を明示するため	| measured_trendをv0.1に含める | 成立条件が未確定。MEASURED Evidenceは別途扱う |
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	history	mtg_pipeline接続が当時未確定だった論点記述を経緯として残すため	- **論点：** 設計メモ§23-6はmtg_pipeline接続を未確定としていたが、
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	implementation_detail	pipeline接続は未確定のまま手動snapshotとする実装境界を示すため	- **v0.1暫定判断：** 手動配置のinput snapshot schemaを定義。pipeline接続は未確定のまま。
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	schema§22-6で後続送付した事項の見出しを明示するため	### 22-6. 引き続き未確定とした事項
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	§22-6表でmtg_pipeline自動接続を後続送付した行を残すため	| mtg_pipeline.py自動接続 | 未確定 |
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	§22-6表で打合せDB接続を後続送付した行を残すため	| 打合せDB接続 | 未確定 |
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	§22-6表で例外承認重み付けを後続送付した行を残すため	| 裕司さん例外承認の重み付け | 未確定 |
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	§22-6表で複数MTG差分自動生成を後続送付した行を残すため	| 複数MTG差分自動生成 | 未確定 |
+docs/organization-diagnosis_schema設計メモ_v0.1.md	1	meta_check	検出対象の保留を推測補完していないことの自己確認行を残すため	- [x] 未確定事項を勝手に埋めていない（§4・§22-5）
