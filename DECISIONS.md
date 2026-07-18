@@ -455,6 +455,65 @@
   - 他ツールからvalidatorを呼び出す正式契約が必要になった場合。
   - 実装パラメータが確定し、文書全体をfrozenへ移行する場合。
 
+### DEC-016｜pre-delivery-check例外台帳v0.1の設計判断を凍結する
+- 日付：2026-07-18
+- 状態：確定
+- 対象：`docs/pre-delivery-check_例外台帳設計メモ_v0.1.md`、`scripts/pre-delivery-check.sh` および例外台帳・回帰testの将来実装境界
+- 決定：
+  1. 設計メモの文書全体は、実装パラメータが未反映のため`status: draft`を維持する。
+  2. 本DECISIONにより、例外台帳v0.1の設計判断を凍結する。実装パラメータは次の実装ゲートで確定する。
+  3. 文書全体がdraftであっても、凍結済み設計判断を実装が黙って変更してはならない。変更が必要な場合は新しい設計判断を経る。
+  4. A群（`soft-uncertainty-term`）の例外台帳は完全一致行方式を継続する。
+  5. 台帳を論理5列 `path / expected_count / classification / reason / exact_line` とする。`exact_line`は4個目のTAB以降をすべて保持する。`reason`は必須とする。
+  6. hard検出区分（`hard-placeholder-symbol-pair`／`hard-placeholder-triple-x`）は例外台帳へ登録できない。台帳読込時に拒否する。
+  7. 台帳の不在、登録先不在、陳腐化、件数不足・超過、重複、不正classification、expected_count不正等をFAILとする。
+  8. pre-commitはGit index上の本文・frontmatter status・既定台帳を同一snapshotとして検査する。明示指定台帳（`PRE_DELIVERY_UNCERTAINTY_REGISTRY`）は指定された実ファイルを読む。
+  9. Stopフック・手動実行はworking tree上の本文・status・例外台帳を検査する。
+  10. staged収集へリネームRを含める（`ACMR`）。本文検査対象が0件でも台帳全体整合を実行する。
+  11. 検出、exact照合、expected_count計数は同一ソース・同一文脈フィルタを使用する。
+  12. 通常成果物はA/B/Cすべてでfenced code blockを原則走査する。「記録形式」節の除外はDECISIONS.mdだけに限定する。
+  13. Office文書（pptx／docx／xlsx）はexact-line台帳の対象外とする。層別statusをcheckerへ実装しない。
+  14. 語彙外表現の検出限界をv0.1の受容済みリスクとする（下記「受容リスク」）。
+  15. DEC-015と同様に、文書状態（draft）と設計判断の凍結を分ける。
+- 理由：
+  - 意図的保留表記を黙認せず、監査可能な狭い例外として管理するため。
+  - 台帳登録行の文言変更、同件数の内容すり替え、既知検出語彙による回避を塞ぐため。
+  - commit対象と検品対象を同一snapshotに揃え、index／working treeの非対称を防ぐため。
+  - hard failureを例外台帳で黙認できないようにするため。
+  - 実装パラメータ確定前に設計判断だけを固定し、実装からの逆流を防ぐため。
+- 採用しなかった案：
+  - ファイル×classification×件数だけで管理する案。
+  - v0.1での安定識別子導入。
+  - fenceへの退避による自己参照回避。
+  - hard検出区分の例外登録。
+  - reason内TABのescape／quote／非TSV化。
+  - 4列台帳の暫定許容。
+  - 単なる文字分断・同義語置換。
+  - 台帳陳腐化をWARNのまま許容する方式。
+  - 層別statusのchecker実装。
+  - 正規化仕様なしでのOffice文書へのexact-line適用。
+- 受容リスク：
+  - v0.1では既知の検出語彙を使用するため、語彙外の同趣旨表現を機械検品だけで完全には検出できない。
+  - この限界はv0.1で受容し、人間レビューとDECISIONによる意味確認を併用する。
+- 見直し条件：
+  - 語彙外表現による実際の検品漏れが発生した場合。
+  - 同義語追加が反復し、語彙保守が不安定になった場合。
+  - 台帳全体整合の性能問題が生じた場合。
+  - exact台帳の追随コストが増大した場合。
+  - reasonへTABを含む任意文字列を安全に保存する必要が生じた場合。
+  - リポジトリ外ファイルを検査対象にする場合。
+  - Office文書の検出基盤を統一する必要が生じた場合。
+  - 実案件で工程区分や検品粒度の違いが判明した場合。
+- 次ゲート：
+  - 次ゲートはpre-delivery-checkの実装ゲートとする。
+  - 実装は現行台帳の事前監査から開始する。
+  - 先行手順：
+    1. 現行台帳を新5列schemaで事前監査する。
+    2. 全既存登録へreasonを付与する。
+    3. 登録先不在・0件・件数不足を確認する。
+    4. classificationを全件再確認する。
+    5. parser・台帳・testを同一commitで切り替える。
+
 ## 2026-07-11 AI運用の判断基準を grow3-judgment スキルとして確立
 1. 承認済み最新版を正とし、依頼範囲外を善意で変更しない（第0原則）。
    改善案は本文反映ではなく別途提案とする。
