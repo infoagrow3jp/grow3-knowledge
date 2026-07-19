@@ -13,7 +13,8 @@ FIXDIR="$REPO_ROOT/_tmp_pdc_test"
 rm -rf "$FIXDIR"
 mkdir -p "$FIXDIR"
 TMPDIR=$(mktemp -d)
-trap 'rm -rf "$TMPDIR" "$FIXDIR"' EXIT
+DEC_E24_BACKUP=""
+trap '[ -n "$DEC_E24_BACKUP" ] && [ -f "$DEC_E24_BACKUP" ] && cp "$DEC_E24_BACKUP" "$REPO_ROOT/DECISIONS.md"; rm -rf "$TMPDIR" "$FIXDIR"' EXIT
 
 PASS=0
 FAILN=0
@@ -85,7 +86,7 @@ status: draft
 EOF
 PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry1_min.tsv" assert_exit0 "2. draft+未登録未確定" "$FIXDIR/draft_unregistered.md"
 
-# 3. コードフェンス内（現行は除外のまま）
+# 3 / E15. fence内A群・frozen → 検出FAIL（旧除外期待の反転）
 cat > "$FIXDIR/fence.md" <<'EOF'
 ---
 status: frozen
@@ -94,9 +95,13 @@ status: frozen
 未確定の例
 ```
 EOF
-PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry1_min.tsv" assert_exit0 "3. コードフェンス内未確定" "$FIXDIR/fence.md"
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry1_min.tsv" \
+  assert_diag "3. E15 fence内A群・frozen→FAIL" 1 \
+  "未確定表記が残存：未確定" \
+  "意図的な未確定表記" \
+  "$FIXDIR/fence.md"
 
-# 4. 記録形式節内（現行は全ファイル除外のまま）
+# 4 / E23. 一般文書の記録形式節内soft・frozen → 検出FAIL
 cat > "$FIXDIR/template_section.md" <<'EOF'
 # サンプル
 
@@ -108,7 +113,93 @@ cat > "$FIXDIR/template_section.md" <<'EOF'
 
 ### DEC-001｜確定済み
 EOF
-PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry1_min.tsv" assert_exit0 "4. 記録形式節内未確定" "$FIXDIR/template_section.md"
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry1_min.tsv" \
+  assert_diag "4. E23 一般文書の記録形式節内→FAIL" 1 \
+  "未確定表記が残存：未確定" \
+  "意図的な未確定表記" \
+  "$FIXDIR/template_section.md"
+
+# 4b / E24. 正本 DECISIONS.md の記録形式節内は除外（陽性回帰）
+# path完全一致 DECISIONS.md だけが対象のため、正本へ一時的に soft を挿入して検証する
+DEC_FILE="$REPO_ROOT/DECISIONS.md"
+DEC_E24_BACKUP="$TMPDIR/DECISIONS.md.e24.bak"
+cp "$DEC_FILE" "$DEC_E24_BACKUP"
+awk '
+  /^## 記録形式[[:space:]]*$/ { print; print ""; print "- 未確定表記の例示"; next }
+  { print }
+' "$DEC_E24_BACKUP" > "$DEC_FILE"
+assert_diag "4b. E24 DECISIONS記録形式節内は除外" 0 \
+  "" \
+  "未確定表記が残存：未確定" \
+  "$DEC_FILE"
+cp "$DEC_E24_BACKUP" "$DEC_FILE"
+DEC_E24_BACKUP=""
+
+# 4b2 / E24-subdir. サブディレクトリ上の DECISIONS.md は記録形式節を除外しない
+mkdir -p "$FIXDIR/subdir"
+cat > "$FIXDIR/subdir/DECISIONS.md" <<'EOF'
+# 派生 DECISIONS（除外対象外）
+
+## 記録形式
+
+- 未確定表記の例示
+
+## 判断ログ
+
+### DEC-001｜確定済み
+- 本文に検出語なし
+EOF
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry1_min.tsv" \
+  assert_diag "4b2. E24-subdir サブdirのDECISIONSは記録形式除外しない" 1 \
+  "未確定表記が残存：未確定" \
+  "意図的な未確定表記" \
+  "$FIXDIR/subdir/DECISIONS.md"
+rm -rf "$FIXDIR/subdir"
+
+# 4c / E16. fence内B群・draft → WARN（exit 0）
+cat > "$FIXDIR/fence_b_draft.md" <<'EOF'
+---
+status: draft
+---
+```
+TODO: fence内
+```
+EOF
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry1_min.tsv" \
+  assert_diag "4c. E16 fence内B群・draft→WARN" 0 \
+  "未確定表記が残存：TODO" \
+  "未確定表記が残存：未確定" \
+  "$FIXDIR/fence_b_draft.md"
+
+# 4d / E17. fence内B群・frozen → FAIL
+cat > "$FIXDIR/fence_b_frozen.md" <<'EOF'
+---
+status: frozen
+---
+```
+TODO: fence内
+```
+EOF
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry1_min.tsv" \
+  assert_diag "4d. E17 fence内B群・frozen→FAIL" 1 \
+  "未確定表記が残存：TODO" \
+  "reasonが空" \
+  "$FIXDIR/fence_b_frozen.md"
+
+# 4e / E18. fence内C群 → 常時FAIL
+cat > "$FIXDIR/fence_c.md" <<'EOF'
+---
+status: draft
+---
+```
+★★要修正
+```
+EOF
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry1_min.tsv" \
+  assert_diag "4e. E18 fence内C群→FAIL" 1 \
+  "未確定表記が残存：★★" \
+  "reasonが空" \
+  "$FIXDIR/fence_c.md"
 
 # 5. 実ファイル3件
 assert_exit0 "5. 実ファイル3件" \
@@ -349,6 +440,31 @@ PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/reason_tab.tsv" \
   "登録行が本文に存在しません" \
   "reasonが空" \
   "$FIXDIR/shift.md"
+
+# 27 / E54. fence外1+fence内1、expected=2 → 登録済みWARN（件数2）
+cat > "$FIXDIR/fence_count.md" <<'EOF'
+---
+status: frozen
+---
+件数確認用の未確定行
+```
+件数確認用の未確定行
+```
+EOF
+printf '%s\n' "${REL_PREFIX}/fence_count.md	2	history	fence内外の件数統一確認	件数確認用の未確定行" > "$TMPDIR/fence_count2.tsv"
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/fence_count2.tsv" \
+  assert_diag "27. E54 fence内外expected=2→OK" 0 \
+  "意図的な未確定表記" \
+  "台帳許可件数を超過|実件数がexpected_countを超過" \
+  "$FIXDIR/fence_count.md"
+
+# 28 / E55. 同条件 expected=1 → 超過FAIL
+printf '%s\n' "${REL_PREFIX}/fence_count.md	1	history	fence内外の件数超過確認	件数確認用の未確定行" > "$TMPDIR/fence_count1.tsv"
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/fence_count1.tsv" \
+  assert_diag "28. E55 fence内外expected=1→超過FAIL" 1 \
+  "台帳許可件数を超過|実件数がexpected_countを超過" \
+  "登録行が本文に存在しません" \
+  "$FIXDIR/fence_count.md"
 
 echo "----------------------------------------"
 echo "テスト結果: 合格 ${PASS}件 / 不合格 ${FAILN}件"

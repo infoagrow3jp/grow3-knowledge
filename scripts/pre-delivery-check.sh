@@ -151,51 +151,62 @@ load_registry() {
   return 0
 }
 
-# コードフェンス／記録形式節を除外した行のうち「未確定」を含む行を NR<TAB>line で出力
+# 「記録形式」節除外はリポジトリ直下の正本 DECISIONS.md のみ。
+# fenced code block は原則走査（区切り行自体はスキップ）。
+apply_record_form_template_filter() {
+  case "$(normalize_rel_path "$1")" in
+    DECISIONS.md) echo 1 ;;
+    *) echo 0 ;;
+  esac
+}
+
+# 記録形式節（DECISIONSのみ）を除いた行のうち「未確定」を含む行を NR<TAB>line で出力
+# fence内も検出対象（検出・exact照合・件数計数と同一フィルタ）
 scan_mitei_prose_lines() {
-  awk '
-    BEGIN { in_fence = 0; in_template = 0 }
+  local file="$1" apply_template
+  apply_template=$(apply_record_form_template_filter "$file")
+  awk -v apply_template="$apply_template" '
+    BEGIN { in_template = 0 }
     {
       line = $0
       sub(/\r$/, "", line)
-      if (line ~ /^```/) { in_fence = (in_fence == 0) ? 1 : 0; next }
-      if (in_fence) next
-      if (line ~ /^## 記録形式[[:space:]]*$/) { in_template = 1; next }
-      if (in_template && line ~ /^## /) { in_template = 0 }
-      if (in_template) next
+      if (line ~ /^```/) next
+      if (apply_template && line ~ /^## 記録形式[[:space:]]*$/) { in_template = 1; next }
+      if (apply_template && in_template && line ~ /^## /) { in_template = 0 }
+      if (apply_template && in_template) next
       if (index(line, "未確定") > 0) print NR "\t" line
     }
-  ' "$1"
+  ' "$file"
 }
 
-# 除外節を除いた本文テキスト（他キーワード用・従来互換）
+# B/C群用：fenceは残し、記録形式節のみ DECISIONS.md で除外
 strip_template_and_fences() {
-  awk '
-    BEGIN { in_fence = 0; in_template = 0 }
+  local apply_template="${1:-0}"
+  awk -v apply_template="$apply_template" '
+    BEGIN { in_template = 0 }
     {
       line = $0
-      if (line ~ /^```/) { in_fence = (in_fence == 0) ? 1 : 0; next }
-      if (in_fence) next
-      if (line ~ /^## 記録形式[[:space:]]*$/) { in_template = 1; next }
-      if (in_template && line ~ /^## /) { in_template = 0 }
-      if (in_template) next
+      sub(/\r$/, "", line)
+      if (apply_template && line ~ /^## 記録形式[[:space:]]*$/) { in_template = 1; next }
+      if (apply_template && in_template && line ~ /^## /) { in_template = 0 }
+      if (apply_template && in_template) next
       print line
     }
   '
 }
 
 count_prose_exact_line() {
-  local file="$1" exact="$2"
-  awk -v target="$exact" '
-    BEGIN { in_fence = 0; in_template = 0; n = 0 }
+  local file="$1" exact="$2" apply_template
+  apply_template=$(apply_record_form_template_filter "$file")
+  awk -v target="$exact" -v apply_template="$apply_template" '
+    BEGIN { in_template = 0; n = 0 }
     {
       line = $0
       sub(/\r$/, "", line)
-      if (line ~ /^```/) { in_fence = (in_fence == 0) ? 1 : 0; next }
-      if (in_fence) next
-      if (line ~ /^## 記録形式[[:space:]]*$/) { in_template = 1; next }
-      if (in_template && line ~ /^## /) { in_template = 0 }
-      if (in_template) next
+      if (line ~ /^```/) next
+      if (apply_template && line ~ /^## 記録形式[[:space:]]*$/) { in_template = 1; next }
+      if (apply_template && in_template && line ~ /^## /) { in_template = 0 }
+      if (apply_template && in_template) next
       if (line == target) n++
     }
     END { print n }
@@ -311,7 +322,7 @@ BRAND_COLORS="0F3D96|EEF3FA|1F2937|E5E7EB|FFFFFF|000000|FFF|000"
 if [ ${#TARGETS[@]} -gt 0 ]; then
   for f in "${TARGETS[@]}"; do
     TEXT=$(get_text "$f")
-    PROSE_TEXT=$(printf '%s\n' "$TEXT" | strip_template_and_fences)
+    PROSE_TEXT=$(printf '%s\n' "$TEXT" | strip_template_and_fences "$(apply_record_form_template_filter "$f")")
     DOC_STATUS=$(get_doc_status "$f")
     REL_PATH=$(normalize_rel_path "$f")
     if [ "$DOC_STATUS" = "draft" ] || [ "$DOC_STATUS" = "reviewed" ]; then
