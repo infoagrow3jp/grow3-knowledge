@@ -485,18 +485,23 @@ reset_test_index() {
 }
 
 # $1=name $2=expected_code $3=must $4=must_not $5=registry_mode(explicit|default)
-# $6=optional: "renames_false" なら checker プロセスにだけ diff.renames=false を注入
+# $6=optional 実行profile:
+#   renames_false … checkerプロセスにだけ diff.renames=false を注入（E48〜E50）
+#   office_tmp    … checkerプロセスにだけ suite専用TMPDIRを注入（E56〜E59）
 assert_staged() {
   local name="$1" expect_code="$2" must="$3" must_not="$4" regmode="$5"
-  local renames_env="${6:-}"
+  local profile="${6:-}"
   local code=0
   local -a run_env=( "GIT_INDEX_FILE=$TEST_INDEX" )
-  if [ "$renames_env" = "renames_false" ]; then
+  if [ "$profile" = "renames_false" ]; then
     run_env+=(
       "GIT_CONFIG_COUNT=1"
       "GIT_CONFIG_KEY_0=diff.renames"
       "GIT_CONFIG_VALUE_0=false"
     )
+  fi
+  if [ "$profile" = "office_tmp" ]; then
+    run_env+=( "TMPDIR=$OFFICE_TEST_TMPROOT" )
   fi
   if [ "$regmode" = "default" ]; then
     OUT=$(env -u PRE_DELIVERY_UNCERTAINTY_REGISTRY "${run_env[@]}" \
@@ -778,13 +783,84 @@ else
   FAILN=$((FAILN + 1))
 fi
 
-# 44 / 実index非破壊確認：staged系test（E48〜E50含む）前後で実indexが不変
-REAL_INDEX_AFTER=$(real_index_hash)
-if [ "$REAL_INDEX_BEFORE" = "$REAL_INDEX_AFTER" ]; then
-  echo "OK: 44. 実index非破壊（staged系test前後で不変）"
+# =============================================================
+# staged Office index検査系（E56〜E60）
+# fixtureは固定base64リテラルから復元した最小ZIP（zip/Python等の追加依存なし）。
+# checker子processにはsuite専用TMPDIRを渡し、E60で一時dir残骸0件を確認する。
+# 一時indexのみ操作し、working tree側fixtureは_tmp_pdc_test配下だけを使う。
+# =============================================================
+OFFICE_TEST_TMPROOT="$TMPDIR/checker-office-tmp"
+mkdir -p "$OFFICE_TEST_TMPROOT"
+
+# 正常ZIP fixture（member: content.xml / 内容: <doc><t>office fixture clean</t></doc>）
+OFFICE_CLEAN_ZIP_B64='UEsDBBQAAAAIANCx81wTT2tsKAAAACgAAAALAAAAY29udGVudC54bWyzSclPtrMpsctPS8tMTlVIy6woKS1KVUjOSU3Ms9EvsbPRByng5QIAUEsBAhQAFAAAAAgA0LHzXBNPa2woAAAAKAAAAAsAAAAAAAAAAAAAAAAAAAAAAGNvbnRlbnQueG1sUEsFBgAAAAABAAEAOQAAAFEAAAAAAA=='
+# hard違反ZIP fixture（member: content.xml / 内容: <doc><t>★★</t></doc>）
+OFFICE_HARD_ZIP_B64='UEsDBBQAAAAIANCx81yNi7CsGgAAABoAAAALAAAAY29udGVudC54bWyzSclPtrMpsXs0o/XRjFYb/RI7G32QEC8XAFBLAQIUABQAAAAIANCx81yNi7CsGgAAABoAAAALAAAAAAAAAAAAAAAAAAAAAABjb250ZW50LnhtbFBLBQYAAAAAAQABADkAAABDAAAAAAA='
+
+# $1=rel_path $2=base64 → 一時indexへOffice blobを登録（実index・WTの正本は触らない）
+stage_office_blob() {
+  local rel="$1" b64="$2" blob
+  reset_test_index
+  blob=$(printf '%s' "$b64" | base64 -d | git -C "$REPO_ROOT" hash-object -w --stdin)
+  git_tmp update-index --add --cacheinfo "100644,${blob},${rel}"
+}
+
+# 44 / E56. index正常ZIP／WTは★★入り有効ZIP → indexだけを検査し exit 0
+stage_office_blob "_tmp_pdc_test/e56.pptx" "$OFFICE_CLEAN_ZIP_B64"
+printf '%s' "$OFFICE_HARD_ZIP_B64" | base64 -d > "$FIXDIR/e56.pptx"
+assert_staged "44. E56 staged Office index正常/WT違反→exit0" 0 \
+  "対象 1ファイル" \
+  "stagedモードのOffice文書検査は未対応|stagedのOffice文書からXMLを抽出できません|未確定表記が残存：★★|検査対象がありません" \
+  default \
+  office_tmp
+
+# 45 / E57. index★★入りZIP／WTは正常ZIP → index側本文のhard FAIL
+stage_office_blob "_tmp_pdc_test/e57.docx" "$OFFICE_HARD_ZIP_B64"
+printf '%s' "$OFFICE_CLEAN_ZIP_B64" | base64 -d > "$FIXDIR/e57.docx"
+assert_staged "45. E57 staged Office index違反/WT正常→hard FAIL" 1 \
+  "_tmp_pdc_test/e57.docx.*未確定表記が残存：★★" \
+  "stagedモードのOffice文書検査は未対応|stagedのOffice文書からXMLを抽出できません|検査対象がありません" \
+  default \
+  office_tmp
+
+# 46 / E58. index正常ZIP／WT同名ファイル不在 → WTなしでも検査成立 exit 0
+stage_office_blob "_tmp_pdc_test/e58.xlsx" "$OFFICE_CLEAN_ZIP_B64"
+rm -f "$FIXDIR/e58.xlsx"
+assert_staged "46. E58 staged Office WT不在でも検査→exit0" 0 \
+  "対象 1ファイル" \
+  "stagedモードのOffice文書検査は未対応|stagedのOffice文書からXMLを抽出できません|検査対象がありません|未確定表記が残存" \
+  default \
+  office_tmp
+
+# 47 / E59. indexが非ZIP blob → 抽出失敗の明示FAIL（診断に実際の非0 rcを含む）
+reset_test_index
+E59_BLOB=$(printf 'this is not a zip file\n' | git -C "$REPO_ROOT" hash-object -w --stdin)
+git_tmp update-index --add --cacheinfo "100644,${E59_BLOB},_tmp_pdc_test/e59.pptx"
+rm -f "$FIXDIR/e59.pptx"
+assert_staged "47. E59 staged Office 非ZIP→抽出失敗FAIL" 1 \
+  "_tmp_pdc_test/e59.pptx.*stagedのOffice文書からXMLを抽出できません（unzip rc=[1-9][0-9]*）" \
+  "stagedモードのOffice文書検査は未対応|検査対象がありません|未確定表記が残存：★★" \
+  default \
+  office_tmp
+
+# 48 / E60. E56〜E59（exit 0経路とexit 1経路の両方）後に一時dir残骸が0件
+OFFICE_TMP_LEFT=$(find "$OFFICE_TEST_TMPROOT" -mindepth 1 -maxdepth 1 -name 'pdc-office-*' 2>/dev/null | wc -l | tr -d ' ')
+if [ "${OFFICE_TMP_LEFT:-0}" -eq 0 ]; then
+  echo "OK: 48. E60 Office一時dir残骸なし（正常・FAIL両経路後）"
   PASS=$((PASS + 1))
 else
-  echo "NG: 44. 実indexが変更されています"
+  echo "NG: 48. E60 Office一時dirが残存（${OFFICE_TMP_LEFT}件）"
+  find "$OFFICE_TEST_TMPROOT" -mindepth 1 -maxdepth 1 | sed 's/^/    /'
+  FAILN=$((FAILN + 1))
+fi
+
+# 49 / 実index非破壊確認：staged系test（E48〜E60含む）前後で実indexが不変
+REAL_INDEX_AFTER=$(real_index_hash)
+if [ "$REAL_INDEX_BEFORE" = "$REAL_INDEX_AFTER" ]; then
+  echo "OK: 49. 実index非破壊（staged系test前後で不変）"
+  PASS=$((PASS + 1))
+else
+  echo "NG: 49. 実indexが変更されています"
   FAILN=$((FAILN + 1))
 fi
 

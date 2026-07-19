@@ -21,6 +21,16 @@ REGISTRY="${PRE_DELIVERY_UNCERTAINTY_REGISTRY:-$SCRIPT_DIR/pre-delivery-intentio
 STAGED_MODE=0
 [ "${1:-}" = "--staged" ] && STAGED_MODE=1
 
+# staged Office抽出用の一時領域（Office対象の初回処理時にのみ遅延作成）
+# 正常終了・FAIL終了ともEXIT trapでdirごと削除する
+OFFICE_TMPDIR=""
+cleanup_office_tmpdir() {
+  if [ -n "${OFFICE_TMPDIR:-}" ] && [ -d "$OFFICE_TMPDIR" ]; then
+    rm -rf "$OFFICE_TMPDIR"
+  fi
+}
+trap cleanup_office_tmpdir EXIT
+
 index_has_path() {
   git -C "$REPO_ROOT" cat-file -e ":$1" 2>/dev/null
 }
@@ -329,7 +339,7 @@ fi
 
 get_text() {
   if [ "$STAGED_MODE" -eq 1 ]; then
-    # Office文書はメインループで事前遮断済み（stagedのOffice index読取は別ゲート）
+    # Office文書はメインループでindex抽出済み（ここへは来ない）
     read_index_content "$(normalize_rel_path "$1")"
     return
   fi
@@ -368,17 +378,40 @@ BRAND_COLORS="0F3D96|EEF3FA|1F2937|E5E7EB|FFFFFF|000000|FFF|000"
 
 if [ ${#TARGETS[@]} -gt 0 ]; then
   for f in "${TARGETS[@]}"; do
+    OFFICE_TEXT_READY=0
     if [ "$STAGED_MODE" -eq 1 ]; then
       case "$f" in
         *.pptx|*.docx|*.xlsx)
-          # stagedのOffice検査は未対応（index上のバイナリ抽出は別ゲート）。
-          # working treeへのフォールバックは禁止のため、明示FAILとする
-          report FAIL "$f" "stagedモードのOffice文書検査は未対応です（別ゲートで実装予定・working tree読取へのフォールバックは行いません）"
-          continue
+          # stagedのOfficeはGit index blobを正とする。一時ファイルへbyte忠実に
+          # 書き出し、working treeモードと同一のZIP/XML抽出を適用する。
+          # working tree読取へのフォールバックは行わない。
+          # unzipの失敗判定のため、pipelineにせず終了コードを個別に確認する。
+          if [ -z "$OFFICE_TMPDIR" ]; then
+            OFFICE_TMPDIR=$(umask 077 && mktemp -d "${TMPDIR:-/tmp}/pdc-office-XXXXXX" 2>/dev/null) || OFFICE_TMPDIR=""
+            if [ -z "$OFFICE_TMPDIR" ] || [ ! -d "$OFFICE_TMPDIR" ]; then
+              OFFICE_TMPDIR=""
+              report FAIL "$f" "stagedのOffice文書検査用の一時領域を作成できません"
+              continue
+            fi
+          fi
+          OFFICE_BIN="$OFFICE_TMPDIR/office-bin"
+          OFFICE_XML="$OFFICE_TMPDIR/office-xml"
+          if ! read_index_content "$(normalize_rel_path "$f")" > "$OFFICE_BIN"; then
+            report FAIL "$f" "stagedのOffice文書をGit indexから読み出せません"
+            continue
+          fi
+          unzip -p "$OFFICE_BIN" "*.xml" > "$OFFICE_XML" 2>/dev/null
+          UNZIP_RC=$?
+          if [ "$UNZIP_RC" -ne 0 ]; then
+            report FAIL "$f" "stagedのOffice文書からXMLを抽出できません（unzip rc=${UNZIP_RC}）"
+            continue
+          fi
+          TEXT=$(sed -e 's/<[^>]*>/ /g' "$OFFICE_XML")
+          OFFICE_TEXT_READY=1
           ;;
       esac
     fi
-    TEXT=$(get_text "$f")
+    [ "$OFFICE_TEXT_READY" -eq 0 ] && TEXT=$(get_text "$f")
     PROSE_TEXT=$(printf '%s\n' "$TEXT" | strip_template_and_fences "$(apply_record_form_template_filter "$f")")
     DOC_STATUS=$(printf '%s\n' "$TEXT" | get_doc_status)
     REL_PATH=$(normalize_rel_path "$f")
