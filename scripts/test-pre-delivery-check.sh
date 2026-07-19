@@ -485,15 +485,25 @@ reset_test_index() {
 }
 
 # $1=name $2=expected_code $3=must $4=must_not $5=registry_mode(explicit|default)
+# $6=optional: "renames_false" なら checker プロセスにだけ diff.renames=false を注入
 assert_staged() {
   local name="$1" expect_code="$2" must="$3" must_not="$4" regmode="$5"
+  local renames_env="${6:-}"
   local code=0
+  local -a run_env=( "GIT_INDEX_FILE=$TEST_INDEX" )
+  if [ "$renames_env" = "renames_false" ]; then
+    run_env+=(
+      "GIT_CONFIG_COUNT=1"
+      "GIT_CONFIG_KEY_0=diff.renames"
+      "GIT_CONFIG_VALUE_0=false"
+    )
+  fi
   if [ "$regmode" = "default" ]; then
-    OUT=$(GIT_INDEX_FILE="$TEST_INDEX" env -u PRE_DELIVERY_UNCERTAINTY_REGISTRY \
+    OUT=$(env -u PRE_DELIVERY_UNCERTAINTY_REGISTRY "${run_env[@]}" \
       bash "$CHECK" --staged 2>&1) || code=$?
   else
-    OUT=$(GIT_INDEX_FILE="$TEST_INDEX" \
-      env PRE_DELIVERY_UNCERTAINTY_REGISTRY="${STAGED_REGISTRY:-$REGISTRY}" \
+    OUT=$(env "${run_env[@]}" \
+      PRE_DELIVERY_UNCERTAINTY_REGISTRY="${STAGED_REGISTRY:-$REGISTRY}" \
       bash "$CHECK" --staged 2>&1) || code=$?
   fi
   if [ "$code" -ne "$expect_code" ]; then
@@ -516,6 +526,43 @@ assert_staged() {
   fi
   echo "OK: $name"
   PASS=$((PASS + 1))
+}
+
+# HEAD上の .gitignore を一時index上で new_rel へ rename（必要なら new_blob に差替え）
+# working tree には新pathを作らない。一時index内の新規A→移動は使わない。
+stage_gitignore_rename() {
+  local new_rel="$1" new_blob="${2:-}"
+  local line mode sha
+  reset_test_index
+  line=$(git_tmp ls-files --stage -- .gitignore | head -1)
+  mode=$(printf '%s\n' "$line" | awk '{print $1}')
+  sha=$(printf '%s\n' "$line" | awk '{print $2}')
+  [ -n "$mode" ] && [ -n "$sha" ] || {
+    echo "NG: stage_gitignore_rename → .gitignore が一時indexにありません"
+    FAILN=$((FAILN + 1))
+    return 1
+  }
+  if [ -n "$new_blob" ]; then
+    sha="$new_blob"
+  fi
+  git_tmp update-index --force-remove -- .gitignore
+  git_tmp update-index --add --cacheinfo "${mode},${sha},${new_rel}"
+}
+
+# rename が R として見えることの補助確認（checker合格の代替にはしない）
+assert_rename_name_status() {
+  local name="$1" old_path="$2" new_path="$3"
+  local ns
+  ns=$(GIT_INDEX_FILE="$TEST_INDEX" git -C "$REPO_ROOT" \
+    -c core.quotepath=false -c diff.renames=false \
+    diff --cached --name-status --diff-filter=ACMR --find-renames 2>/dev/null || true)
+  if ! printf '%s\n' "$ns" | grep -Eq "^R[0-9]*[[:space:]]+${old_path}[[:space:]]+${new_path}$"; then
+    echo "NG: $name → rename name-status 補助確認失敗"
+    echo "$ns" | sed 's/^/    /'
+    FAILN=$((FAILN + 1))
+    return 1
+  fi
+  return 0
 }
 
 # 実index非破壊の事前スナップショット（末尾検査で照合）
@@ -676,13 +723,68 @@ else
   FAILN=$((FAILN + 1))
 fi
 
-# 40 / 実index非破壊確認：staged系test前後で実indexの実体が完全一致すること
-REAL_INDEX_AFTER=$(real_index_hash)
-if [ "$REAL_INDEX_BEFORE" = "$REAL_INDEX_AFTER" ]; then
-  echo "OK: 40. 実index非破壊（staged系test前後で不変）"
+# =============================================================
+# ACMR / rename 系（E48〜E50）
+# 旧pathは HEAD の .gitignore。一時indexのみ操作し WT/実index は触らない。
+# checker 実行時のみ GIT_CONFIG_* で diff.renames=false を注入する。
+# =============================================================
+
+# 40 / E48. リネームのみ（違反なし）→ 新pathを走査し exit 0（vacuous禁止）
+stage_gitignore_rename "_tmp_pdc_test/e48_renamed.md"
+assert_rename_name_status "40. E48 補助name-status" ".gitignore" "_tmp_pdc_test/e48_renamed.md" || true
+assert_staged "40. E48 リネームのみ・違反なし→exit0" 0 \
+  "対象 [1-9][0-9]*ファイル" \
+  "検査対象がありません|\\[FAIL\\]" \
+  default \
+  renames_false
+
+# 41 / E49. リネーム＋hard（★★）最小編集 → 新path index 本文で FAIL
+E49_BLOB=$(
+  { git -C "$REPO_ROOT" show HEAD:.gitignore; printf '%s\n' '★★'; } \
+    | git -C "$REPO_ROOT" hash-object -w --stdin
+)
+stage_gitignore_rename "_tmp_pdc_test/e49_renamed.md" "$E49_BLOB"
+assert_rename_name_status "41. E49 補助name-status" ".gitignore" "_tmp_pdc_test/e49_renamed.md" || true
+assert_staged "41. E49 リネーム＋★★→新path hard FAIL" 1 \
+  "_tmp_pdc_test/e49_renamed.md.*未確定表記が残存：★★|未確定表記が残存：★★" \
+  "検査対象がありません" \
+  default \
+  renames_false
+
+# 42 / E50. 未登録frozen相当のリネーム＋soft → 本文 soft FAIL（台帳不在だけ禁止）
+E50_BLOB=$(
+  { git -C "$REPO_ROOT" show HEAD:.gitignore; printf '%s\n' '未確定'; } \
+    | git -C "$REPO_ROOT" hash-object -w --stdin
+)
+stage_gitignore_rename "_tmp_pdc_test/e50_renamed.md" "$E50_BLOB"
+assert_rename_name_status "42. E50 補助name-status" ".gitignore" "_tmp_pdc_test/e50_renamed.md" || true
+assert_staged "42. E50 未登録リネーム＋未確定→本文 soft FAIL" 1 \
+  "_tmp_pdc_test/e50_renamed.md.*未確定表記が残存：未確定|未確定表記が残存：未確定" \
+  "未確定表記が残存：★★" \
+  default \
+  renames_false
+
+# 43 / ACMR／find-renames 契約：staged収集コマンド行に両方が明示されていること
+# （コメント行は除外し、diff --cached 収集行だけを見る）
+if awk '
+  /^[[:space:]]*#/ { next }
+  /diff --cached/ && /--name-only/ && /--diff-filter=ACMR/ && /--find-renames/ { found=1 }
+  END { exit found ? 0 : 1 }
+' "$CHECK"; then
+  echo "OK: 43. ACMR／find-renames契約（staged収集コマンド）"
   PASS=$((PASS + 1))
 else
-  echo "NG: 40. 実indexが変更されています"
+  echo "NG: 43. ACMR／find-renames契約（staged収集にACMR+find-renamesなし）"
+  FAILN=$((FAILN + 1))
+fi
+
+# 44 / 実index非破壊確認：staged系test（E48〜E50含む）前後で実indexが不変
+REAL_INDEX_AFTER=$(real_index_hash)
+if [ "$REAL_INDEX_BEFORE" = "$REAL_INDEX_AFTER" ]; then
+  echo "OK: 44. 実index非破壊（staged系test前後で不変）"
+  PASS=$((PASS + 1))
+else
+  echo "NG: 44. 実indexが変更されています"
   FAILN=$((FAILN + 1))
 fi
 

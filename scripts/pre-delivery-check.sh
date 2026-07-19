@@ -308,7 +308,7 @@ if [ "$STAGED_MODE" -eq 1 ]; then
   # indexが正。working tree上の存在は要求しない（同一snapshot契約）
   while IFS= read -r f; do
     ! is_excluded "$f" && TARGETS+=("$f")
-  done < <(git -C "$REPO_ROOT" -c core.quotepath=false diff --cached --name-only --diff-filter=ACM 2>/dev/null)
+  done < <(git -C "$REPO_ROOT" -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR --find-renames 2>/dev/null)
 else
   for a in "$@"; do
     if [ -d "$a" ]; then
