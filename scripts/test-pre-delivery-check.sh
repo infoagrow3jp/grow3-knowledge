@@ -14,7 +14,8 @@ rm -rf "$FIXDIR"
 mkdir -p "$FIXDIR"
 TMPDIR=$(mktemp -d)
 DEC_E24_BACKUP=""
-trap '[ -n "$DEC_E24_BACKUP" ] && [ -f "$DEC_E24_BACKUP" ] && cp "$DEC_E24_BACKUP" "$REPO_ROOT/DECISIONS.md"; rm -rf "$TMPDIR" "$FIXDIR"' EXIT
+REG_E45_BACKUP=""
+trap '[ -n "$DEC_E24_BACKUP" ] && [ -f "$DEC_E24_BACKUP" ] && cp "$DEC_E24_BACKUP" "$REPO_ROOT/DECISIONS.md"; [ -n "$REG_E45_BACKUP" ] && [ -f "$REG_E45_BACKUP" ] && cp "$REG_E45_BACKUP" "$REGISTRY"; rm -rf "$TMPDIR" "$FIXDIR"' EXIT
 
 PASS=0
 FAILN=0
@@ -465,6 +466,225 @@ PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/fence_count1.tsv" \
   "台帳許可件数を超過|実件数がexpected_countを超過" \
   "登録行が本文に存在しません" \
   "$FIXDIR/fence_count.md"
+
+# =============================================================
+# staged / index snapshot 系（E41〜E47・E51〜E53・S04）
+# 実indexは一切変更しない。GIT_INDEX_FILEによる一時indexを
+# read-tree HEADで初期化し、全staged fixtureとchecker実行を
+# その一時index上で行う。
+# =============================================================
+TEST_INDEX="$TMPDIR/pdc-test-index"
+
+git_tmp() {
+  GIT_INDEX_FILE="$TEST_INDEX" git -C "$REPO_ROOT" -c core.quotepath=false "$@"
+}
+
+reset_test_index() {
+  rm -f "$TEST_INDEX"
+  git_tmp read-tree HEAD
+}
+
+# $1=name $2=expected_code $3=must $4=must_not $5=registry_mode(explicit|default)
+assert_staged() {
+  local name="$1" expect_code="$2" must="$3" must_not="$4" regmode="$5"
+  local code=0
+  if [ "$regmode" = "default" ]; then
+    OUT=$(GIT_INDEX_FILE="$TEST_INDEX" env -u PRE_DELIVERY_UNCERTAINTY_REGISTRY \
+      bash "$CHECK" --staged 2>&1) || code=$?
+  else
+    OUT=$(GIT_INDEX_FILE="$TEST_INDEX" \
+      env PRE_DELIVERY_UNCERTAINTY_REGISTRY="${STAGED_REGISTRY:-$REGISTRY}" \
+      bash "$CHECK" --staged 2>&1) || code=$?
+  fi
+  if [ "$code" -ne "$expect_code" ]; then
+    echo "NG: $name → 終了コード${code}（期待：${expect_code}）"
+    echo "$OUT" | sed 's/^/    /'
+    FAILN=$((FAILN + 1))
+    return
+  fi
+  if [ -n "$must" ] && ! printf '%s\n' "$OUT" | grep -Eq -- "$must"; then
+    echo "NG: $name → 必須診断なし（期待マッチ：${must}）"
+    echo "$OUT" | sed 's/^/    /'
+    FAILN=$((FAILN + 1))
+    return
+  fi
+  if [ -n "$must_not" ] && printf '%s\n' "$OUT" | grep -Eq -- "$must_not"; then
+    echo "NG: $name → 禁止診断あり（禁止マッチ：${must_not}）"
+    echo "$OUT" | sed 's/^/    /'
+    FAILN=$((FAILN + 1))
+    return
+  fi
+  echo "OK: $name"
+  PASS=$((PASS + 1))
+}
+
+# 実index非破壊の事前スナップショット（末尾検査で照合）
+# mode・blob SHA・stage番号・pathを含むindex実体をハッシュ化して比較する
+real_index_hash() {
+  git -C "$REPO_ROOT" ls-files --stage -z | git hash-object --stdin
+}
+REAL_INDEX_BEFORE=$(real_index_hash)
+
+# 29 / E41. staged版は正常／working tree版は違反 → exit 0（index本文が正）
+reset_test_index
+cat > "$FIXDIR/e41.md" <<'EOF'
+---
+status: frozen
+---
+確定済みの本文
+EOF
+git_tmp add -f "$FIXDIR/e41.md"
+cat > "$FIXDIR/e41.md" <<'EOF'
+---
+status: frozen
+---
+この行は未確定
+EOF
+assert_staged "29. E41 index正常/WT違反→exit0" 0 \
+  "" \
+  "未確定表記が残存" \
+  explicit
+
+# 30 / E42. staged版は違反／working tree版は正常 → FAIL
+reset_test_index
+cat > "$FIXDIR/e42.md" <<'EOF'
+---
+status: frozen
+---
+この行は未確定
+EOF
+git_tmp add -f "$FIXDIR/e42.md"
+cat > "$FIXDIR/e42.md" <<'EOF'
+---
+status: frozen
+---
+確定済みの本文
+EOF
+assert_staged "30. E42 index違反/WT正常→FAIL" 1 \
+  "\[FAIL\].*未確定表記が残存" \
+  "" \
+  explicit
+
+# 31 / E43. staged本文違反＋staged status frozen、WTは本文・status変更済み → soft FAIL
+reset_test_index
+cat > "$FIXDIR/e43.md" <<'EOF'
+---
+status: frozen
+---
+この行は未確定
+EOF
+git_tmp add -f "$FIXDIR/e43.md"
+cat > "$FIXDIR/e43.md" <<'EOF'
+---
+status: draft
+---
+確定済みの本文
+EOF
+assert_staged "31. E43 index本文+index statusでsoft FAIL" 1 \
+  "\[FAIL\].*未確定表記が残存" \
+  "\[WARN\].*未確定表記が残存" \
+  explicit
+
+# 32 / E44. staged本文正常＋staged status frozen、WTだけdraft＋違反本文 → exit 0
+reset_test_index
+cat > "$FIXDIR/e44.md" <<'EOF'
+---
+status: frozen
+---
+確定済みの本文
+EOF
+git_tmp add -f "$FIXDIR/e44.md"
+cat > "$FIXDIR/e44.md" <<'EOF'
+---
+status: draft
+---
+この行は未確定
+EOF
+assert_staged "32. E44 index本文+index statusで違反なし" 0 \
+  "" \
+  "未確定表記が残存" \
+  explicit
+
+# 33 / E45. staged既定台帳は正常／WT既定台帳は不正 → index台帳で読込成功
+reset_test_index
+REG_E45_BACKUP="$TMPDIR/registry-e45-backup.tsv"
+cp "$REGISTRY" "$REG_E45_BACKUP"
+printf 'broken registry without tabs\n' > "$REGISTRY"
+assert_staged "33. E45 index既定台帳正常/WT不正→exit0" 0 \
+  "" \
+  "台帳エラー|台帳ファイルが存在しません" \
+  default
+cp "$REG_E45_BACKUP" "$REGISTRY"
+REG_E45_BACKUP=""
+
+# 34 / E46. staged既定台帳は不正／WT既定台帳は正常 → index台帳に基づく読込FAIL
+reset_test_index
+E46_BLOB=$(printf 'broken registry without tabs\n' | git -C "$REPO_ROOT" hash-object -w --stdin)
+git_tmp update-index --cacheinfo "100644,$E46_BLOB,scripts/pre-delivery-intentional-uncertainty.tsv"
+assert_staged "34. E46 index既定台帳不正/WT正常→FAIL" 1 \
+  "台帳エラー：列不足" \
+  "" \
+  default
+
+# 35 / E47. 明示指定台帳（不正classification）はstagedでも実ファイルを読む
+reset_test_index
+STAGED_REGISTRY="$TMPDIR/e47.tsv"
+printf '%s\n' "${REL_PREFIX}/e47.md	1	bad_class	明示指定テスト	なにかの行" > "$STAGED_REGISTRY"
+assert_staged "35. E47 staged明示指定=実ファイル読込" 1 \
+  "classificationが不正" \
+  "Git indexに存在しません|台帳ファイルが存在しません" \
+  explicit
+unset STAGED_REGISTRY
+
+# 36 / E51. 登録対象ファイルだけindexから削除（本文対象0件） → 登録先不在FAIL
+reset_test_index
+REG_FIRST_PATH=$(grep -v '^[[:space:]]*#' "$REGISTRY" | grep -v '^[[:space:]]*$' | head -1 | cut -f1)
+git_tmp update-index --force-remove -- "$REG_FIRST_PATH"
+assert_staged "36. E51 登録先をindex削除→0件でも不在FAIL" 1 \
+  "登録先ファイルが存在しません（${REG_FIRST_PATH}）" \
+  "" \
+  default
+
+# 37 / E52. 台帳ファイルだけをstage（登録先不在の行を追加） → 0件でも台帳整合FAIL
+reset_test_index
+{ git_tmp show ":scripts/pre-delivery-intentional-uncertainty.tsv"; \
+  printf '%s\n' "_tmp_pdc_test/ghost.md	1	history	index snapshotテスト用	この行は存在しない"; } > "$TMPDIR/e52.tsv"
+E52_BLOB=$(git -C "$REPO_ROOT" hash-object -w --stdin < "$TMPDIR/e52.tsv")
+git_tmp update-index --cacheinfo "100644,$E52_BLOB,scripts/pre-delivery-intentional-uncertainty.tsv"
+assert_staged "37. E52 台帳のみstage→0件でも整合FAIL" 1 \
+  "登録先ファイルが存在しません（_tmp_pdc_test/ghost.md）" \
+  "" \
+  default
+
+# 38 / E53. staged対象がすべて除外対象 → 除外だけを理由に整合をスキップしない
+reset_test_index
+E53_DUMMY_BLOB=$(printf 'dummy excluded content\n' | git -C "$REPO_ROOT" hash-object -w --stdin)
+git_tmp update-index --add --cacheinfo "100644,$E53_DUMMY_BLOB,scripts/_pdc_test_dummy.md"
+git_tmp update-index --cacheinfo "100644,$E52_BLOB,scripts/pre-delivery-intentional-uncertainty.tsv"
+assert_staged "38. E53 staged全件除外でも台帳整合FAIL" 1 \
+  "登録先ファイルが存在しません（_tmp_pdc_test/ghost.md）" \
+  "" \
+  default
+
+# 39 / S04. 静的契約：既定台帳のみindex読取・明示指定は実ファイルの分岐が存在
+if grep -q 'REGISTRY_EXPLICIT=1' "$CHECK" \
+   && grep -q 'REGISTRY_EXPLICIT" -eq 0' "$CHECK"; then
+  echo "OK: 39. S04 既定台帳index/明示指定実ファイルの分岐存在"
+  PASS=$((PASS + 1))
+else
+  echo "NG: 39. S04 分岐が見つかりません"
+  FAILN=$((FAILN + 1))
+fi
+
+# 40 / 実index非破壊確認：staged系test前後で実indexの実体が完全一致すること
+REAL_INDEX_AFTER=$(real_index_hash)
+if [ "$REAL_INDEX_BEFORE" = "$REAL_INDEX_AFTER" ]; then
+  echo "OK: 40. 実index非破壊（staged系test前後で不変）"
+  PASS=$((PASS + 1))
+else
+  echo "NG: 40. 実indexが変更されています"
+  FAILN=$((FAILN + 1))
+fi
 
 echo "----------------------------------------"
 echo "テスト結果: 合格 ${PASS}件 / 不合格 ${FAILN}件"

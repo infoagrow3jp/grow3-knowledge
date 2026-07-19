@@ -12,7 +12,22 @@ WARN=0
 
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 明示指定台帳（PRE_DELIVERY_UNCERTAINTY_REGISTRY）は指定パスの実ファイルを読む（index非要求）
+REGISTRY_EXPLICIT=0
+[ -n "${PRE_DELIVERY_UNCERTAINTY_REGISTRY:-}" ] && REGISTRY_EXPLICIT=1
 REGISTRY="${PRE_DELIVERY_UNCERTAINTY_REGISTRY:-$SCRIPT_DIR/pre-delivery-intentional-uncertainty.tsv}"
+
+# --staged: 本文・frontmatter status・既定台帳をGit indexの同一snapshotから読む
+STAGED_MODE=0
+[ "${1:-}" = "--staged" ] && STAGED_MODE=1
+
+index_has_path() {
+  git -C "$REPO_ROOT" cat-file -e ":$1" 2>/dev/null
+}
+
+read_index_content() {
+  git -C "$REPO_ROOT" -c core.quotepath=false show ":$1" 2>/dev/null
+}
 VALID_CLASSIFICATIONS="history|data_state|deferred_v0.2|implementation_detail|meta_check"
 
 declare -A REG_EXPECTED
@@ -62,9 +77,21 @@ registry_key() {
 
 load_registry() {
   local line_no=0 registry_fail=0
-  [ -f "$REGISTRY" ] || { report FAIL "$REGISTRY" "台帳ファイルが存在しません"; return 1; }
+  # 既定台帳のみstagedでindex読取。明示指定台帳は指定パスの実ファイルを読む
+  if [ "$STAGED_MODE" -eq 1 ] && [ "$REGISTRY_EXPLICIT" -eq 0 ]; then
+    local reg_rel
+    reg_rel=$(normalize_rel_path "$REGISTRY")
+    if ! index_has_path "$reg_rel"; then
+      report FAIL "$REGISTRY" "台帳ファイルがGit indexに存在しません"
+      return 1
+    fi
+    exec 3< <(read_index_content "$reg_rel")
+  else
+    [ -f "$REGISTRY" ] || { report FAIL "$REGISTRY" "台帳ファイルが存在しません"; return 1; }
+    exec 3< "$REGISTRY"
+  fi
 
-  while IFS= read -r raw_line || [ -n "$raw_line" ]; do
+  while IFS= read -r raw_line <&3 || [ -n "$raw_line" ]; do
     line_no=$((line_no + 1))
     # コメント行・空行（空白のみ）はスキップ
     [[ "$raw_line" =~ ^[[:space:]]*# ]] && continue
@@ -145,7 +172,8 @@ load_registry() {
     REG_EXPECTED[$key]=$expected
     REG_CLASS[$key]=$class
     REG_FOUND[$key]=0
-  done < "$REGISTRY"
+  done
+  exec 3<&-
 
   [ "$registry_fail" -eq 1 ] && return 1
   return 0
@@ -162,6 +190,7 @@ apply_record_form_template_filter() {
 
 # 記録形式節（DECISIONSのみ）を除いた行のうち「未確定」を含む行を NR<TAB>line で出力
 # fence内も検出対象（検出・exact照合・件数計数と同一フィルタ）
+# stdinから本文を読む（pathはフィルタ判定にのみ使用。stagedはindex版、手動はworking tree版）
 scan_mitei_prose_lines() {
   local file="$1" apply_template
   apply_template=$(apply_record_form_template_filter "$file")
@@ -176,7 +205,7 @@ scan_mitei_prose_lines() {
       if (apply_template && in_template) next
       if (index(line, "未確定") > 0) print NR "\t" line
     }
-  ' "$file"
+  '
 }
 
 # B/C群用：fenceは残し、記録形式節のみ DECISIONS.md で除外
@@ -195,6 +224,7 @@ strip_template_and_fences() {
   '
 }
 
+# stdinから本文を読む（pathはフィルタ判定にのみ使用）
 count_prose_exact_line() {
   local file="$1" exact="$2" apply_template
   apply_template=$(apply_record_form_template_filter "$file")
@@ -210,7 +240,7 @@ count_prose_exact_line() {
       if (line == target) n++
     }
     END { print n }
-  ' "$file"
+  '
 }
 
 check_mitei_lines() {
@@ -236,7 +266,7 @@ check_mitei_lines() {
     else
       report "$uncertain_level" "$f" "行${lineno} 未確定表記が残存：未確定"
     fi
-  done < <(scan_mitei_prose_lines "$f")
+  done < <(printf '%s\n' "$TEXT" | scan_mitei_prose_lines "$f")
 }
 
 check_stale_registry_entries() {
@@ -245,12 +275,20 @@ check_stale_registry_entries() {
     rel="${key%%$'\t'*}"
     exact="${key#*$'\t'}"
     expected="${REG_EXPECTED[$key]}"
-    abs="$REPO_ROOT/$rel"
-    if [ ! -f "$abs" ]; then
-      report FAIL "$REGISTRY" "台帳エラー：登録先ファイルが存在しません（${rel}）"
-      continue
+    if [ "$STAGED_MODE" -eq 1 ]; then
+      if ! index_has_path "$rel"; then
+        report FAIL "$REGISTRY" "台帳エラー：登録先ファイルが存在しません（${rel}）"
+        continue
+      fi
+      found=$(read_index_content "$rel" | count_prose_exact_line "$rel" "$exact")
+    else
+      abs="$REPO_ROOT/$rel"
+      if [ ! -f "$abs" ]; then
+        report FAIL "$REGISTRY" "台帳エラー：登録先ファイルが存在しません（${rel}）"
+        continue
+      fi
+      found=$(count_prose_exact_line "$abs" "$exact" < "$abs")
     fi
-    found=$(count_prose_exact_line "$abs" "$exact")
     found="${found:-0}"
     if [ "$found" -eq 0 ]; then
       report FAIL "$REGISTRY" "台帳エラー：登録行が本文に存在しません（${rel}）"
@@ -266,10 +304,11 @@ load_registry || exit 1
 
 # ---- 検査対象の収集 ----
 TARGETS=()
-if [ "${1:-}" = "--staged" ]; then
+if [ "$STAGED_MODE" -eq 1 ]; then
+  # indexが正。working tree上の存在は要求しない（同一snapshot契約）
   while IFS= read -r f; do
-    [ -f "$f" ] && ! is_excluded "$f" && TARGETS+=("$f")
-  done < <(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACM 2>/dev/null)
+    ! is_excluded "$f" && TARGETS+=("$f")
+  done < <(git -C "$REPO_ROOT" -c core.quotepath=false diff --cached --name-only --diff-filter=ACM 2>/dev/null)
 else
   for a in "$@"; do
     if [ -d "$a" ]; then
@@ -289,6 +328,11 @@ if [ ${#TARGETS[@]} -eq 0 ]; then
 fi
 
 get_text() {
+  if [ "$STAGED_MODE" -eq 1 ]; then
+    # Office文書はメインループで事前遮断済み（stagedのOffice index読取は別ゲート）
+    read_index_content "$(normalize_rel_path "$1")"
+    return
+  fi
   case "$1" in
     *.pptx|*.docx|*.xlsx)
       unzip -p "$1" "*.xml" 2>/dev/null | sed -e 's/<[^>]*>/ /g' ;;
@@ -296,17 +340,20 @@ get_text() {
   esac
 }
 
+# stdinから本文を読み、frontmatterのstatusを出力（本文と同一snapshotを保証）
 get_doc_status() {
-  local first
-  first=$(head -n 1 "$1" 2>/dev/null | tr -d '\r')
-  [ "$first" = "---" ] || { echo ""; return; }
   awk '
-    BEGIN { in_fm=0 }
+    NR==1 {
+      line=$0
+      sub(/\r$/, "", line)
+      if (line != "---") exit
+      in_fm=1
+      next
+    }
     {
       line=$0
       sub(/\r$/, "", line)
     }
-    NR==1 && line=="---" { in_fm=1; next }
     in_fm && line=="---" { exit }
     in_fm && line ~ /^status:[[:space:]]*/ {
       sub(/^status:[[:space:]]*/, "", line)
@@ -314,16 +361,26 @@ get_doc_status() {
       print line
       exit
     }
-  ' "$1"
+  '
 }
 
 BRAND_COLORS="0F3D96|EEF3FA|1F2937|E5E7EB|FFFFFF|000000|FFF|000"
 
 if [ ${#TARGETS[@]} -gt 0 ]; then
   for f in "${TARGETS[@]}"; do
+    if [ "$STAGED_MODE" -eq 1 ]; then
+      case "$f" in
+        *.pptx|*.docx|*.xlsx)
+          # stagedのOffice検査は未対応（index上のバイナリ抽出は別ゲート）。
+          # working treeへのフォールバックは禁止のため、明示FAILとする
+          report FAIL "$f" "stagedモードのOffice文書検査は未対応です（別ゲートで実装予定・working tree読取へのフォールバックは行いません）"
+          continue
+          ;;
+      esac
+    fi
     TEXT=$(get_text "$f")
     PROSE_TEXT=$(printf '%s\n' "$TEXT" | strip_template_and_fences "$(apply_record_form_template_filter "$f")")
-    DOC_STATUS=$(get_doc_status "$f")
+    DOC_STATUS=$(printf '%s\n' "$TEXT" | get_doc_status)
     REL_PATH=$(normalize_rel_path "$f")
     if [ "$DOC_STATUS" = "draft" ] || [ "$DOC_STATUS" = "reviewed" ]; then
       UNCERTAIN_LEVEL=WARN
