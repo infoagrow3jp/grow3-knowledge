@@ -1067,6 +1067,252 @@ else
   FAILN=$((FAILN + 1))
 fi
 
+# =============================================================
+# Stop hook path handoff / quoted expansion 系（E69〜E80）
+# suite専用TMPDIRに一時cloneを1回だけ作成し、候補版hook（現在のWT版）を
+# baseline commitして検査する。実index・正本WT・origin・実cloneのHEADへ
+# 影響させない。診断はgrep -F・行完全一致・件数・stdout/stderr分離で確認する。
+# =============================================================
+HOOK_CLONE="$TMPDIR/hook-clone"
+rm -rf "$HOOK_CLONE"
+git clone -q "$REPO_ROOT" "$HOOK_CLONE" 2>/dev/null
+# 候補版hook（現在のWT版）をcloneへコピー。checkerはHEAD版のまま（変更しない契約）
+cp "$SCRIPT_DIR/stop-hook-check.sh" "$HOOK_CLONE/scripts/stop-hook-check.sh"
+HOOK_CHECKER_CLONE=$(git -C "$HOOK_CLONE" hash-object scripts/pre-delivery-check.sh)
+HOOK_CHECKER_HEAD=$(git -C "$HOOK_CLONE" rev-parse HEAD:scripts/pre-delivery-check.sh)
+HOOK_HOOK_CLONE=$(git -C "$HOOK_CLONE" hash-object scripts/stop-hook-check.sh)
+HOOK_HOOK_WT=$(git -C "$REPO_ROOT" hash-object scripts/stop-hook-check.sh)
+# clone内だけでidentityを設定し、候補版hookをbaselineとしてcommitする
+git -C "$HOOK_CLONE" config user.name "grow3-gate-test"
+git -C "$HOOK_CLONE" config user.email "gate-test@grow3.invalid"
+git -C "$HOOK_CLONE" commit -q -am "candidate stop-hook-check.sh (gate test baseline)"
+HOOK_BASELINE=$(git -C "$HOOK_CLONE" rev-parse HEAD)
+HOOK_BASELINE_STATUS=$(git -C "$HOOK_CLONE" status --short | wc -l | tr -d ' ')
+
+# setup健全性ガード（PASS件数には含めない。異常時のみFAILN加算して以降のhook testを実行しない）
+HOOK_READY=1
+if [ "$HOOK_CHECKER_CLONE" != "$HOOK_CHECKER_HEAD" ]; then
+  echo "NG: hook-setup checkerがHEADと不一致（clone=$HOOK_CHECKER_CLONE / HEAD=$HOOK_CHECKER_HEAD）"
+  FAILN=$((FAILN + 1)); HOOK_READY=0
+fi
+if [ "$HOOK_HOOK_CLONE" != "$HOOK_HOOK_WT" ]; then
+  echo "NG: hook-setup 候補版hookがWT版と不一致（旧HEAD版をtestしている疑い）"
+  FAILN=$((FAILN + 1)); HOOK_READY=0
+fi
+if [ "$HOOK_BASELINE_STATUS" != "0" ]; then
+  echo "NG: hook-setup baseline commit直後のstatusが非空（${HOOK_BASELINE_STATUS}行）"
+  FAILN=$((FAILN + 1)); HOOK_READY=0
+fi
+
+# fixture完全reset（baseline commitへ戻す）
+hook_reset() {
+  git -C "$HOOK_CLONE" checkout -q -- . 2>/dev/null
+  git -C "$HOOK_CLONE" clean -qfd 2>/dev/null
+}
+hook_violating() { printf -- '---\nstatus: frozen\n---\nこの行は未確定\n' > "$HOOK_CLONE/$1"; }
+hook_clean()     { printf -- '---\nstatus: frozen\n---\n確定済みの本文\n' > "$HOOK_CLONE/$1"; }
+
+# $1=json $2=optional subdir(clone相対)。HOOK_OUT/HOOK_ERR/HOOK_CODEへ格納
+run_hook() {
+  local json="$1" sub="${2:-}" wd="$HOOK_CLONE" errf
+  [ -n "$sub" ] && wd="$HOOK_CLONE/$sub"
+  errf=$(mktemp)
+  HOOK_CODE=0
+  HOOK_OUT=$( cd "$wd" && printf '%s' "$json" | bash "$HOOK_CLONE/scripts/stop-hook-check.sh" 2>"$errf" ) || HOOK_CODE=$?
+  HOOK_ERR=$(cat "$errf")
+  rm -f "$errf"
+}
+hook_fail_count() { printf '%s\n' "$1" | grep -cF '[FAIL]'; }
+
+if [ "$HOOK_READY" -eq 1 ]; then
+  VIOL_LINE_VIOL='[FAIL] viol.md : 行4 未確定表記が残存：未確定'
+
+  # 59 / E69. subdir cwdから起動・repo root側のclean md 1件 → exit0・対象1
+  hook_reset
+  mkdir -p "$HOOK_CLONE/sub/dir"
+  hook_clean "clean-doc.md"
+  run_hook '{"stop_hook_active": false}' "sub/dir"
+  if [ "$HOOK_CODE" -eq 0 ] && printf '%s\n' "$HOOK_OUT" | grep -qE '対象 1ファイル' \
+    && ! printf '%s\n' "$HOOK_OUT" | grep -qF '[FAIL]'; then
+    echo "OK: 59. E69 subdir cwd＋clean→exit0（repo root基準検査）"; PASS=$((PASS + 1))
+  else
+    echo "NG: 59. E69 subdir cwd（code=$HOOK_CODE）"; printf '%s\n' "$HOOK_OUT" | sed 's/^/    /'; FAILN=$((FAILN + 1))
+  fi
+
+  # 60 / E70. checker FAILのexit 2伝播＋stdout/stderr双方に[FAIL]明細
+  hook_reset
+  hook_violating "viol.md"
+  run_hook '{"stop_hook_active": false}'
+  if [ "$HOOK_CODE" -eq 2 ] \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF "$VIOL_LINE_VIOL" \
+    && printf '%s\n' "$HOOK_ERR" | grep -qF "$VIOL_LINE_VIOL" \
+    && printf '%s\n' "$HOOK_ERR" | grep -qF "出荷前検品でFAILが検出されました。"; then
+    echo "OK: 60. E70 checker FAIL→exit2・stdout/stderr双方に明細"; PASS=$((PASS + 1))
+  else
+    echo "NG: 60. E70 FAIL伝播（code=$HOOK_CODE）"; printf 'OUT:%s\nERR:%s\n' "$HOOK_OUT" "$HOOK_ERR" | sed 's/^/    /'; FAILN=$((FAILN + 1))
+  fi
+
+  # 61 / E71. active=true → 警告2行・exit0・通常差し戻し文言なし
+  hook_reset
+  hook_violating "viol.md"
+  run_hook '{"stop_hook_active": true}'
+  if [ "$HOOK_CODE" -eq 0 ] \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF "$VIOL_LINE_VIOL" \
+    && printf '%s\n' "$HOOK_ERR" | grep -qF "$VIOL_LINE_VIOL" \
+    && printf '%s\n' "$HOOK_ERR" | grep -qF "ループ防止のため停止を許可します。" \
+    && printf '%s\n' "$HOOK_ERR" | grep -qF "pre-commitで再度遮断されます。" \
+    && ! printf '%s\n' "$HOOK_ERR" | grep -qF "出荷前検品でFAILが検出されました。"; then
+    echo "OK: 61. E71 active=true→警告exit0（差し戻し文言なし）"; PASS=$((PASS + 1))
+  else
+    echo "NG: 61. E71 active=true（code=$HOOK_CODE）"; printf 'ERR:%s\n' "$HOOK_ERR" | sed 's/^/    /'; FAILN=$((FAILN + 1))
+  fi
+
+  # 62 / E72. 空白＋日本語path → 両raw pathのFAIL・対象2・分割なし
+  hook_reset
+  mkdir -p "$HOOK_CLONE/hooktest"
+  hook_violating "hooktest/sp ace.md"
+  hook_violating "hooktest/日本語 メモ.md"
+  run_hook '{"stop_hook_active": false}'
+  E72_L1='[FAIL] hooktest/sp ace.md : 行4 未確定表記が残存：未確定'
+  E72_L2='[FAIL] hooktest/日本語 メモ.md : 行4 未確定表記が残存：未確定'
+  if [ "$HOOK_CODE" -eq 2 ] \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF "$E72_L1" \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF "$E72_L2" \
+    && printf '%s\n' "$HOOK_OUT" | grep -qE '対象 2ファイル' \
+    && [ "$(hook_fail_count "$HOOK_OUT")" -eq 2 ]; then
+    echo "OK: 62. E72 空白＋日本語path→両FAIL・対象2・分割なし"; PASS=$((PASS + 1))
+  else
+    echo "NG: 62. E72 空白＋日本語（code=$HOOK_CODE FAIL数=$(hook_fail_count "$HOOK_OUT")）"; printf '%s\n' "$HOOK_OUT" | sed 's/^/    /'; FAILN=$((FAILN + 1))
+  fi
+
+  # 63 / E73. quote＋先頭ハイフン → ./-dash.md FAIL・option errorなし
+  hook_reset
+  mkdir -p "$HOOK_CLONE/hooktest"
+  hook_clean "hooktest/it's.md"
+  hook_violating "-dash.md"
+  run_hook '{"stop_hook_active": false}'
+  E73_LINE='[FAIL] ./-dash.md : 行4 未確定表記が残存：未確定'
+  if [ "$HOOK_CODE" -eq 2 ] \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF "$E73_LINE" \
+    && ! printf '%s\n' "$HOOK_OUT" | grep -qF "[FAIL] hooktest/it's.md" \
+    && ! printf '%s\n' "$HOOK_ERR" | grep -qiE 'unknown option|invalid option|illegal option'; then
+    echo "OK: 63. E73 quote＋先頭ハイフン→./前置FAIL・option errorなし"; PASS=$((PASS + 1))
+  else
+    echo "NG: 63. E73 quote＋hyphen（code=$HOOK_CODE）"; printf 'OUT:%s\nERR:%s\n' "$HOOK_OUT" "$HOOK_ERR" | sed 's/^/    /'; FAILN=$((FAILN + 1))
+  fi
+
+  # 64 / E74. globメタ文字 → memo[1].md FAIL・memo1.md非FAIL（glob非展開の直接証明）
+  hook_reset
+  mkdir -p "$HOOK_CLONE/hooktest"
+  hook_violating "hooktest/memo[1].md"
+  hook_clean "hooktest/memo1.md"
+  run_hook '{"stop_hook_active": false}'
+  E74_LINE='[FAIL] hooktest/memo[1].md : 行4 未確定表記が残存：未確定'
+  if [ "$HOOK_CODE" -eq 2 ] \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF "$E74_LINE" \
+    && ! printf '%s\n' "$HOOK_OUT" | grep -qF '[FAIL] hooktest/memo1.md' \
+    && printf '%s\n' "$HOOK_OUT" | grep -qE '対象 2ファイル' \
+    && [ "$(hook_fail_count "$HOOK_OUT")" -eq 1 ]; then
+    echo "OK: 64. E74 globメタ文字→memo[1]のみFAIL（glob非展開）"; PASS=$((PASS + 1))
+  else
+    echo "NG: 64. E74 glob（code=$HOOK_CODE FAIL数=$(hook_fail_count "$HOOK_OUT")）"; printf '%s\n' "$HOOK_OUT" | sed 's/^/    /'; FAILN=$((FAILN + 1))
+  fi
+
+  # 65 / E75. 複数path境界 → raw path件数とchecker対象数一致・各FAIL固定
+  hook_reset
+  mkdir -p "$HOOK_CLONE/hooktest"
+  hook_violating "hooktest/sp ace.md"
+  hook_violating "hooktest/日本語 メモ.md"
+  hook_clean     "hooktest/it's.md"
+  hook_violating "-dash.md"
+  hook_violating "hooktest/memo[1].md"
+  run_hook '{"stop_hook_active": false}'
+  if [ "$HOOK_CODE" -eq 2 ] \
+    && printf '%s\n' "$HOOK_OUT" | grep -qE '対象 5ファイル' \
+    && [ "$(hook_fail_count "$HOOK_OUT")" -eq 4 ] \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF '[FAIL] hooktest/sp ace.md : 行4 未確定表記が残存：未確定' \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF '[FAIL] hooktest/日本語 メモ.md : 行4 未確定表記が残存：未確定' \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF '[FAIL] ./-dash.md : 行4 未確定表記が残存：未確定' \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF '[FAIL] hooktest/memo[1].md : 行4 未確定表記が残存：未確定'; then
+    echo "OK: 65. E75 複数path境界→対象5・FAIL4・各path固定"; PASS=$((PASS + 1))
+  else
+    echo "NG: 65. E75 複数path境界（code=$HOOK_CODE 対象/FAIL不一致）"; printf '%s\n' "$HOOK_OUT" | sed 's/^/    /'; FAILN=$((FAILN + 1))
+  fi
+
+  # 66 / E76. path 0件 → checkerを呼ばずexit0（marker stubで非起動を証明）
+  # 前testの未追跡fixtureを完全resetしてから、stub checkerをcommitしてWTを
+  # cleanに保つ（0件化）。確認後baselineへhard reset。
+  hook_reset
+  E76_MARKER="$TMPDIR/e76-checker-invoked.marker"
+  rm -f "$E76_MARKER"
+  cat > "$HOOK_CLONE/scripts/pre-delivery-check.sh" <<EOS
+#!/bin/bash
+: > "$E76_MARKER"
+exit 0
+EOS
+  git -C "$HOOK_CLONE" commit -q -am "e76 marker-stub checker"
+  run_hook '{"stop_hook_active": false}'
+  if [ "$HOOK_CODE" -eq 0 ] && [ ! -f "$E76_MARKER" ]; then
+    echo "OK: 66. E76 path0件→checker非起動・exit0（marker不在）"; PASS=$((PASS + 1))
+  else
+    echo "NG: 66. E76 path0件（code=$HOOK_CODE marker=$( [ -f "$E76_MARKER" ] && echo 存在 || echo 不在 )）"; FAILN=$((FAILN + 1))
+  fi
+  git -C "$HOOK_CLONE" reset -q --hard "$HOOK_BASELINE"
+  rm -f "$E76_MARKER"
+
+  # 67 / E77. 除外対象だけ変更 → checkerは起動され「検査対象がありません」・exit0
+  hook_reset
+  printf 'excluded note\n' > "$HOOK_CLONE/scripts/_hook_excluded_note.md"
+  run_hook '{"stop_hook_active": false}'
+  if [ "$HOOK_CODE" -eq 0 ] \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF '検査対象がありません'; then
+    echo "OK: 67. E77 除外対象のみ→checker起動・検査対象なし・exit0"; PASS=$((PASS + 1))
+  else
+    echo "NG: 67. E77 除外対象のみ（code=$HOOK_CODE）"; printf '%s\n' "$HOOK_OUT" | sed 's/^/    /'; FAILN=$((FAILN + 1))
+  fi
+
+  # 68 / E78. 空白入りOffice path → WT Office抽出でraw pathの★★FAIL
+  hook_reset
+  mkdir -p "$HOOK_CLONE/hooktest"
+  printf '%s' "$OFFICE_HARD_ZIP_B64" | base64 -d > "$HOOK_CLONE/hooktest/of fice.pptx"
+  run_hook '{"stop_hook_active": false}'
+  E78_LINE='[FAIL] hooktest/of fice.pptx : 未確定表記が残存：★★'
+  if [ "$HOOK_CODE" -eq 2 ] \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF "$E78_LINE" \
+    && ! printf '%s\n' "$HOOK_OUT" | grep -qF 'XMLを抽出できません'; then
+    echo "OK: 68. E78 空白入りOffice→raw path★★FAIL"; PASS=$((PASS + 1))
+  else
+    echo "NG: 68. E78 空白入りOffice（code=$HOOK_CODE）"; printf '%s\n' "$HOOK_OUT" | sed 's/^/    /'; FAILN=$((FAILN + 1))
+  fi
+
+  # 69 / E79. rename後の新path（空白入り） → 新pathのFAIL・対象1・旧path欠落を成功理由にしない
+  hook_reset
+  mkdir -p "$HOOK_CLONE/hooktest"
+  mv "$HOOK_CLONE/.gitignore" "$HOOK_CLONE/hooktest/sp renamed.md"
+  printf '★★\n' >> "$HOOK_CLONE/hooktest/sp renamed.md"
+  run_hook '{"stop_hook_active": false}'
+  E79_LINE='[FAIL] hooktest/sp renamed.md : 未確定表記が残存：★★'
+  if [ "$HOOK_CODE" -eq 2 ] \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF "$E79_LINE" \
+    && printf '%s\n' "$HOOK_OUT" | grep -qE '対象 1ファイル'; then
+    echo "OK: 69. E79 rename後の新path→新pathFAIL・対象1"; PASS=$((PASS + 1))
+  else
+    echo "NG: 69. E79 rename後の新path（code=$HOOK_CODE）"; printf '%s\n' "$HOOK_OUT" | sed 's/^/    /'; FAILN=$((FAILN + 1))
+  fi
+
+  # 70 / E80. malformed JSON → ACTIVE=false扱いで検査続行・違反FAIL・exit2
+  hook_reset
+  hook_violating "viol.md"
+  run_hook 'not-json-at-all'
+  if [ "$HOOK_CODE" -eq 2 ] \
+    && printf '%s\n' "$HOOK_OUT" | grep -qF "$VIOL_LINE_VIOL" \
+    && printf '%s\n' "$HOOK_ERR" | grep -qF "出荷前検品でFAILが検出されました。"; then
+    echo "OK: 70. E80 malformed JSON→ACTIVE=false扱いで検査続行・exit2"; PASS=$((PASS + 1))
+  else
+    echo "NG: 70. E80 malformed JSON（code=$HOOK_CODE）"; printf 'OUT:%s\nERR:%s\n' "$HOOK_OUT" "$HOOK_ERR" | sed 's/^/    /'; FAILN=$((FAILN + 1))
+  fi
+fi
+
 echo "----------------------------------------"
 echo "テスト結果: 合格 ${PASS}件 / 不合格 ${FAILN}件"
 if [ $FAILN -gt 0 ]; then
