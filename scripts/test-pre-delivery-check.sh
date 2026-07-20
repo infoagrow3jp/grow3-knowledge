@@ -769,17 +769,18 @@ assert_staged "42. E50 未登録リネーム＋未確定→本文 soft FAIL" 1 \
   default \
   renames_false
 
-# 43 / ACMR／find-renames 契約：staged収集コマンド行に両方が明示されていること
+# 43 / ACMR／find-renames／NUL契約：staged収集コマンド行に
+# --name-only -z・--diff-filter=ACMR・--find-renames がすべて明示されていること
 # （コメント行は除外し、diff --cached 収集行だけを見る）
 if awk '
   /^[[:space:]]*#/ { next }
-  /diff --cached/ && /--name-only/ && /--diff-filter=ACMR/ && /--find-renames/ { found=1 }
+  /diff --cached/ && /--name-only -z/ && /--diff-filter=ACMR/ && /--find-renames/ { found=1 }
   END { exit found ? 0 : 1 }
 ' "$CHECK"; then
-  echo "OK: 43. ACMR／find-renames契約（staged収集コマンド）"
+  echo "OK: 43. ACMR／find-renames／-z契約（staged収集コマンド）"
   PASS=$((PASS + 1))
 else
-  echo "NG: 43. ACMR／find-renames契約（staged収集にACMR+find-renamesなし）"
+  echo "NG: 43. ACMR／find-renames／-z契約（staged収集にACMR+find-renames+-zなし）"
   FAILN=$((FAILN + 1))
 fi
 
@@ -854,13 +855,215 @@ else
   FAILN=$((FAILN + 1))
 fi
 
-# 49 / 実index非破壊確認：staged系test（E48〜E60含む）前後で実indexが不変
-REAL_INDEX_AFTER=$(real_index_hash)
-if [ "$REAL_INDEX_BEFORE" = "$REAL_INDEX_AFTER" ]; then
-  echo "OK: 49. 実index非破壊（staged系test前後で不変）"
+# =============================================================
+# staged path transport / NUL-safe 系（E61〜E68）
+# 特殊pathはGIT_INDEX_FILEの一時indexだけへ登録する（実index・正本WT不変）。
+# core.protectNTFS=false はfixture登録時のみ使用（checker本体では不使用）。
+# 特殊path診断の確認はregexに依存せず固定文字列（grep -F）と行完全一致で行う。
+# =============================================================
+
+# 特殊path fixture登録：raw pathをNUL終端したindex-infoで一時indexへ登録
+stage_special_path_blob() { # $1=raw_path $2=blob_sha
+  printf '100644 %s 0\t%s\0' "$2" "$1" \
+    | GIT_INDEX_FILE="$TEST_INDEX" git -C "$REPO_ROOT" \
+        -c core.quotepath=false -c core.protectNTFS=false \
+        update-index -z --index-info
+}
+
+# staged実行helper（既定台帳・結果をOUT／CODEへ格納。固定文字列検査用）
+run_staged_default() { # $1=optional profile（renames_false|office_tmp）
+  local profile="${1:-}"
+  local -a run_env=( "GIT_INDEX_FILE=$TEST_INDEX" )
+  if [ "$profile" = "renames_false" ]; then
+    run_env+=(
+      "GIT_CONFIG_COUNT=1"
+      "GIT_CONFIG_KEY_0=diff.renames"
+      "GIT_CONFIG_VALUE_0=false"
+    )
+  fi
+  if [ "$profile" = "office_tmp" ]; then
+    run_env+=( "TMPDIR=$OFFICE_TEST_TMPROOT" )
+  fi
+  CODE=0
+  OUT=$(env -u PRE_DELIVERY_UNCERTAINTY_REGISTRY "${run_env[@]}" \
+    bash "$CHECK" --staged 2>&1) || CODE=$?
+}
+
+run_staged_explicit() { # $1=明示指定台帳（実ファイル）
+  CODE=0
+  OUT=$(env "GIT_INDEX_FILE=$TEST_INDEX" \
+    PRE_DELIVERY_UNCERTAINTY_REGISTRY="$1" \
+    bash "$CHECK" --staged 2>&1) || CODE=$?
+}
+
+# rename補助確認（NUL安全版）：--name-status -zをread -d ''で解析しraw値で比較する。
+# 既存assert_rename_name_status（E48〜E50用）は変更しない。
+assert_rename_z() { # $1=name $2=old_raw_path $3=new_raw_path
+  local name="$1" old="$2" new="$3" x
+  local -a rec=()
+  while IFS= read -r -d '' x; do rec+=("$x"); done < <(GIT_INDEX_FILE="$TEST_INDEX" \
+    git -C "$REPO_ROOT" -c core.quotepath=false -c diff.renames=false \
+    diff --cached --name-status -z --diff-filter=ACMR --find-renames 2>/dev/null)
+  if [ "${#rec[@]}" -eq 3 ] && [[ "${rec[0]}" == R* ]] \
+     && [ "${rec[1]}" = "$old" ] && [ "${rec[2]}" = "$new" ]; then
+    return 0
+  fi
+  echo "NG: $name → rename -z補助確認失敗（record数=${#rec[@]}）"
+  FAILN=$((FAILN + 1))
+  return 1
+}
+
+# 特殊path用の共通blob（frozen＋A群soft／frozen＋C群hard）
+SPECIAL_MITEI_BLOB=$(printf -- '---\nstatus: frozen\n---\nこの行は未確定\n' | git -C "$REPO_ROOT" hash-object -w --stdin)
+SPECIAL_HARD_BLOB=$(printf -- '---\nstatus: frozen\n---\n★★\n' | git -C "$REPO_ROOT" hash-object -w --stdin)
+
+# 50 / E61. 空白を含むstaged path → raw pathのまま検査・未確定FAIL
+reset_test_index
+stage_special_path_blob '_tmp_pdc_test/sp ace.md' "$SPECIAL_MITEI_BLOB"
+assert_staged "50. E61 空白を含むstaged path→未確定FAIL" 1 \
+  "\[FAIL\] _tmp_pdc_test/sp ace\.md : 行4 未確定表記が残存：未確定" \
+  "検査対象がありません" \
+  default
+
+# 51 / E62. 日本語＋空白path → octal・quote表記にならずraw表示で検査
+reset_test_index
+stage_special_path_blob '_tmp_pdc_test/日本語 メモ.md' "$SPECIAL_MITEI_BLOB"
+assert_staged "51. E62 日本語＋空白staged path→未確定FAIL" 1 \
+  "\[FAIL\] _tmp_pdc_test/日本語 メモ\.md : 行4 未確定表記が残存：未確定" \
+  "検査対象がありません" \
+  default
+
+# 52 / E63. 先頭ハイフン＋single quote＋double quote＋backslash複合path（固定文字列検査）
+# raw path： -dash'quo"te\slash.md ／ 表示期待： -dash'quo"te\\slash.md
+E63_PATH="-dash'quo\"te\\slash.md"
+E63_EXPECT="[FAIL] -dash'quo\"te\\\\slash.md : 未確定表記が残存：★★"
+reset_test_index
+stage_special_path_blob "$E63_PATH" "$SPECIAL_HARD_BLOB"
+run_staged_default ""
+if [ "$CODE" -eq 1 ] \
+  && printf '%s\n' "$OUT" | grep -qF "$E63_EXPECT" \
+  && ! printf '%s\n' "$OUT" | grep -qF "Git indexから読み出せません" \
+  && ! printf '%s\n' "$OUT" | grep -qF "検査対象がありません"; then
+  echo "OK: 52. E63 hyphen・quotes・backslash複合path→hard FAIL"
   PASS=$((PASS + 1))
 else
-  echo "NG: 49. 実indexが変更されています"
+  echo "NG: 52. E63 hyphen・quotes・backslash複合path（code=$CODE）"
+  printf '%s\n' "$OUT" | sed 's/^/    /'
+  FAILN=$((FAILN + 1))
+fi
+
+# 53 / E64. TAB pathとregistry_keyのTAB連結キー衝突（path単位の固定文字列検査）
+# 通常path「collision.md」のexact_line「tail<TAB>未確定」登録キーと、
+# 特殊path「collision.md<TAB>tail」＋本文「未確定」のキーが旧実装では同一になる。
+# 新実装は制御文字pathの台帳照合をスキップし、常に未登録FAILへ倒す。
+E64_NORMAL='_tmp_pdc_test/collision.md'
+E64_SPECIAL=$'_tmp_pdc_test/collision.md\ttail'
+E64_NORMAL_BLOB=$(printf -- '---\nstatus: frozen\n---\ntail\t未確定\n' | git -C "$REPO_ROOT" hash-object -w --stdin)
+E64_SPECIAL_BLOB=$(printf -- '---\nstatus: frozen\n---\n未確定\n' | git -C "$REPO_ROOT" hash-object -w --stdin)
+reset_test_index
+stage_special_path_blob "$E64_NORMAL" "$E64_NORMAL_BLOB"
+stage_special_path_blob "$E64_SPECIAL" "$E64_SPECIAL_BLOB"
+printf '%s\t1\thistory\t衝突確認用の一時登録\ttail\t未確定\n' "$E64_NORMAL" > "$TMPDIR/e64.tsv"
+run_staged_explicit "$TMPDIR/e64.tsv"
+E64_WARN_LINE='[WARN] _tmp_pdc_test/collision.md : 行4 意図的な未確定表記（history・台帳登録済み）'
+E64_FAIL_LINE='[FAIL] _tmp_pdc_test/collision.md\ttail : 行4 未確定表記が残存：未確定'
+E64_BAD_FRAG='collision.md\ttail : 行4 意図的な未確定表記'
+if [ "$CODE" -eq 1 ] \
+  && printf '%s\n' "$OUT" | grep -qF "$E64_WARN_LINE" \
+  && printf '%s\n' "$OUT" | grep -qF "$E64_FAIL_LINE" \
+  && ! printf '%s\n' "$OUT" | grep -qF "$E64_BAD_FRAG"; then
+  echo "OK: 53. E64 TAB path台帳キー衝突→照合スキップで未登録FAIL"
+  PASS=$((PASS + 1))
+else
+  echo "NG: 53. E64 TAB path台帳キー衝突（code=$CODE）"
+  printf '%s\n' "$OUT" | sed 's/^/    /'
+  FAILN=$((FAILN + 1))
+fi
+
+# 54 / E65. CR＋LFを含むpath → 診断はline\r\npath.mdの1行表示（OUTはE68用に保全）
+E65_PATH=$'_tmp_pdc_test/line\r\npath.md'
+E65_LINE='[FAIL] _tmp_pdc_test/line\r\npath.md : 未確定表記が残存：★★'
+reset_test_index
+stage_special_path_blob "$E65_PATH" "$SPECIAL_HARD_BLOB"
+run_staged_default ""
+E65_OUT="$OUT"
+if [ "$CODE" -eq 1 ] \
+  && printf '%s\n' "$E65_OUT" | grep -qF "$E65_LINE" \
+  && ! printf '%s\n' "$E65_OUT" | grep -qF "検査対象がありません"; then
+  echo "OK: 54. E65 CR+LF path→escape表示でhard FAIL"
+  PASS=$((PASS + 1))
+else
+  echo "NG: 54. E65 CR+LF path（code=$CODE）"
+  printf '%s\n' "$E65_OUT" | sed 's/^/    /'
+  FAILN=$((FAILN + 1))
+fi
+
+# 55 / E66. 特殊path（TAB入り）へのrename → -z補助確認＋新raw path本文のhard FAIL
+reset_test_index
+E66_NEW=$'_tmp_pdc_test/ren\tamed.md'
+E66_LINE='[FAIL] _tmp_pdc_test/ren\tamed.md : 未確定表記が残存：★★'
+E66_BLOB=$(
+  { git -C "$REPO_ROOT" show HEAD:.gitignore; printf '%s\n' '★★'; } \
+    | git -C "$REPO_ROOT" hash-object -w --stdin
+)
+git_tmp update-index --force-remove -- .gitignore
+stage_special_path_blob "$E66_NEW" "$E66_BLOB"
+assert_rename_z "55. E66 -z補助確認" ".gitignore" "$E66_NEW" || true
+run_staged_default "renames_false"
+if [ "$CODE" -eq 1 ] \
+  && printf '%s\n' "$OUT" | grep -qF "$E66_LINE" \
+  && ! printf '%s\n' "$OUT" | grep -qF "検査対象がありません"; then
+  echo "OK: 55. E66 rename→特殊path・新path検査でhard FAIL"
+  PASS=$((PASS + 1))
+else
+  echo "NG: 55. E66 rename→特殊path（code=$CODE）"
+  printf '%s\n' "$OUT" | sed 's/^/    /'
+  FAILN=$((FAILN + 1))
+fi
+
+# 56 / E67. 特殊path（TAB入り）のOffice → raw suffixでOffice分岐・index抽出成功
+reset_test_index
+E67_PATH=$'_tmp_pdc_test/off\tice.pptx'
+E67_LINE='[FAIL] _tmp_pdc_test/off\tice.pptx : 未確定表記が残存：★★'
+E67_BLOB=$(printf '%s' "$OFFICE_HARD_ZIP_B64" | base64 -d | git -C "$REPO_ROOT" hash-object -w --stdin)
+stage_special_path_blob "$E67_PATH" "$E67_BLOB"
+run_staged_default "office_tmp"
+if [ "$CODE" -eq 1 ] \
+  && printf '%s\n' "$OUT" | grep -qF "$E67_LINE" \
+  && ! printf '%s\n' "$OUT" | grep -qF "XMLを抽出できません" \
+  && ! printf '%s\n' "$OUT" | grep -qF "Git indexから読み出せません" \
+  && ! printf '%s\n' "$OUT" | grep -qF "検査対象がありません"; then
+  echo "OK: 56. E67 特殊pathのOffice→index抽出でhard FAIL"
+  PASS=$((PASS + 1))
+else
+  echo "NG: 56. E67 特殊pathのOffice（code=$CODE）"
+  printf '%s\n' "$OUT" | sed 's/^/    /'
+  FAILN=$((FAILN + 1))
+fi
+
+# 57 / E68. 診断1行性（E65のOUTを行完全一致・件数で検査。summary行は含めない）
+E68_FULL_LINE='[FAIL] _tmp_pdc_test/line\r\npath.md : 未確定表記が残存：★★'
+E68_FAIL_COUNT=$(printf '%s\n' "$E65_OUT" | grep -cF '[FAIL]')
+E68_EXACT_COUNT=$(printf '%s\n' "$E65_OUT" | grep -cFx "$E68_FULL_LINE")
+E68_ORPHAN_COUNT=$(printf '%s\n' "$E65_OUT" | grep -cE '^path\.md')
+if [ "${E68_FAIL_COUNT:-0}" -eq 1 ] \
+  && [ "${E68_EXACT_COUNT:-0}" -eq 1 ] \
+  && [ "${E68_ORPHAN_COUNT:-0}" -eq 0 ]; then
+  echo "OK: 57. E68 特殊path診断の1物理行性（[FAIL]=1行・完全一致・孤立行なし）"
+  PASS=$((PASS + 1))
+else
+  echo "NG: 57. E68 診断1行性（FAIL行=${E68_FAIL_COUNT} 完全一致=${E68_EXACT_COUNT} 孤立行=${E68_ORPHAN_COUNT}）"
+  printf '%s\n' "$E65_OUT" | sed 's/^/    /'
+  FAILN=$((FAILN + 1))
+fi
+
+# 58 / 実index非破壊確認：staged系test（E48〜E68含む）前後で実indexが不変
+REAL_INDEX_AFTER=$(real_index_hash)
+if [ "$REAL_INDEX_BEFORE" = "$REAL_INDEX_AFTER" ]; then
+  echo "OK: 58. 実index非破壊（staged系test前後で不変）"
+  PASS=$((PASS + 1))
+else
+  echo "NG: 58. 実indexが変更されています"
   FAILN=$((FAILN + 1))
 fi
 

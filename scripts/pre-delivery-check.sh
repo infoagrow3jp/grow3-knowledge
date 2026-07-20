@@ -76,13 +76,30 @@ normalize_rel_path() {
   basename "$p"
 }
 
+# 診断表示：pathのみ表示用escape（\→\\、TAB→\t、CR→\r、LF→\n の順）。
+# 内部処理（index読出し・除外・拡張子・台帳判定）はraw pathを使い、表示だけを1物理行に保つ。
+# message本文はescape対象にしない。
 report() { # $1=LEVEL $2=file $3=message
-  echo "[$1] $2 : $3"
+  local disp="$2"
+  disp="${disp//\\/\\\\}"
+  disp="${disp//$'\t'/\\t}"
+  disp="${disp//$'\r'/\\r}"
+  disp="${disp//$'\n'/\\n}"
+  printf '[%s] %s : %s\n' "$1" "$disp" "$3"
   [ "$1" = "FAIL" ] && FAIL=$((FAIL+1)) || WARN=$((WARN+1))
 }
 
 registry_key() {
   printf '%s\t%s' "$1" "$2"
+}
+
+# TAB・CR・LFを含むpathはTSV台帳で安全に表現できないため、常に台帳未登録として扱う
+# （registry_keyのTAB連結キーとの衝突も防ぐ。台帳形式自体は変更しない）
+path_registry_incompatible() {
+  case "$1" in
+    *$'\t'*|*$'\r'*|*$'\n'*) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 load_registry() {
@@ -191,8 +208,14 @@ load_registry() {
 
 # 「記録形式」節除外はリポジトリ直下の正本 DECISIONS.md のみ。
 # fenced code block は原則走査（区切り行自体はスキップ）。
+# staged：引数は既にrepo相対の正本pathのためそのままcase判定。
+# working tree：従来どおりnormalize_rel_pathを経由する。
 apply_record_form_template_filter() {
-  case "$(normalize_rel_path "$1")" in
+  local p="$1"
+  if [ "$STAGED_MODE" -eq 0 ]; then
+    p=$(normalize_rel_path "$p")
+  fi
+  case "$p" in
     DECISIONS.md) echo 1 ;;
     *) echo 0 ;;
   esac
@@ -260,6 +283,11 @@ check_mitei_lines() {
   while IFS=$'\t' read -r lineno content || [ -n "$lineno" ]; do
     [ -z "$lineno" ] && continue
     line_hits["$content"]=$((${line_hits["$content"]:-0} + 1))
+    # 台帳照合不能path：keyを生成せずREG_*にも触れない（常に未登録扱い）
+    if path_registry_incompatible "$rel"; then
+      report "$uncertain_level" "$f" "行${lineno} 未確定表記が残存：未確定"
+      continue
+    fi
     local key hit_count reg_expected reg_class
     key=$(registry_key "$rel" "$content")
     hit_count=${line_hits["$content"]}
@@ -316,9 +344,10 @@ load_registry || exit 1
 TARGETS=()
 if [ "$STAGED_MODE" -eq 1 ]; then
   # indexが正。working tree上の存在は要求しない（同一snapshot契約）
-  while IFS= read -r f; do
+  # -z＋read -d ''のNUL区切りで、特殊文字pathもGit index上の生pathのまま受け取る
+  while IFS= read -r -d '' f; do
     ! is_excluded "$f" && TARGETS+=("$f")
-  done < <(git -C "$REPO_ROOT" -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR --find-renames 2>/dev/null)
+  done < <(git -C "$REPO_ROOT" -c core.quotepath=false diff --cached --name-only -z --diff-filter=ACMR --find-renames 2>/dev/null)
 else
   for a in "$@"; do
     if [ -d "$a" ]; then
@@ -340,7 +369,8 @@ fi
 get_text() {
   if [ "$STAGED_MODE" -eq 1 ]; then
     # Office文書はメインループでindex抽出済み（ここへは来ない）
-    read_index_content "$(normalize_rel_path "$1")"
+    # staged収集済みpathはGit indexの正確なrepo相対path。再正規化しない
+    read_index_content "$1"
     return
   fi
   case "$1" in
@@ -396,7 +426,7 @@ if [ ${#TARGETS[@]} -gt 0 ]; then
           fi
           OFFICE_BIN="$OFFICE_TMPDIR/office-bin"
           OFFICE_XML="$OFFICE_TMPDIR/office-xml"
-          if ! read_index_content "$(normalize_rel_path "$f")" > "$OFFICE_BIN"; then
+          if ! read_index_content "$f" > "$OFFICE_BIN"; then
             report FAIL "$f" "stagedのOffice文書をGit indexから読み出せません"
             continue
           fi
@@ -414,7 +444,12 @@ if [ ${#TARGETS[@]} -gt 0 ]; then
     [ "$OFFICE_TEXT_READY" -eq 0 ] && TEXT=$(get_text "$f")
     PROSE_TEXT=$(printf '%s\n' "$TEXT" | strip_template_and_fences "$(apply_record_form_template_filter "$f")")
     DOC_STATUS=$(printf '%s\n' "$TEXT" | get_doc_status)
-    REL_PATH=$(normalize_rel_path "$f")
+    if [ "$STAGED_MODE" -eq 1 ]; then
+      # 収集済みraw pathを正本とする（$()経由の末尾LF喪失を避けるため直接代入）
+      REL_PATH="$f"
+    else
+      REL_PATH=$(normalize_rel_path "$f")
+    fi
     if [ "$DOC_STATUS" = "draft" ] || [ "$DOC_STATUS" = "reviewed" ]; then
       UNCERTAIN_LEVEL=WARN
     else
