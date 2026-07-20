@@ -13,12 +13,65 @@ FIXDIR="$REPO_ROOT/_tmp_pdc_test"
 rm -rf "$FIXDIR"
 mkdir -p "$FIXDIR"
 TMPDIR=$(mktemp -d)
-DEC_E24_BACKUP=""
-REG_E45_BACKUP=""
-trap '[ -n "$DEC_E24_BACKUP" ] && [ -f "$DEC_E24_BACKUP" ] && cp "$DEC_E24_BACKUP" "$REPO_ROOT/DECISIONS.md"; [ -n "$REG_E45_BACKUP" ] && [ -f "$REG_E45_BACKUP" ] && cp "$REG_E45_BACKUP" "$REGISTRY"; rm -rf "$TMPDIR" "$FIXDIR"' EXIT
+# E24/E45は正本tracked file（DECISIONS.md・実台帳）を一切変更せず、プロセス固有の
+# 一時clone内でだけ不正状態を再現する。よって正本ファイルのbackup/復元は行わない。
+trap 'rm -rf "$TMPDIR" "$FIXDIR"' EXIT
+
+# 正本repo rootのcanonical形（境界guardの比較基準）
+CANONICAL_REPO_ROOT=$(cd "$REPO_ROOT" && pwd -P)
 
 PASS=0
 FAILN=0
+
+# 正本REPO_ROOTからプロセス固有の一時cloneを作成する（git worktreeは使わない）。
+# 正本の .git／index／working tree を変更しない。cloneは$TMPDIR配下でtrapが削除する。
+# 成功時stdoutにclone path、失敗時は空文字。
+make_isolated_clone() {
+  local dest
+  dest="$TMPDIR/isoclone-$$-${RANDOM}-${RANDOM}"
+  rm -rf "$dest"
+  if git clone -q "$REPO_ROOT" "$dest" >/dev/null 2>&1; then
+    printf '%s' "$dest"
+  else
+    printf ''
+  fi
+}
+
+# 破壊的書込みの直前guard。まず書込対象file自体を検査し（存在・通常file・非symlink）、
+# 次に対象が属するrepo rootをcanonicalに解決して正本REPO_ROOTと一致しないことを確認する。
+# file検査を先に行うことで、隔離clone内のsymlinkを介した正本ファイルへの書込みを禁止する。
+assert_write_target_isolated() { # $1=書込対象ファイル $2=test名
+  local target="$1" name="$2" dir root
+  # (a) 対象file検査：存在しない・通常fileでない・symlinkは安全側で拒否
+  if [ ! -e "$target" ]; then
+    echo "NG: $name → 境界guard：書込対象が存在しません（$target）。書込みを中止しました"
+    FAILN=$((FAILN + 1)); return 1
+  fi
+  if [ -L "$target" ]; then
+    echo "NG: $name → 境界guard：書込対象がsymlinkです（$target）。書込みを中止しました"
+    FAILN=$((FAILN + 1)); return 1
+  fi
+  if [ ! -f "$target" ]; then
+    echo "NG: $name → 境界guard：書込対象が通常fileではありません（$target）。書込みを中止しました"
+    FAILN=$((FAILN + 1)); return 1
+  fi
+  # (b) canonical repo root比較：対象の属するrepo rootが正本と一致するなら拒否（部分一致非依存）
+  dir=$(cd "$(dirname "$target")" 2>/dev/null && pwd -P) || {
+    echo "NG: $name → 境界guard：書込対象dirを解決できません（$target）"; FAILN=$((FAILN + 1)); return 1; }
+  root=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)
+  root=$(cd "$root" 2>/dev/null && pwd -P)
+  if [ -z "$root" ] || [ "$root" = "$CANONICAL_REPO_ROOT" ]; then
+    echo "NG: $name → 境界guard：破壊対象が正本repoです（$target）。書込みを中止しました"
+    FAILN=$((FAILN + 1)); return 1
+  fi
+  return 0
+}
+
+# 正本ファイルがHEADと一致することは、git-canonicalな判定で確認する：
+#   - git diff --quiet（作業ツリーの変更なし）
+#   - git hash-object == git rev-parse HEAD:path（cleanフィルタ適用後のblobがHEADと同一）
+# この2つはautocrlf（作業ツリーCRLF／blob LF）に依存せず「HEAD一致」を保証する。
+# `cmp FILE <(git show HEAD:FILE)` は生byte比較のためautocrlf環境で偽の不一致を出すので使わない。
 
 run_check() {
   env PRE_DELIVERY_UNCERTAINTY_REGISTRY="${PRE_DELIVERY_UNCERTAINTY_REGISTRY:-$REGISTRY}" \
@@ -120,21 +173,74 @@ PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry1_min.tsv" \
   "意図的な未確定表記" \
   "$FIXDIR/template_section.md"
 
-# 4b / E24. 正本 DECISIONS.md の記録形式節内は除外（陽性回帰）
-# path完全一致 DECISIONS.md だけが対象のため、正本へ一時的に soft を挿入して検証する
-DEC_FILE="$REPO_ROOT/DECISIONS.md"
-DEC_E24_BACKUP="$TMPDIR/DECISIONS.md.e24.bak"
-cp "$DEC_FILE" "$DEC_E24_BACKUP"
-awk '
-  /^## 記録形式[[:space:]]*$/ { print; print ""; print "- 未確定表記の例示"; next }
-  { print }
-' "$DEC_E24_BACKUP" > "$DEC_FILE"
-assert_diag "4b. E24 DECISIONS記録形式節内は除外" 0 \
-  "" \
-  "未確定表記が残存：未確定" \
-  "$DEC_FILE"
-cp "$DEC_E24_BACKUP" "$DEC_FILE"
-DEC_E24_BACKUP=""
+# 4b / E24 ＋ E81. 記録形式節内除外（陽性回帰）を、正本ではなく隔離clone内で検証する。
+# clone内 DECISIONS.md だけへ soft を挿入し、同じ瞬間に正本 DECISIONS.md が
+# Git上でHEADと一致していること（E81）も確認する。正本ファイルは一切変更しない。
+E24_CLONE=$(make_isolated_clone)
+if [ -z "$E24_CLONE" ]; then
+  echo "NG: 4b. E24 隔離clone作成失敗"; FAILN=$((FAILN + 1))
+  echo "NG: E81 E24隔離の正本非破壊（clone作成失敗のため未検証）"; FAILN=$((FAILN + 1))
+else
+  E24_DEC="$E24_CLONE/DECISIONS.md"
+  if assert_write_target_isolated "$E24_DEC" "4b/E81. E24"; then
+    # clone内 DECISIONS.md の記録形式節へ soft を注入し、fixtureが成立したことを確認する：
+    #  (1) awk成功  (2) clone内DECISIONS.mdへの反映成功
+    #  (3) 挿入行が存在し  (4) それが ## 記録形式 節内（次の同階層 ## 見出しまで）にある
+    # 単純な全体grepでは他節の同表記と区別できないため、節範囲をawkで判定する。
+    E24_FIXTURE_OK=0
+    if awk '
+         /^## 記録形式[[:space:]]*$/ { print; print ""; print "- 未確定表記の例示"; next }
+         { print }
+       ' "$E24_DEC" > "$TMPDIR/e24-mutated" \
+       && cp "$TMPDIR/e24-mutated" "$E24_DEC" \
+       && awk '
+            BEGIN { in_sec = 0; found = 0 }
+            /^## 記録形式[[:space:]]*$/ { in_sec = 1; next }
+            in_sec && /^## / { in_sec = 0 }
+            in_sec && $0 == "- 未確定表記の例示" { found = 1 }
+            END { exit found ? 0 : 1 }
+          ' "$E24_DEC"; then
+      E24_FIXTURE_OK=1
+    fi
+
+    if [ "$E24_FIXTURE_OK" -ne 1 ]; then
+      # fixture不成立：checkerを実行せず、E24・E81ともNG（正本は不変のまま）
+      echo "NG: 4b. E24 fixture成立せず（記録形式節内への挿入を確認できません・checker未実行）"
+      FAILN=$((FAILN + 1))
+      echo "NG: E81 E24 fixture成立せず（checker未実行・正本は不変）"
+      FAILN=$((FAILN + 1))
+    else
+      # E81：clone内fixtureが不正状態であるこの瞬間に、正本 DECISIONS.md が Git上でHEADと一致
+      #      （clean-filter適用後のblobがHEAD blobと一致）
+      if git -C "$REPO_ROOT" diff --quiet -- DECISIONS.md \
+         && [ "$(git -C "$REPO_ROOT" hash-object DECISIONS.md)" = "$(git -C "$REPO_ROOT" rev-parse HEAD:DECISIONS.md)" ]; then
+        echo "OK: E81 E24 fixture成立かつ正本DECISIONS.mdはGit上でHEADと一致（非破壊）"
+        PASS=$((PASS + 1))
+      else
+        echo "NG: E81 E24隔離中に正本DECISIONS.mdがGit上でHEADと不一致"
+        FAILN=$((FAILN + 1))
+      fi
+
+      # 4b / E24：clone checker で記録形式節内 soft が除外され exit 0（診断契約は不変）
+      E24_OUT=$(cd "$E24_CLONE" \
+        && PRE_DELIVERY_UNCERTAINTY_REGISTRY="$E24_CLONE/scripts/pre-delivery-intentional-uncertainty.tsv" \
+           bash "$E24_CLONE/scripts/pre-delivery-check.sh" "$E24_DEC" 2>&1)
+      E24_CODE=$?
+      if [ "$E24_CODE" -eq 0 ] && ! printf '%s\n' "$E24_OUT" | grep -qF "未確定表記が残存：未確定"; then
+        echo "OK: 4b. E24 DECISIONS記録形式節内は除外（隔離clone）"
+        PASS=$((PASS + 1))
+      else
+        echo "NG: 4b. E24 記録形式除外（code=$E24_CODE）"
+        printf '%s\n' "$E24_OUT" | sed 's/^/    /'
+        FAILN=$((FAILN + 1))
+      fi
+    fi
+  else
+    # guard失敗（M14検出経路）：E24診断もE81も未成立としてカウント
+    echo "NG: E81 E24隔離の正本非破壊（境界guardで書込み中止）"; FAILN=$((FAILN + 1))
+  fi
+  rm -rf "$E24_CLONE" "$TMPDIR/e24-mutated"
+fi
 
 # 4b2 / E24-subdir. サブディレクトリ上の DECISIONS.md は記録形式節を除外しない
 mkdir -p "$FIXDIR/subdir"
@@ -657,17 +763,84 @@ assert_staged "32. E44 index本文+index statusで違反なし" 0 \
   "未確定表記が残存" \
   explicit
 
-# 33 / E45. staged既定台帳は正常／WT既定台帳は不正 → index台帳で読込成功
-reset_test_index
-REG_E45_BACKUP="$TMPDIR/registry-e45-backup.tsv"
-cp "$REGISTRY" "$REG_E45_BACKUP"
-printf 'broken registry without tabs\n' > "$REGISTRY"
-assert_staged "33. E45 index既定台帳正常/WT不正→exit0" 0 \
-  "" \
-  "台帳エラー|台帳ファイルが存在しません" \
-  default
-cp "$REG_E45_BACKUP" "$REGISTRY"
-REG_E45_BACKUP=""
+# 33 / E45 ＋ E82. 「staged modeはWTの不正台帳ではなくindex snapshotの台帳を読む」契約を、
+# 正本ではなく隔離clone内で検証する。clone内indexに正常台帳・clone内WT台帳だけを不正化し、
+# 同じ瞬間に正本の実台帳がGit上でHEADと一致・正本indexが不変（E82）であることも確認する。
+# E24とは別cloneを使い、順序依存を作らない。
+E45_CLONE=$(make_isolated_clone)
+if [ -z "$E45_CLONE" ]; then
+  echo "NG: 33. E45 隔離clone作成失敗"; FAILN=$((FAILN + 1))
+  echo "NG: E82 E45隔離の正本非破壊（clone作成失敗のため未検証）"; FAILN=$((FAILN + 1))
+else
+  E45_REG="$E45_CLONE/scripts/pre-delivery-intentional-uncertainty.tsv"
+  E45_IDX="$TMPDIR/e45-clone-index"
+  E45_REG_REL="scripts/pre-delivery-intentional-uncertainty.tsv"
+  rm -f "$E45_IDX"
+  # clone内index に正常台帳を保持（read-tree HEAD）
+  E45_READTREE_OK=0
+  GIT_INDEX_FILE="$E45_IDX" git -C "$E45_CLONE" read-tree HEAD 2>/dev/null && E45_READTREE_OK=1
+  if assert_write_target_isolated "$E45_REG" "33/E82. E45"; then
+    # clone内WT台帳だけを不正化（正本・clone index は不変）
+    printf 'broken registry without tabs\n' > "$E45_REG"
+
+    # fixture成立確認：
+    #  (1) 代替indexへのread-tree HEAD成功
+    #  (2) clone WT台帳へ不正内容の書込み成功
+    #  (3) clone WT台帳の内容が正確に "broken registry without tabs"
+    #  (4) 代替index内の台帳blob = cloneのHEAD台帳blob（indexは正常台帳）
+    #  (5) clone WT台帳 ≠ 代替index内の正常台帳（WTとindexが異なる）
+    E45_IDX_BLOB=$(GIT_INDEX_FILE="$E45_IDX" git -C "$E45_CLONE" rev-parse ":$E45_REG_REL" 2>/dev/null)
+    E45_HEAD_BLOB=$(git -C "$E45_CLONE" rev-parse "HEAD:$E45_REG_REL" 2>/dev/null)
+    E45_WT_BLOB=$(git -C "$E45_CLONE" hash-object "$E45_REG" 2>/dev/null)
+    E45_FIXTURE_OK=0
+    if [ "$E45_READTREE_OK" -eq 1 ] \
+       && [ "$(cat "$E45_REG")" = "broken registry without tabs" ] \
+       && [ -n "$E45_IDX_BLOB" ] && [ "$E45_IDX_BLOB" = "$E45_HEAD_BLOB" ] \
+       && [ -n "$E45_WT_BLOB" ] && [ "$E45_WT_BLOB" != "$E45_IDX_BLOB" ]; then
+      E45_FIXTURE_OK=1
+    fi
+
+    if [ "$E45_FIXTURE_OK" -ne 1 ]; then
+      # fixture不成立：checkerを実行せず、E45・E82ともNG（正本台帳・indexは不変のまま）
+      echo "NG: 33. E45 fixture成立せず（index正常台帳／WT不正／両者相違を確認できません・checker未実行）"
+      FAILN=$((FAILN + 1))
+      echo "NG: E82 E45 fixture成立せず（checker未実行・正本台帳/indexは不変）"
+      FAILN=$((FAILN + 1))
+    else
+      # E82：clone WTが不正・clone indexが正常であるこの瞬間に、正本の実台帳がGit上でHEADと一致
+      #      （clean-filter適用後のblobがHEAD blobと一致）＋正本indexが不変
+      if git -C "$REPO_ROOT" diff --quiet -- scripts/pre-delivery-intentional-uncertainty.tsv \
+         && git -C "$REPO_ROOT" diff --cached --quiet \
+         && [ "$(git -C "$REPO_ROOT" hash-object scripts/pre-delivery-intentional-uncertainty.tsv)" = "$(git -C "$REPO_ROOT" rev-parse HEAD:scripts/pre-delivery-intentional-uncertainty.tsv)" ]; then
+        echo "OK: E82 E45 fixture成立（WT不正/index正常/相違）かつ正本台帳はGit上でHEAD一致・正本index不変（非破壊）"
+        PASS=$((PASS + 1))
+      else
+        echo "NG: E82 E45隔離中に正本台帳またはindexがGit上でHEADと不一致"
+        FAILN=$((FAILN + 1))
+      fi
+
+      # 33 / E45：clone checker を staged mode で実行。index台帳（正常）を読み exit 0・
+      # WT台帳の不正（台帳エラー）を観測しないこと。既定台帳はindex読取のため明示指定しない。
+      E45_OUT=$(cd "$E45_CLONE" \
+        && env -u PRE_DELIVERY_UNCERTAINTY_REGISTRY GIT_INDEX_FILE="$E45_IDX" \
+           bash "$E45_CLONE/scripts/pre-delivery-check.sh" --staged 2>&1)
+      E45_CODE=$?
+      if [ "$E45_CODE" -eq 0 ] \
+        && ! printf '%s\n' "$E45_OUT" | grep -qE '台帳エラー|台帳ファイルが存在しません'; then
+        echo "OK: 33. E45 index既定台帳正常/WT不正→exit0（隔離clone・index snapshot契約）"
+        PASS=$((PASS + 1))
+      else
+        echo "NG: 33. E45 index snapshot契約（code=$E45_CODE）"
+        printf '%s\n' "$E45_OUT" | sed 's/^/    /'
+        FAILN=$((FAILN + 1))
+      fi
+    fi
+  else
+    echo "NG: E82 E45隔離の正本非破壊（境界guardで書込み中止）"; FAILN=$((FAILN + 1))
+  fi
+  rm -f "$E45_IDX"
+  rm -rf "$E45_CLONE"
+fi
 
 # 34 / E46. staged既定台帳は不正／WT既定台帳は正常 → index台帳に基づく読込FAIL
 reset_test_index
