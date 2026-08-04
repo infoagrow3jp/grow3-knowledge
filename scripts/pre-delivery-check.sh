@@ -38,7 +38,7 @@ index_has_path() {
 read_index_content() {
   git -C "$REPO_ROOT" -c core.quotepath=false show ":$1" 2>/dev/null
 }
-VALID_CLASSIFICATIONS="history|data_state|deferred_v0.2|implementation_detail|meta_check"
+VALID_CLASSIFICATIONS="history|data_state|deferred_v0.2|implementation_detail|meta_check|domain_term"
 
 declare -A REG_EXPECTED
 declare -A REG_CLASS
@@ -224,10 +224,10 @@ apply_record_form_template_filter() {
 # 記録形式節（DECISIONSのみ）を除いた行のうち「未確定」を含む行を NR<TAB>line で出力
 # fence内も検出対象（検出・exact照合・件数計数と同一フィルタ）
 # stdinから本文を読む（pathはフィルタ判定にのみ使用。stagedはindex版、手動はworking tree版）
-scan_mitei_prose_lines() {
-  local file="$1" apply_template
+scan_keyword_prose_lines() {
+  local file="$1" keyword="$2" apply_template
   apply_template=$(apply_record_form_template_filter "$file")
-  awk -v apply_template="$apply_template" '
+  awk -v apply_template="$apply_template" -v keyword="$keyword" '
     BEGIN { in_template = 0 }
     {
       line = $0
@@ -236,9 +236,14 @@ scan_mitei_prose_lines() {
       if (apply_template && line ~ /^## 記録形式[[:space:]]*$/) { in_template = 1; next }
       if (apply_template && in_template && line ~ /^## /) { in_template = 0 }
       if (apply_template && in_template) next
-      if (index(line, "未確定") > 0) print NR "\t" line
+      if (index(line, keyword) > 0) print NR "\t" line
     }
   '
+}
+
+# 既存呼び出し互換：「未確定」専用の薄いラッパ（照合語は変更しない）
+scan_mitei_prose_lines() {
+  scan_keyword_prose_lines "$1" "未確定"
 }
 
 # B/C群用：fenceは残し、記録形式節のみ DECISIONS.md で除外
@@ -276,8 +281,8 @@ count_prose_exact_line() {
   '
 }
 
-check_mitei_lines() {
-  local f="$1" rel="$2" uncertain_level="$3"
+check_keyword_lines() {
+  local f="$1" rel="$2" uncertain_level="$3" keyword="$4"
   declare -A line_hits=()
 
   while IFS=$'\t' read -r lineno content || [ -n "$lineno" ]; do
@@ -285,7 +290,7 @@ check_mitei_lines() {
     line_hits["$content"]=$((${line_hits["$content"]:-0} + 1))
     # 台帳照合不能path：keyを生成せずREG_*にも触れない（常に未登録扱い）
     if path_registry_incompatible "$rel"; then
-      report "$uncertain_level" "$f" "行${lineno} 未確定表記が残存：未確定"
+      report "$uncertain_level" "$f" "行${lineno} 未確定表記が残存：${keyword}"
       continue
     fi
     local key hit_count reg_expected reg_class
@@ -302,9 +307,14 @@ check_mitei_lines() {
         report FAIL "$f" "行${lineno} 未確定表記が台帳許可件数を超過（${hit_count}/${reg_expected}）"
       fi
     else
-      report "$uncertain_level" "$f" "行${lineno} 未確定表記が残存：未確定"
+      report "$uncertain_level" "$f" "行${lineno} 未確定表記が残存：${keyword}"
     fi
-  done < <(printf '%s\n' "$TEXT" | scan_mitei_prose_lines "$f")
+  done < <(printf '%s\n' "$TEXT" | scan_keyword_prose_lines "$f" "$keyword")
+}
+
+# 既存呼び出し互換：「未確定」専用の薄いラッパ
+check_mitei_lines() {
+  check_keyword_lines "$1" "$2" "$3" "未確定"
 }
 
 check_stale_registry_entries() {
@@ -481,11 +491,10 @@ if [ ${#TARGETS[@]} -gt 0 ]; then
     # 「未確定」：行単位＋台帳（draft/reviewedでも未登録はFAIL）
     check_mitei_lines "$f" "$REL_PATH" "$UNCERTAIN_LEVEL"
 
-    # その他未確定語：従来どおり（台帳対象外）
+    # その他未確定語：「未確定」と同じ行単位＋台帳照合機構を共有する
+    # （検知語リスト自体は変更しない。domain_term等で登録された行のみWARNへ落ちる）
     for kw in "【要確認】" "TODO" "仮置き"; do
-      if echo "$PROSE_TEXT" | grep -qF "$kw"; then
-        report "$UNCERTAIN_LEVEL" "$f" "未確定表記が残存：${kw}"
-      fi
+      check_keyword_lines "$f" "$REL_PATH" "$UNCERTAIN_LEVEL" "$kw"
     done
     for kw in "★★" "XXX"; do
       if echo "$PROSE_TEXT" | grep -qF "$kw"; then

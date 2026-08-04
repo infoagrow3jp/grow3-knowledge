@@ -1486,6 +1486,122 @@ EOS
   fi
 fi
 
+# ===== B群（【要確認】/TODO/仮置き）の台帳照合 =====
+# 「未確定」と同じ行単位＋台帳機構を共有する。検知語リスト・正規表現自体は不変。
+
+# 71 / E83. TODO登録済み（domain_term）→ WARN・exit 0
+cat > "$FIXDIR/kw_todo_registered.md" <<'EOF'
+---
+status: frozen
+---
+- 個人目標シート：達成基準（TOBE）／具体的行動（TODO）で記述。
+EOF
+KW_TODO_LINE='- 個人目標シート：達成基準（TOBE）／具体的行動（TODO）で記述。'
+printf '%s\n' "${REL_PREFIX}/kw_todo_registered.md	1	domain_term	帳票の正式項目名であり未確定箇所ではないため	${KW_TODO_LINE}" > "$TMPDIR/registry_kw.tsv"
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry_kw.tsv" \
+  assert_diag "71. E83 TODO台帳登録済み→WARN" 0 \
+  "意図的な未確定表記（domain_term・台帳登録済み）" \
+  "未確定表記が残存：TODO" \
+  "$FIXDIR/kw_todo_registered.md"
+
+# 72 / E84. TODO未登録・frozen → 従来どおりFAIL
+cat > "$FIXDIR/kw_todo_unregistered.md" <<'EOF'
+---
+status: frozen
+---
+- TODO: あとで書く
+EOF
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry_kw.tsv" \
+  assert_diag "72. E84 TODO未登録・frozen→FAIL" 1 \
+  "未確定表記が残存：TODO" \
+  "意図的な未確定表記" \
+  "$FIXDIR/kw_todo_unregistered.md"
+
+# 73 / E85. 仮置き登録済み（domain_term）→ WARN・exit 0
+cat > "$FIXDIR/kw_karioki_registered.md" <<'EOF'
+---
+status: frozen
+---
+- 新等級を仮置きして○/over/shortを判定する。
+EOF
+KW_KARI_LINE='- 新等級を仮置きして○/over/shortを判定する。'
+printf '%s\n' "${REL_PREFIX}/kw_karioki_registered.md	1	domain_term	操作手順の記述であり未確定箇所ではないため	${KW_KARI_LINE}" > "$TMPDIR/registry_kari.tsv"
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry_kari.tsv" \
+  assert_diag "73. E85 仮置き台帳登録済み→WARN" 0 \
+  "意図的な未確定表記（domain_term・台帳登録済み）" \
+  "未確定表記が残存：仮置き" \
+  "$FIXDIR/kw_karioki_registered.md"
+
+# 74 / E86. 仮置き未登録・frozen → 従来どおりFAIL
+cat > "$FIXDIR/kw_karioki_unregistered.md" <<'EOF'
+---
+status: frozen
+---
+- 金額は仮置きのままにしている
+EOF
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry_kari.tsv" \
+  assert_diag "74. E86 仮置き未登録・frozen→FAIL" 1 \
+  "未確定表記が残存：仮置き" \
+  "意図的な未確定表記" \
+  "$FIXDIR/kw_karioki_unregistered.md"
+
+# 75 / E87. 【要確認】も同じ機構で登録できる（仕組みのみ。正本への登録は行わない）
+cat > "$FIXDIR/kw_youkakunin_registered.md" <<'EOF'
+---
+status: frozen
+---
+- 確認手順の見出しに【要確認】を用いる規約である。
+EOF
+KW_YOU_LINE='- 確認手順の見出しに【要確認】を用いる規約である。'
+printf '%s\n' "${REL_PREFIX}/kw_youkakunin_registered.md	1	domain_term	規約名の一部であり未確定箇所ではないため	${KW_YOU_LINE}" > "$TMPDIR/registry_you.tsv"
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry_you.tsv" \
+  assert_diag "75. E87 【要確認】台帳登録済み→WARN" 0 \
+  "意図的な未確定表記（domain_term・台帳登録済み）" \
+  "未確定表記が残存：【要確認】" \
+  "$FIXDIR/kw_youkakunin_registered.md"
+
+# 76 / E88. 【要確認】未登録・frozen → 従来どおりFAIL
+cat > "$FIXDIR/kw_youkakunin_unregistered.md" <<'EOF'
+---
+status: frozen
+---
+- 保険料率は【要確認】
+EOF
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry_you.tsv" \
+  assert_diag "76. E88 【要確認】未登録・frozen→FAIL" 1 \
+  "未確定表記が残存：【要確認】" \
+  "意図的な未確定表記" \
+  "$FIXDIR/kw_youkakunin_unregistered.md"
+
+# 77 / E89. 登録済み行の内容が変わった → 陳腐化検知FAIL（B群でも維持）
+cat > "$FIXDIR/kw_todo_changed.md" <<'EOF'
+---
+status: frozen
+---
+- 個人目標シート：達成基準（TOBE）／具体的行動（TODO）で記述する。
+EOF
+printf '%s\n' "${REL_PREFIX}/kw_todo_changed.md	1	domain_term	帳票の正式項目名であり未確定箇所ではないため	${KW_TODO_LINE}" > "$TMPDIR/registry_stale.tsv"
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry_stale.tsv" \
+  assert_diag "77. E89 登録行の内容変更→台帳陳腐化FAIL" 1 \
+  "台帳エラー：登録行が本文に存在しません" \
+  "" \
+  "$FIXDIR/kw_todo_changed.md"
+
+# 78 / E90. 登録件数を超える出現 → 超過FAIL（B群でも維持）
+cat > "$FIXDIR/kw_todo_dup.md" <<EOF
+---
+status: frozen
+---
+${KW_TODO_LINE}
+${KW_TODO_LINE}
+EOF
+printf '%s\n' "${REL_PREFIX}/kw_todo_dup.md	1	domain_term	帳票の正式項目名であり未確定箇所ではないため	${KW_TODO_LINE}" > "$TMPDIR/registry_dup.tsv"
+PRE_DELIVERY_UNCERTAINTY_REGISTRY="$TMPDIR/registry_dup.tsv" \
+  assert_diag "78. E90 登録件数超過→FAIL" 1 \
+  "台帳許可件数を超過|実件数がexpected_countを超過" \
+  "" \
+  "$FIXDIR/kw_todo_dup.md"
+
 echo "----------------------------------------"
 echo "テスト結果: 合格 ${PASS}件 / 不合格 ${FAILN}件"
 if [ $FAILN -gt 0 ]; then

@@ -1,13 +1,14 @@
 # 意図的に残す「未確定」表記の監査台帳（完全一致・行番号非依存）
 # 形式: path<TAB>expected_count<TAB>classification<TAB>reason<TAB>exact_line
 # parser: 最初の4個のTABを区切りとし、残り全体をexact_lineとする（exact_lineにTAB可）
-# classification: history | data_state | deferred_v0.2 | implementation_detail | meta_check
+# classification: history | data_state | deferred_v0.2 | implementation_detail | meta_check | domain_term
 # reason: 例外を残す具体的理由。TAB・改行禁止。trim後空白は禁止。
 #
 # 分類基準（論点のテーマではなく、exact lineを例外として残す現在の理由）:
 # - history: 後続の凍結文書またはDECISIONで解決済みだが、古い文書内に当時の未確定状態を残している行
 # - deferred_v0.2: 最新の正本・DECISION系列でも引き続きv0.2以降へ送られている事項に限る
 # - implementation_detail: 最新の設計判断が具体化を実装段階へ意図的に委ねている事項に限る
+# - domain_term: 未確定箇所ではなく、業務・帳票の正式名称や操作手順として検知語がそのまま現れている行に限る
 
 # --- DECISIONS.md ---
 DECISIONS.md	1	history	DEC-008の判断記録内の項目見出しとして当時の記載を逐語保持するため	  - **未確定事項**
@@ -41,3 +42,7 @@ docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	§22-6表
 docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	§22-6表で例外承認重み付けを後続送付した行を残すため	| 裕司さん例外承認の重み付け | 未確定 |
 docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	§22-6表で複数MTG差分自動生成を後続送付した行を残すため	| 複数MTG差分自動生成 | 未確定 |
 docs/organization-diagnosis_schema設計メモ_v0.1.md	1	meta_check	検出対象の保留を推測補完していないことの自己確認行を残すため	- [x] 未確定事項を勝手に埋めていない（§4・§22-5）
+
+# --- 正本OS（業務用語）---
+grow3-frameworks.md	1	domain_term	賃金移行シミュレーションの操作手順であり、書きかけの未確定箇所ではないため	- 現行給与を入力し、範囲給に含める手当を決め、新等級を仮置きして○/over/shortを判定する。
+grow3-hr-system-design-os.md	1	domain_term	個人目標シートの記入項目名（TOBEと対になる正式名称）であり、未確定箇所ではないため	- 個人目標シート：上位目標を踏まえ個人目標3つを「達成基準（TOBE）／達成のための具体的行動（TODO）」で記述。
