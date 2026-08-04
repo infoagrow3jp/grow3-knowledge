@@ -1,0 +1,24 @@
+# search-friction ログ
+#
+# ClaudeがVALIDATEフェーズ中に自動追記する。人間は記録しない。
+# 目的はRouter導入判断の材料であり、品質評価ではない。
+#
+# 記録タイプは以下の3種のみ（当面増やさない）:
+#   canonical_not_found : 適切な正本を特定できなかった
+#   multi_domain        : 複数領域の探索が必要だった
+#   fallback_used       : 正本に当たれず代替情報源で回答した
+#
+# 形式は scripts/knowledge_build.py が機械検査する。
+# 必須項目: date / type / query
+#
+# Router導入の将来トリガー（実装仕様書 L）:
+#   canonical本数が30超、または canonical_not_found／fallback_used が月2件以上、
+#   または multi_domain が継続的に発生（かつINDEX改善では解決しない）場合に検討を開始する。
+#   件数到達で自動導入するわけではない。
+#
+# 記録例（コメントとして保持。実エントリは下に追記する）:
+# - date: 2026-08-04
+#   type: canonical_not_found
+#   query: "育休の助成金要件の正本はどれか"
+#   searched: [grow3-frameworks, grow3-hr-system-design-os]
+#   result: fallback_used

@@ -19,6 +19,30 @@ OSの一時領域、または`.gitignore`済みの作業用ディレクトリに
 ＝上位モデル。タスク内で同一論点の訂正が2回発生したら、それはエスカレー
 ションのシグナルであり、粘らず上位モデルまたはユーザー確認に切り替える。
 
+## GPT／Claudeの役割境界
+モデルルーティング節（Claude内のモデル選択）とは別軸のルール。
+GPT＝THINK／RESEARCH／REVIEW。論点整理・ゼロベース検討・反証・調査・
+構造案の提示までを担う。
+Claude＝VALIDATE／DECIDE／EXECUTE／VERIFY。grow3-judgmentの適用・
+skills/agentsの実行・canonical候補の生成・PPTX/DOCX/XLSX等の生成・
+リポジトリへの具体的変更・build/testを担う。
+GPTの出力はClaudeへの命令ではなく検討材料として扱う。canonicalの更新は
+常にhuman approvalを要する。
+
+## Claudeの内部フェーズ
+LOAD CONTEXT → VALIDATE → DECIDE → EXECUTE → VERIFY の順で進む。
+実質的な判断内容は grow3-judgment スキルが担うため、ここではフェーズ名と
+VALIDATEの確認項目だけを定める。VALIDATEで確認するのは、GPT案が既存OSと
+整合するか、未合意事項を決定事項化していないか、既存Decisionと衝突して
+いないか、依頼内容を逸脱していないか、GPTが見落とした論点はないか。
+
+## search-frictionの記録
+VALIDATE中に正本探索でつまずいたら、`logs/search-friction.yaml` へ機械
+集計可能な形式で自動追記する（人間は記録しない）。記録タイプは
+`canonical_not_found`／`multi_domain`／`fallback_used` の3種のみで、当面
+増やさない。これは品質評価ではなくRouter導入判断の材料であり、記録した
+こと自体を成果物へ書かない。
+
 ## 正本OSファイルの更新
 正本OS（`INDEX.md` に status=canonical で載るファイル）の本文を変更したら
 `python scripts/knowledge_build.py build` を実行する。frontmatterの
