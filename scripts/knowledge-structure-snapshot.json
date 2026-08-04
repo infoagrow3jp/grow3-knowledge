@@ -22,8 +22,9 @@
       }
     },
     "grow3-frameworks.md": {
-      "metadata_source_hash": "sha256:6ab866ffeec98ec4306a38013e9dbf46d41023fd9574620703e8732077ed6dbe",
+      "metadata_source_hash": "sha256:f05e274a060d7d6ab0de3da270734ffebf1bc116cbbcbbcc0ca2b2140cd8ad76",
       "regenerations": [
+        "2026-08-04",
         "2026-08-04"
       ],
       "structure": {
@@ -38,6 +39,7 @@
           "GROWモデルと「任せる設計」の同型性",
           "思考特性が機能する理由",
           "ナイカイ研修の骨格構造",
+          "暗黙知を組織の力に変える循環（言語化・構造化・モノサシ化・内面化）",
           "システム思考",
           "因果ループ図（ループ図）",
           "レバレッジポイント12（介入の12レベル｜Meadows）",
@@ -190,8 +192,9 @@
       }
     },
     "grow3-training-design-os.md": {
-      "metadata_source_hash": "sha256:c6d1f0f715e6ce8f654867cda086a5d1dde64b7f4c02b2e76e9f6c02cf468ef9",
+      "metadata_source_hash": "sha256:1181ff0ec28d849a5870cd83534f6a65c8b89f2701fe7bd6ca2be6923f97af53",
       "regenerations": [
+        "2026-08-04",
         "2026-08-04"
       ],
       "structure": {
@@ -200,7 +203,8 @@
         ],
         "headings": [
           "索引",
-          "運用メモ"
+          "運用メモ",
+          "更新履歴"
         ],
         "related": [
           "grow3-frameworks"

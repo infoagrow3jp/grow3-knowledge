@@ -11,6 +11,7 @@
 | [Grow3 構造・フレーム収集](grow3-frameworks.md) | os | canonical | frameworks | 研修設計・コンサル・コンテンツ制作で使う「構造」を蓄積するファイル。 |
 | [Grow3 人事制度設計OS](grow3-hr-system-design-os.md) | os | canonical | hr | 目的：人事制度を「どう作り・どう運用するか」の設計の型を体系化する。 |
 | [グロウスリー マーケティングOS v13（統合完全版）](grow3-marketing-os.md) | os | canonical | marketing | 株式会社グロウスリー　小林裕司 |
+| [Grow3 研修設計 実装テンプレート v1](grow3-training-design-implementation-templates.md) | — | — | — | OS本体（`grow3-training-design-os.md`）から分離した実装用テンプレート集。判断原則はOS本体、概念の正本は`grow3-fram… |
 | [Grow3 研修設計OS](grow3-training-design-os.md) | os | canonical | training | 目的：研修・ワークショップを「どう組み立てるか」の設計の型を体系化する。 |
 | [コーチング研修2026改定　意思決定ログ](コーチング研修2026改定_意思決定ログ.md) | — | — | — | 作成日：2026年7月4日　対象：2026年7月8日（水）実施回 |
 | [内部改善記録：コーチング研修（2026-07-08実施）](内部改善記録_コーチング研修_2026-07-08.md) | — | — | — | ※Grow3内部専用。クライアント向けレポートに転記しない。 |

@@ -3,7 +3,7 @@ id: grow3-frameworks
 type: os
 status: canonical
 domain: [frameworks]
-metadata_source_hash: sha256:6ab866ffeec98ec4306a38013e9dbf46d41023fd9574620703e8732077ed6dbe
+metadata_source_hash: sha256:f05e274a060d7d6ab0de3da270734ffebf1bc116cbbcbbcc0ca2b2140cd8ad76
 ---
 # Grow3 構造・フレーム収集
 

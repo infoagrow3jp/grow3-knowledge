@@ -648,6 +648,22 @@
   - GPT以外の外部モデルを常用フローへ組み込む。
   - grow3-judgmentのフェーズ責務が変わる。
 
+## 2026-08-04 構造承認記録：JFE播磨追記の合流に伴うSTRUCTURAL_CHANGE承認
+
+DEC-019の承認フローに基づく機械的な承認記録であり、新しい設計判断ではない。
+
+- 対象：`grow3-frameworks.md`、`grow3-training-design-os.md`
+- 契機：origin/main側で2026-07-23に追加された暗黙知循環フレームワーク
+  （5df4da9 / 76895fc / 80c4d7a）を `--no-ff` で合流したこと。
+- 検知内容：両ファイルとも主要見出し（H2）が増えたためSTRUCTURAL_CHANGE。
+  追加H2は `暗黙知を組織の力に変える循環（言語化・構造化・モノサシ化・内面化）`
+  および `更新履歴`。domain／related／type／statusの変更はない。
+- 承認：`knowledge_build.py build --approve` の2ファイル指定で
+  `metadata_source_hash` を再生成した。
+- 位置づけ：追記内容そのものは合流前に既にorigin/mainで確定していた本文であり、
+  本記録はその本文をPhase 1のstaleness機構へ取り込むための承認である。
+  内容の妥当性判断を新たに行ったものではない。
+
 ## 2026-07-11 AI運用の判断基準を grow3-judgment スキルとして確立
 1. 承認済み最新版を正とし、依頼範囲外を善意で変更しない（第0原則）。
    改善案は本文反映ではなく別途提案とする。

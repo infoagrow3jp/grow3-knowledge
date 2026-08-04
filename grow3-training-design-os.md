@@ -3,7 +3,7 @@ id: grow3-training-design-os
 type: os
 status: canonical
 domain: [training]
-metadata_source_hash: sha256:c6d1f0f715e6ce8f654867cda086a5d1dde64b7f4c02b2e76e9f6c02cf468ef9
+metadata_source_hash: sha256:1181ff0ec28d849a5870cd83534f6a65c8b89f2701fe7bd6ca2be6923f97af53
 related: [grow3-frameworks]
 ---
 # Grow3 研修設計OS
