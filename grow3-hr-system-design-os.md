@@ -1,3 +1,11 @@
+---
+id: grow3-hr-system-design-os
+type: os
+status: canonical
+domain: [hr]
+metadata_source_hash: sha256:74c9100bc5d9d6437873bb068e16abe045e343c0e515f7596e23b669db9b848c
+related: [grow3-frameworks, grow3-training-design-os]
+---
 # Grow3 人事制度設計OS
 
 > 目的：人事制度を「どう作り・どう運用するか」の設計の型を体系化する。

@@ -1,3 +1,11 @@
+---
+id: grow3-blog-concept-map
+type: map
+status: canonical
+domain: [blog]
+metadata_source_hash: sha256:2c5834ae8cda1a54b981128314f3fe5c8a6169983d48a77536a7314e26ba393e
+related: [grow3-frameworks]
+---
 # Grow3 ブログ概念対応表
 
 > 目的：ブログ・ステップメール執筆時の概念のブレを防ぐ。

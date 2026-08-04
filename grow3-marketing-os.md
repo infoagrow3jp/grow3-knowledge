@@ -1,3 +1,10 @@
+---
+id: grow3-marketing-os
+type: os
+status: canonical
+domain: [marketing]
+metadata_source_hash: sha256:fb5d1a6e91d21d33d376e3ae70f65eddff18fa639d932a62ab02a76c46c3cf35
+---
 # グロウスリー マーケティングOS v13（統合完全版）
 
 **株式会社グロウスリー　小林裕司**

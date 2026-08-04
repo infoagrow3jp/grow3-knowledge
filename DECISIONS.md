@@ -514,6 +514,100 @@
     4. classificationを全件再確認する。
     5. parser・台帳・testを同一commitで切り替える。
 
+### DEC-017｜正本OS frontmatterを最小5項目に限定し、DEC-012の抽出契約を流用する
+- 日付：2026-08-04
+- 状態：確定
+- 対象：ルート直下の正本OSファイル5本、`schemas/knowledge/os_frontmatter.schema.json`、`scripts/knowledge_build.py`
+- 決定：
+  - frontmatterを付与する対象は `grow3-frameworks.md` / `grow3-training-design-os.md` / `grow3-hr-system-design-os.md` / `grow3-marketing-os.md` / `grow3-blog-concept-map.md` の5本とする。
+  - 必須項目は `id` / `type` / `status` / `domain` / `metadata_source_hash` の5つ、任意項目は `related` のみとする。それ以外のキーはERRORにする。
+  - `id` はファイル名から拡張子を除いた値と一致させる。
+  - `type` は `os` / `map` の2値、`status` は `draft` / `canonical` の2値、`domain` は5値のenumとする。
+  - frontmatter抽出契約（1行目が単独の `---`、BOM・先頭空行・先頭コメント不可、次の単独 `---` で終了、終了区切り欠落はERROR、本文中の後続 `---` は本文扱い）はDEC-012の契約をそのまま流用し、再設計しない。
+  - YAMLは汎用parserを使わず、`key: scalar` と `key: [a, b]` のみを受理する厳格なサブセットとする。サブセット外は黙って解釈せずERRORにする。
+  - `docs/` 配下の既存設計メモは独自のfrontmatter規約（日本語キーを含む）を持つ確定済み文書であり、本schemaを後付けで強制しない。INDEX生成時はbest-effortで読み、解釈できなければ「—」として扱う。
+- 理由：
+  - 既にfrontmatter運用の実績があるDEC-012パターンを流用し、ゼロから設計しないため。
+  - 最初から大量のタグを作ると、以後の整理作業が人力で増えるため。
+  - 汎用YAMLの部分実装を持つと、受理できる記法の境界が曖昧になり事故の温床になるため。
+  - 既存の確定済み文書へ新規約を遡及適用すると、依頼範囲外の変更になるため（第0原則）。
+- 採用しなかった案：
+  - 外部YAMLライブラリへ依存する案。
+  - `docs/` 配下も同一schemaへ統一する案。
+  - `tags` / `owner` / `updated_at` 等を初期から持たせる案。
+  - `grow3-blog-writing-context.md` や `grow3-coaching-training-os.md` へ同時に付与する案（実装仕様書Cの名指し5本を超えるため見送り）。
+- 見直し条件：
+  - 正本OSファイルが増減する。
+  - `domain` のenumに収まらない領域が生じる。
+  - `docs/` 配下も機械検査対象にする必要が生じる。
+
+### DEC-018｜metadata stalenessはhash一致で判定し、機械判定する構造的変化を5項目に限定する
+- 日付：2026-08-04
+- 状態：確定
+- 対象：`metadata_source_hash`、`scripts/knowledge_build.py`、`scripts/knowledge-structure-snapshot.json`
+- 決定：
+  - 本文hashと `metadata_source_hash` が不一致ならSTALEとする。
+  - hash算法を本Phaseで確定する：frontmatter終了区切りの直後から末尾までを対象とし、改行をLFへ統一 → 末尾の空白を除去 → 末尾にLFを1つ付与 → UTF-8で符号化 → SHA-256 → 小文字hexに `sha256:` を前置する。
+  - DEC-012が `register_snapshot_hash` の算法を意図的に特定しなかったのとは別に、本項目は算法を固定する。両者を同一視しない。
+  - STALE時に機械判定する構造的変化は `domain` / `related` / `type` / `status` / 主要見出し（H2）の5項目のみとする。該当すればSTRUCTURAL_CHANGEとしてWARNする。
+  - 構造baselineは `scripts/knowledge-structure-snapshot.json` に保持し、frontmatterへは持たせない。
+  - 過去30日のmetadata再生成回数を記録し、月次サンプル監査の候補選定に使う。それ以上の用途に使わない。
+- 理由：
+  - 安価・決定的に判定できる構造的変化に限定し、判定の再現性を確保するため。
+  - hash算法を定めないまま運用すると、STALE判定そのものが再現しなくなるため。
+  - frontmatterを最小に保つため、構造baselineは別ファイルへ分離する。
+- 採用しなかった案：
+  - Summary本文の意味的な変化量（semantic drift）を検知する案。
+  - embedding／LLMによる意味比較を用いる案。
+  - Vector DB／RAGを導入する案。
+  - 構造baselineをfrontmatterへ持たせる案。
+- 見直し条件：
+  - 構造的変化の5項目では取りこぼす実害が確認される。
+  - 再生成回数の記録が監査以外の用途で必要になる。
+
+### DEC-019｜STRUCTURAL_CHANGE WARNを承認フローの起動トリガーそのものとして定義する
+- 日付：2026-08-04
+- 状態：確定
+- 対象：`status` の遷移、`knowledge_build.py build --approve`、canonical化の権限
+- 決定：
+  - WARNは独立した品質判定ではなく、human approvalを起動する通知トリガーそのものとする。二重ゲートにしない。
+  - STRUCTURAL_CHANGEを検知した場合、`build` は当該ファイルの `metadata_source_hash` を更新しない。人間が `--approve <file>` を与えたときのみ更新する。
+  - canonical authorityはGitHubだが、canonical化のauthorityは人間である。Claudeが生成したcanonical候補は承認まで `draft` に留まる。
+  - 新しい承認フローは作らず、DECISIONS.mdによる既存のADR運用（構造的変更は人間承認のうえ記録する）の延長として扱う。
+- 理由：
+  - WARNと承認を別ゲートにすると、警告が出ているのに承認済みという中間状態が生まれ、正本の信頼性が落ちるため。
+  - 承認機構を新設せず既存運用に載せることで、人力の運用コストを増やさないため。
+- 採用しなかった案：
+  - WARNを品質スコアとして別途集計する案。
+  - 承認用の新しいワークフロー・ラベル体系を新設する案。
+  - 構造的変化でも自動でhashを更新し、事後に通知する案。
+- 見直し条件：
+  - 承認待ちのまま滞留する運用上の不都合が生じる。
+  - 複数人が承認権限を持つ運用へ移行する。
+
+### DEC-020｜INDEX生成とリンク検査の対象を正本OS層に限定し、Routerを導入しない
+- 日付：2026-08-04
+- 状態：確定
+- 対象：`INDEX.md`、`docs/INDEX.md`、`scripts/knowledge_build.py`
+- 決定：
+  - INDEX自動生成とリンク検査の対象は、リポジトリ直下の正本OS層と `docs/` 層に限定する。`clients/` `marketing/` `.claude/` は対象外とする。
+  - `_` で始まるファイルは `.gitignore` 済みの一時作業ファイルであり、INDEXにもリンク検査にも載せない。
+  - INDEX.mdは生成物であり手で編集しない。`check` は内容が古ければERRORにする。
+  - リンク検査は相対リンクの参照先存在のみを見る。外部URL・アンカーのみのリンク・コードフェンス内・画像は対象外とする。
+  - 本格的なRouter（confidence分類・multi-domain fallback・回帰テスト・holdout・provenance manifest）は導入しない。現規模ではINDEX + grep/searchで足りる。
+- 理由：
+  - 正本OSが6本程度の規模でRouterを持つと、維持コストが便益を上回るため。
+  - 顧客成果物ディレクトリへ生成物を置くと、納品物と内部生成物の境界が曖昧になるため。
+- 採用しなかった案：
+  - リポジトリ全体を対象に各ディレクトリへINDEXを生成する案。
+  - `marketing/` を対象に含める案。
+  - 外部URLの到達性を検査する案。
+- 見直し条件：
+  - canonical本数が30を超える。
+  - `canonical_not_found`／`fallback_used` が月2件以上になる。
+  - `multi_domain` が継続的に発生し、INDEX改善では解決しないと判明する。
+  - （いずれも検討開始のトリガーであり、件数到達で自動導入するわけではない。）
+
 ## 2026-07-11 AI運用の判断基準を grow3-judgment スキルとして確立
 1. 承認済み最新版を正とし、依頼範囲外を善意で変更しない（第0原則）。
    改善案は本文反映ではなく別途提案とする。

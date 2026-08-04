@@ -19,6 +19,15 @@ OSの一時領域、または`.gitignore`済みの作業用ディレクトリに
 ＝上位モデル。タスク内で同一論点の訂正が2回発生したら、それはエスカレー
 ションのシグナルであり、粘らず上位モデルまたはユーザー確認に切り替える。
 
+## 正本OSファイルの更新
+正本OS（`INDEX.md` に status=canonical で載るファイル）の本文を変更したら
+`python scripts/knowledge_build.py build` を実行する。frontmatterの
+`metadata_source_hash` と本文hashが不一致ならSTALEとなり、domain／related／
+type／status／主要見出しのいずれかが変わっていればSTRUCTURAL_CHANGEとして
+WARNする。WARNは独立した品質判定ではなく承認フローの起動トリガーそのもの
+であり、人間が承認するまでhashを更新しない（`--approve <file>` で承認）。
+承認した構造的変更はDECISIONS.mdに記録する。
+
 ## 学習の還流
 別コンテキストレビューで訂正が出た場合、レビュー完了時の最終ステップとして
 「一般化してexamplesに追記すべきか」を判断する。追記する場合は該当スキルの
