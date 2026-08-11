@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>欲求プロフィール | Grow3</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:#0F3D96; --blue-mid:#1a52c8; --pale:#EEF3FA;
+  --text:#1F2937; --border:#E5E7EB; --white:#ffffff;
+  --gray:#6B7280; --accent:#E8F0FF;
+  --ai:#E84B6A; --ch:#F5A623; --ji:#0F3D96; --ta:#27AE60; --se:#8B5CF6;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--pale);color:var(--text);}
+
+.header{background:var(--blue);padding:14px 20px 12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(15,61,150,0.3);}
+.header-inner{max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;}
+.header-logo{font-family:'Montserrat',sans-serif;font-weight:800;font-size:16px;color:#fff;letter-spacing:0.04em;}
+.header-sub{font-size:10px;color:rgba(255,255,255,0.65);margin-top:1px;letter-spacing:0.06em;}
+.header-right{display:flex;align-items:center;gap:8px;}
+.header-count{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;color:rgba(255,255,255,0.9);white-space:nowrap;}
+.progress-track{width:72px;height:4px;background:rgba(255,255,255,0.22);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:#fff;border-radius:2px;transition:width 0.4s ease;}
+
+.screen{display:none;} .screen.active{display:block;}
+.container{max-width:560px;margin:0 auto;padding:24px 16px 80px;}
+.intro-card{background:var(--white);border-radius:16px;padding:28px 22px;box-shadow:0 2px 16px rgba(15,61,150,0.08);}
+.intro-title{font-family:'Montserrat',sans-serif;font-size:20px;font-weight:800;color:var(--blue);margin-bottom:4px;}
+.intro-ja{font-size:11px;color:var(--gray);margin-bottom:18px;letter-spacing:0.06em;}
+.intro-desc{font-size:13px;line-height:1.9;margin-bottom:16px;}
+.needs-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.needs-pill{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.needs-pill .dot{width:7px;height:7px;border-radius:50%;}
+.pill-ai{background:#FEF0F3;color:var(--ai);}.dot-ai{background:var(--ai);}
+.pill-ch{background:#FEF5E7;color:var(--ch);}.dot-ch{background:var(--ch);}
+.pill-ji{background:var(--accent);color:var(--ji);}.dot-ji{background:var(--ji);}
+.pill-ta{background:#EAFAF2;color:var(--ta);}.dot-ta{background:var(--ta);}
+.pill-se{background:#F3EFFF;color:var(--se);}.dot-se{background:var(--se);}
+.intro-note{font-size:12px;color:var(--gray);line-height:1.8;margin-bottom:22px;background:var(--pale);border-radius:8px;padding:12px 14px;}
+
+/* QUESTION */
+#screen-question{height:calc(100vh - 58px);display:none;flex-direction:column;}
+#screen-question.active{display:flex;}
+.q-top{padding:16px 16px 12px;max-width:600px;margin:0 auto;width:100%;}
+.q-scene-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--gray);background:var(--white);border:1px solid var(--border);padding:4px 10px;border-radius:20px;margin-bottom:8px;}
+.q-scene-dot{width:6px;height:6px;border-radius:50%;}
+.q-label{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;color:var(--gray);letter-spacing:0.08em;}
+.q-split{display:grid;grid-template-columns:1fr 24px 1fr;padding:0 12px;max-width:600px;margin:0 auto;width:100%;align-items:stretch;height:200px;}
+.q-side{display:flex;align-items:center;justify-content:center;padding:16px 12px;border-radius:12px;border:2px solid var(--border);background:var(--white);cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:all 0.15s;text-align:center;}
+.q-side:active{transform:scale(0.97);}
+.q-side-label{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:800;color:var(--gray);background:var(--pale);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;margin-bottom:8px;}
+.q-side-text{font-size:12px;line-height:1.6;color:var(--text);}
+.q-side.flash-a{background:#EEF2F7;border-color:#64748B;}
+.q-side.flash-a .q-side-label{background:#64748B;color:#fff;}
+.q-side.flash-b{background:var(--accent);border-color:var(--blue);}
+.q-side.flash-b .q-side-label{background:var(--blue);color:#fff;}
+.q-divider{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--gray);}
+.q-bottom{padding:0 16px 12px;max-width:600px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:4px;}
+.skip-btn{background:none;border:none;color:var(--gray);font-size:11px;cursor:pointer;padding:6px 0;text-align:center;font-family:'Noto Sans JP',sans-serif;display:block;width:100%;-webkit-tap-highlight-color:transparent;text-decoration:underline;text-decoration-color:var(--border);}
+.back-btn{background:none;border:none;color:var(--gray);font-size:11px;cursor:pointer;padding:4px 0;text-align:center;font-family:'Noto Sans JP',sans-serif;display:block;width:100%;-webkit-tap-highlight-color:transparent;}
+
+@keyframes slideInRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideOutLeft{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-40px)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.anim-enter{animation:slideInRight 0.22s ease forwards;}
+.anim-leave{animation:slideOutLeft 0.18s ease forwards;}
+.screen.active:not(#screen-question){animation:fadeInUp 0.3s ease;}
+
+/* BUTTONS */
+.btn-primary{display:block;width:100%;padding:15px;background:var(--blue);color:#fff;border:none;border-radius:12px;font-family:'Noto Sans JP',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.05em;transition:background 0.2s,transform 0.1s;-webkit-tap-highlight-color:transparent;}
+.btn-primary:active{background:var(--blue-mid);transform:scale(0.98);}
+.btn-secondary{display:block;width:100%;padding:13px;background:var(--white);color:var(--blue);border:2px solid var(--blue);border-radius:12px;font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;-webkit-tap-highlight-color:transparent;}
+.pdf-btn{display:block;width:100%;padding:13px;background:var(--white);color:var(--blue);border:2px solid var(--blue);border-radius:12px;font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;text-align:center;-webkit-tap-highlight-color:transparent;}
+
+/* RESULT */
+.result-intro{background:var(--blue);border-radius:14px;padding:20px 22px;color:#fff;margin-bottom:14px;}
+.result-label{font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:0.12em;opacity:0.75;margin-bottom:4px;}
+.result-title{font-size:19px;font-weight:700;margin-bottom:4px;}
+.result-sub{font-size:12px;opacity:0.8;line-height:1.6;}
+.ranking-card{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:18px;margin-bottom:12px;}
+.card-title{font-size:12px;font-weight:700;color:var(--blue);margin-bottom:14px;}
+.rank-row{display:grid;grid-template-columns:36px 1fr 44px;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.rank-row:last-child{border-bottom:none;}
+.rank-pos{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;color:var(--gray);}
+.rank-pos.top{color:var(--blue);font-size:13px;}
+.rank-main{display:flex;flex-direction:column;gap:4px;}
+.rank-name-row{display:flex;align-items:center;gap:6px;}
+.rank-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.rank-name{font-size:13px;font-weight:700;}
+.rank-bar-wrap{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.rank-bar{height:100%;border-radius:3px;transition:width 0.7s ease;}
+.rank-score{font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;text-align:right;}
+.desc-card{background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:10px;}
+.desc-card.rank1{border-left-width:4px;}
+.desc-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.desc-rank-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;}
+.desc-name{font-size:15px;font-weight:700;}
+.desc-score{font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;margin-left:auto;}
+.desc-text{font-size:13px;line-height:1.85;}
+.desc-kws{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;}
+.kw{background:var(--pale);border:1px solid var(--border);color:var(--gray);font-size:11px;padding:3px 10px;border-radius:20px;}
+.overall-card{background:var(--blue);color:#fff;border-radius:14px;padding:18px 20px;margin-bottom:14px;}
+.overall-label{font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:0.1em;opacity:0.75;margin-bottom:6px;}
+.overall-text{font-size:13px;line-height:1.85;}
+.note-box{background:var(--pale);border-radius:10px;padding:14px 16px;font-size:12px;color:var(--gray);line-height:1.8;margin-bottom:14px;}
+.skip-note{background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400E;line-height:1.7;margin-bottom:12px;}
+.skip-note-mild{font-size:11px;color:var(--gray);margin-bottom:8px;}
+.next-link-box{background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:14px;}
+.next-link-title{font-size:12px;font-weight:700;color:var(--blue);margin-bottom:10px;}
+.next-link-btn{display:block;padding:11px 14px;background:var(--pale);border:1.5px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.next-link-btn:last-child{margin-bottom:0;}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
+.footer-brand{text-align:center;padding:16px;font-family:'Montserrat',sans-serif;font-size:10px;color:var(--gray);letter-spacing:0.08em;}
+
+@media print{
+  body{background:#fff;}
+  .screen{display:none!important;}
+  #pdf-sheet{display:block!important;}
+  @page{size:A4 portrait;margin:15mm 15mm 15mm 15mm;}
+}
+#pdf-sheet{display:none;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-logo">Grow3</div>
+      <div class="header-sub">欲求プロフィール</div>
+    </div>
+    <div class="header-right" id="headerProgress" style="display:none;">
+      <div class="header-count" id="headerCount">1 / 20</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="screen active" id="screen-intro">
+  <div class="container">
+    <div class="intro-card">
+      <div class="intro-title">欲求プロフィール</div>
+      <div class="intro-ja">Basic Needs Profile</div>
+      <p class="intro-desc">私たちはみな5つの基本的欲求を持っています。このツールでは20問の二択を通して、今のあなたが5つの欲求のうち何を相対的に優先しやすいかを確認します。点数は欲求の絶対的な強さを測るものではありません。</p>
+      <div class="needs-row">
+        <div class="needs-pill pill-ai"><div class="dot dot-ai"></div>愛・所属の欲求</div>
+        <div class="needs-pill pill-ch"><div class="dot dot-ch"></div>力・価値の欲求</div>
+        <div class="needs-pill pill-ji"><div class="dot dot-ji"></div>自由の欲求</div>
+        <div class="needs-pill pill-ta"><div class="dot dot-ta"></div>楽しみの欲求</div>
+        <div class="needs-pill pill-se"><div class="dot dot-se"></div>生存の欲求</div>
+      </div>
+      <div class="intro-note">左右に2つの選択肢が1問ずつ表示されます。<strong>より自分に近い方を直感でタップ</strong>してください。全20問・約3分。正解はありません。<br><br>（ウィリアム・グラッサー博士の選択理論心理学をもとにした独自設計ツールです）</div>
+      <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--border);">
+        <label for="tokenInput" style="display:block;font-size:12px;font-weight:700;color:var(--gray);margin-bottom:6px;">参加者トークン</label>
+        <input id="tokenInput" type="text" autocomplete="off" placeholder="事前に配布されたトークン"
+          style="width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#fff;">
+        <div id="tokenError" style="min-height:18px;margin-top:5px;font-size:11px;color:#B83228;"></div>
+        <button class="btn-primary" id="startAuthBtn" onclick="authenticateAndStart()">トークンを確認する →</button>
+        <div id="profilePanel" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <div id="profileHint" style="font-size:11px;line-height:1.7;color:var(--gray);margin-bottom:12px;"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label for="diagDateInput" style="display:block;font-size:11px;font-weight:700;color:var(--gray);margin-bottom:4px;">診断日</label>
+              <input id="diagDateInput" type="date" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;box-sizing:border-box;">
+            </div>
+            <div>
+              <label for="nameInput" id="nameLabel" style="display:block;font-size:11px;font-weight:700;color:var(--gray);margin-bottom:4px;">氏名</label>
+              <input id="nameInput" type="text" autocomplete="name" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;box-sizing:border-box;">
+            </div>
+            <div>
+              <label for="birthdateInput" style="display:block;font-size:11px;font-weight:700;color:var(--gray);margin-bottom:4px;">生年月日（任意）</label>
+              <input id="birthdateInput" type="date" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;box-sizing:border-box;">
+            </div>
+            <div>
+              <label for="orgInput" style="display:block;font-size:11px;font-weight:700;color:var(--gray);margin-bottom:4px;">所属組織（任意）</label>
+              <input id="orgInput" type="text" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;box-sizing:border-box;">
+            </div>
+            <div style="grid-column:1 / -1;">
+              <label for="deptInput" style="display:block;font-size:11px;font-weight:700;color:var(--gray);margin-bottom:4px;">所属部署（任意）</label>
+              <input id="deptInput" type="text" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;box-sizing:border-box;">
+            </div>
+          </div>
+          <div id="profileError" style="min-height:18px;margin-top:6px;font-size:11px;color:#B83228;"></div>
+          <button class="btn-primary" id="profileStartBtn" onclick="startAfterProfile()">この内容で診断を始める →</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-brand">Grow3 © 2025</div>
+  </div>
+</div>
+
+<!-- QUESTION -->
+<div class="screen" id="screen-question"></div>
+
+<!-- RESULT -->
+<div class="screen" id="screen-result">
+  <div class="container">
+    <div class="result-intro">
+      <div class="result-label">RESULT</div>
+      <div class="result-title">欲求プロフィールの結果</div>
+      <div class="result-sub">20問の選択に表れた、5つの欲求の相対的な優先度です。「今の自分は何を大切にしやすいか」を考える材料として読んでください。0点でも、その欲求が「ない」という意味ではありません。</div>
+    </div>
+    <div id="recordStatus" style="display:none;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;font-weight:700;line-height:1.6;"></div>
+    <div class="ranking-card" id="ranking-card-wrap">
+      <div class="card-title">📊 今回の選択に表れた欲求の優先度</div>
+      <div id="ranking-rows"></div>
+    </div>
+    <div id="desc-cards"></div>
+    <div class="overall-card" id="overall-card">
+      <div class="overall-label">OVERALL　もっとも特徴が出た傾向</div>
+      <div class="overall-text" id="overall-text"></div>
+    </div>
+    <div class="note-box">このプロフィールは「あなたはこういう人」と断定するものではありません。自分と相手では、満たされやすい欲求が違うかもしれない——そのことを対話のきっかけにしてみてください。</div>
+    <div class="next-link-box">
+      <div class="next-link-title">🔗 他の診断について</div>
+      <div style="font-size:12px;line-height:1.7;color:var(--gray);">行動特性など別の診断は、それぞれ専用トークンで受験します。案内されたタイミングでご利用ください。</div>
+    </div>
+    <hr class="divider">
+    <button class="pdf-btn" onclick="printPDF()">📄 結果をPDFで保存する</button>
+    <button class="btn-secondary" onclick="resetAll()">もう一度診断する</button>
+    <div class="footer-brand">Grow3 © 2025</div>
+  </div>
+</div>
+
+<div id="pdf-sheet"></div>
+
+<script>
+// ===================== Grow3 token / GAS =====================
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxN6MZZmZet7ltH98CyB5fz14qfqlUXxrJ6WLhb4oEMgP0ef6WicYFp4wNolmrG8CoNRQ/exec";
+const TOKEN_SESSION_KEY = "grow3_assessment_token_needs_v3";
+
+function getSavedToken() {
+  try { return sessionStorage.getItem(TOKEN_SESSION_KEY) || ''; } catch (_) { return ''; }
+}
+function saveToken(v) {
+  try { sessionStorage.setItem(TOKEN_SESSION_KEY, v); } catch (_) {}
+}
+function todayIso() { return new Date().toISOString().slice(0,10); }
+
+async function gasPost(payload) {
+  if(GAS_URL.includes('PASTE_V3_GAS_WEB_APP_URL_HERE')) throw new Error('v3 GASのWebアプリURLが未設定です。');
+  const res = await fetch(GAS_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.message || '通信処理に失敗しました。');
+  return data;
+}
+
+function showTokenError(message) {
+  const el=document.getElementById('tokenError');
+  if(el) el.textContent=message || '';
+}
+
+function setRecordStatus(state, message) {
+  const el=document.getElementById('recordStatus');
+  if(!el) return;
+  if(state!=='error'){
+    el.style.display='none';
+    el.textContent='';
+    return;
+  }
+  el.style.display='block';
+  el.style.background='#FFF8F0';
+  el.style.color='#B45309';
+  el.textContent='結果の保存に失敗しました。画面を閉じず、担当者にお知らせください。';
+}
+
+const DIAG_TYPE = 'needs';
+const ASSESSMENT_VERSION = 'needs-v3.2';
+let authToken = '';
+let participant = {name:'',birthdate:'',org:'',dept:''};
+let tokenAssigned = false;
+let recordSubmitted = false;
+
+async function authenticateAndStart() {
+  const input=document.getElementById('tokenInput');
+  const btn=document.getElementById('startAuthBtn');
+  const token=(input?.value||'').trim().toUpperCase().replace(/\s+/g,'');
+  showTokenError('');
+  if(!token){showTokenError('トークンを入力してください。');return;}
+  if(btn){btn.disabled=true;btn.textContent='確認中…';}
+  try{
+    const data=await gasPost({action:'validate',token_code:token,diag_type:DIAG_TYPE});
+    authToken=token;
+    tokenAssigned=Boolean(data.assigned);
+    saveToken(token);
+    if(input){input.value=token;input.readOnly=true;}
+    if(btn) btn.style.display='none';
+    const panel=document.getElementById('profilePanel');
+    if(panel) panel.style.display='block';
+    const date=document.getElementById('diagDateInput');
+    if(date && !date.value) date.value=todayIso();
+    const hint=document.getElementById('profileHint');
+    if(hint) hint.textContent=tokenAssigned
+      ? 'このトークンは登録済み受験者に紐づいています。氏名・所属等は空欄でも受験できます。入力した場合は受験時点の情報として記録します。'
+      : 'このトークンはまだ受験者に割り当てられていません。氏名を入力すると、受験完了時に新しい受験者として登録されます。';
+    const label=document.getElementById('nameLabel');
+    if(label) label.textContent=tokenAssigned?'氏名（任意）':'氏名（必須）';
+  }catch(err){
+    showTokenError(err.message || '通信エラーが発生しました。');
+  }finally{
+    if(btn && btn.style.display!=='none'){btn.disabled=false;btn.textContent='トークンを確認する →';}
+  }
+}
+
+function startAfterProfile() {
+  const diagDate=(document.getElementById('diagDateInput')?.value||'').trim();
+  const name=(document.getElementById('nameInput')?.value||'').trim();
+  const error=document.getElementById('profileError');
+  if(error) error.textContent='';
+  if(!diagDate){if(error)error.textContent='診断日を入力してください。';return;}
+  if(!tokenAssigned && !name){if(error)error.textContent='氏名を入力してください。';return;}
+  participant={
+    name,
+    birthdate:(document.getElementById('birthdateInput')?.value||'').trim(),
+    org:(document.getElementById('orgInput')?.value||'').trim(),
+    dept:(document.getElementById('deptInput')?.value||'').trim(),
+    diag_date:diagDate,
+  };
+  startQuiz();
+}
+
+async function recordNeedsResult(scores) {
+  if(recordSubmitted) return;
+  recordSubmitted=true;
+  setRecordStatus('sending','');
+  try{
+    await gasPost({
+      action:'record',diag_type:DIAG_TYPE,token_code:authToken,diag_date:participant.diag_date||todayIso(),
+      name:participant.name,birthdate:participant.birthdate,org:participant.org,dept:participant.dept,
+      score_ai:scores.ai,score_ch:scores.ch,score_ji:scores.ji,score_ta:scores.ta,score_se:scores.se,
+      assessment_version:ASSESSMENT_VERSION,answers_json:JSON.stringify(answers),
+    });
+    setRecordStatus('saved','');
+  }catch(err){
+    recordSubmitted=false;
+    console.error('record error',err); setRecordStatus('error','保存失敗');
+  }
+}
+
+const QUESTIONS = [
+  // 左右連打で特定の欲求に偏りにくくするため、表示位置を調整しています。
+  // 各欲求は全8回登場し、左側4回・右側4回になる配置です。
+  {n:1, scene:'日常',sc:'#27AE60',a:{key:'ai',t:'気の合う人たちと時間を共にすることが、自分にとってのエネルギー源になる'},b:{key:'ch',t:'何かに取り組んで、自分の力を発揮し、成果や手応えを感じることがエネルギー源になる'}},
+  {n:2, scene:'日常',sc:'#27AE60',a:{key:'ai',t:'誰かと一緒に過ごす時間が、自分にとってのリフレッシュになる'},b:{key:'ji',t:'自分のペースで、好きなことを自由にできる時間が、リフレッシュになる'}},
+  {n:3, scene:'日常',sc:'#27AE60',a:{key:'ta',t:'知らないことを調べたり試したりすると、気持ちが弾む'},b:{key:'ai',t:'気の合う人と一緒に過ごすと、気持ちが満たされる'}},
+  {n:4, scene:'日常',sc:'#27AE60',a:{key:'se',t:'生活リズムや健康、住環境が整っていると、安心して日々を過ごしやすい'},b:{key:'ai',t:'安心して話せる人間関係があると、自分の居場所があると感じやすい'}},
+  {n:5, scene:'日常',sc:'#27AE60',a:{key:'ch',t:'取り組んだことが成果になり、自分の力を実感できる時間に充実感を覚える'},b:{key:'ji',t:'自分で決めて、自分のやり方で動ける時間に充実感を覚える'}},
+  {n:6, scene:'日常',sc:'#27AE60',a:{key:'ch',t:'取り組むなら、結果や手応えが見える形で頑張りたい'},b:{key:'ta',t:'取り組むなら、面白さや遊び心を感じられることを大切にしたい'}},
+  {n:7, scene:'日常',sc:'#27AE60',a:{key:'se',t:'見通しを立てて、安心して続けられる状態を整えたい'},b:{key:'ch',t:'多少不確実でも、挑戦して手応えを得たい'}},
+  {n:8, scene:'日常',sc:'#27AE60',a:{key:'ji',t:'予定や過ごし方を自分で決められる時間があると落ち着く'},b:{key:'ta',t:'笑ったり夢中になったり、純粋に楽しめる時間にワクワクする'}},
+  {n:9, scene:'日常',sc:'#27AE60',a:{key:'ji',t:'多少不安定でも、自分の選択で動ける生き方を選びたい'},b:{key:'se',t:'多少制約があっても、安定・安心な環境を選びたい'}},
+  {n:10, scene:'日常',sc:'#27AE60',a:{key:'ta',t:'多少予定外でも、楽しそうなことには時間を使いたい'},b:{key:'se',t:'楽しそうでも、生活の余裕や安心を保てることを優先したい'}},
+  {n:11, scene:'仕事',sc:'#0F3D96',a:{key:'ai',t:'一緒に働く人との関係が良好だと、仕事へのやる気が高まる'},b:{key:'ch',t:'自分の工夫や努力が成果として認められると、仕事へのやる気が高まる'}},
+  {n:12, scene:'仕事',sc:'#0F3D96',a:{key:'ai',t:'仲間と連携しながら進めるプロジェクトに充実感を覚える'},b:{key:'ji',t:'進め方や順番を自分で選びながら進められる仕事に充実感を覚える'}},
+  {n:13, scene:'仕事',sc:'#0F3D96',a:{key:'ta',t:'仕事に面白さや新しい発見があることが、続けるうえでの土台になる'},b:{key:'ai',t:'職場の人間関係が良好であることが、仕事を続けるうえでの土台になる'}},
+  {n:14, scene:'仕事',sc:'#0F3D96',a:{key:'se',t:'雇用や待遇、働く環境が安定していると、仕事への安心感につながる'},b:{key:'ai',t:'職場に気を許せる人がいると、仕事への安心感につながる'}},
+  {n:15, scene:'仕事',sc:'#0F3D96',a:{key:'ch',t:'自分の工夫や成果が評価され、手応えを感じられるとやる気が出る'},b:{key:'ji',t:'自分でやり方を選びながら進められるとやる気が出る'}},
+  {n:16, scene:'仕事',sc:'#0F3D96',a:{key:'ch',t:'仕事では、成果が形になり、自分の役割の価値を実感できることを大切にしたい'},b:{key:'ta',t:'仕事では、面白さや好奇心を感じられることを大切にしたい'}},
+  {n:17, scene:'仕事',sc:'#0F3D96',a:{key:'se',t:'職場環境や雇用が安定していて、将来の見通しが持てることでモチベーションが上がる'},b:{key:'ch',t:'自分の力や役割が認められたり、責任ある役割を任されたりするとモチベーションが上がる'}},
+  {n:18, scene:'仕事',sc:'#0F3D96',a:{key:'ji',t:'仕事では、進め方や優先順位を自分で選べることを大切にしたい'},b:{key:'ta',t:'仕事では、新しい発見や楽しさがあることを大切にしたい'}},
+  {n:19, scene:'仕事',sc:'#0F3D96',a:{key:'ji',t:'職場では、細かなルールより自分で判断できる余地を大切にしたい'},b:{key:'se',t:'職場では、曖昧さより仕組みやルールが整っている安心感を大切にしたい'}},
+  {n:20, scene:'仕事',sc:'#0F3D96',a:{key:'ta',t:'仕事そのものを楽しめることを大切にしたい'},b:{key:'se',t:'職場環境や将来の見通しが安定していることを大切にしたい'}},
+];
+
+const NEEDS_INFO = {
+  ai:{name:'愛・所属の欲求',color:'#E84B6A',bg:'#FEF0F3'},
+  ch:{name:'力・価値の欲求',color:'#F5A623',bg:'#FEF5E7'},
+  ji:{name:'自由の欲求',   color:'#0F3D96',bg:'#E8F0FF'},
+  ta:{name:'楽しみの欲求', color:'#27AE60',bg:'#EAFAF2'},
+  se:{name:'生存の欲求',   color:'#8B5CF6',bg:'#F3EFFF'},
+};
+
+const NEEDS_DESC = {
+  ai:{
+    desc:'「愛・所属」は、人とのつながり、受け入れられている感覚、安心して関われる関係を求める欲求です。今回この点が相対的に高いほど、仲間との関係や一緒に取り組める感覚を大切に選びやすかったと読めます。',
+    kws:['つながり','安心できる関係','仲間との連携','居場所'],
+    overall:'今回の20問では「愛・所属」が相対的に最も高く出ています。人とのつながりや安心して関われる関係を、他の欲求より優先して選びやすかった結果です。「誰と、どんな関係で取り組めると動きやすいか」を振り返る材料にしてください。'
+  },
+  ch:{
+    desc:'「力・価値」は、自分の力を発揮すること、成果や手応えを得ること、自分の存在や役割が認められることを求める欲求です。今回この点が相対的に高いほど、成果・承認・役割の価値を大切に選びやすかったと読めます。',
+    kws:['成果の手応え','認められる','役割の価値','力を発揮する'],
+    overall:'今回の20問では「力・価値」が相対的に最も高く出ています。成果の手応えや、自分の力・役割が認められる感覚を、他の欲求より優先して選びやすかった結果です。「何を達成したとき、どんな認められ方をしたときに動きやすいか」を振り返る材料にしてください。'
+  },
+  ji:{
+    desc:'「自由」は、自分で選ぶこと、自分の判断やペースを持つこと、必要以上に縛られないことを求める欲求です。今回この点が相対的に高いほど、裁量や選択の余地を大切に選びやすかったと読めます。',
+    kws:['自分で選ぶ','裁量','自分のペース','選択の余地'],
+    overall:'今回の20問では「自由」が相対的に最も高く出ています。自分で選び、判断できる余地を、他の欲求より優先して選びやすかった結果です。「どこまで自分で決められると動きやすいか」を振り返る材料にしてください。'
+  },
+  ta:{
+    desc:'「楽しみ」は、面白さ、遊び心、笑い、好奇心、学びや発見を求める欲求です。今回この点が相対的に高いほど、楽しさや新しい発見があることを大切に選びやすかったと読めます。',
+    kws:['面白さ','遊び心','好奇心','学び・発見'],
+    overall:'今回の20問では「楽しみ」が相対的に最も高く出ています。面白さや好奇心、学び・発見のあることを、他の欲求より優先して選びやすかった結果です。「何に夢中になるか、どんな面白さがあると続けたくなるか」を振り返る材料にしてください。'
+  },
+  se:{
+    desc:'「生存」は、身体的な安全や健康、生活の安定、将来の見通しなど、安心して暮らし続けるための土台を求める欲求です。今回この点が相対的に高いほど、安心・安定・見通しを大切に選びやすかったと読めます。',
+    kws:['安全・健康','安心','生活の安定','見通し'],
+    overall:'今回の20問では「生存」が相対的に最も高く出ています。安全・安定・見通しのある状態を、他の欲求より優先して選びやすかった結果です。「何が見えると安心して動けるか」を振り返る材料にしてください。'
+  },
+};
+
+let answers={}, currentQ=0, isAnimating=false, lastResult=null;
+
+function updateHeader(idx){
+  const el=document.getElementById('headerProgress');
+  if(idx<0){el.style.display='none';return;}
+  el.style.display='flex';
+  document.getElementById('headerCount').textContent=`${idx+1} / ${QUESTIONS.length}`;
+  document.getElementById('progressFill').style.width=`${(idx/QUESTIONS.length)*100}%`;
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id!=='screen-question') window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderQuestion(idx){
+  const q=QUESTIONS[idx];
+  const scr=document.getElementById('screen-question');
+  scr.innerHTML=`
+    <div class="q-top">
+      <div class="q-scene-tag"><div class="q-scene-dot" style="background:${q.sc};"></div>${q.scene}の場面</div>
+      <div class="q-label">Q${q.n}　どちらが自分に近いですか？</div>
+    </div>
+    <div class="q-split anim-enter">
+      <div class="q-side" id="sideA" onclick="selectAnswer('a')" style="flex-direction:column;gap:8px;">
+        <div class="q-side-text">${q.a.t}</div>
+      </div>
+      <div class="q-divider">or</div>
+      <div class="q-side" id="sideB" onclick="selectAnswer('b')" style="flex-direction:column;gap:8px;">
+        <div class="q-side-text">${q.b.t}</div>
+      </div>
+    </div>
+  `;
+}
+
+function startQuiz(){currentQ=0;answers={};showScreen('screen-question');updateHeader(0);renderQuestion(0);}
+
+function selectAnswer(side){
+  if(isAnimating) return;
+  isAnimating=true;
+  const q=QUESTIONS[currentQ];
+  answers[q.n]=side;
+  const el=document.getElementById(side==='a'?'sideA':'sideB');
+  el.classList.add(side==='a'?'flash-a':'flash-b');
+  setTimeout(()=>{advance();},260);
+}
+
+function advance(){
+  const split=document.querySelector('.q-split');
+  if(split){split.classList.remove('anim-enter');split.classList.add('anim-leave');}
+  setTimeout(()=>{
+    currentQ++;
+    if(currentQ>=QUESTIONS.length) showResult();
+    else{updateHeader(currentQ);renderQuestion(currentQ);}
+    isAnimating=false;
+  },180);
+}
+
+function showResult(){
+  const missingIndex=QUESTIONS.findIndex(q=>answers[q.n]===undefined);
+  if(missingIndex!==-1){
+    currentQ=missingIndex;
+    isAnimating=false;
+    showScreen('screen-question');
+    updateHeader(currentQ);
+    renderQuestion(currentQ);
+    return;
+  }
+  updateHeader(-1);
+  const scores={ai:0,ch:0,ji:0,ta:0,se:0};
+  QUESTIONS.forEach(q=>{
+    const ans=answers[q.n];
+    if(ans==='a') scores[q.a.key]++;
+    if(ans==='b') scores[q.b.key]++;
+  });
+
+  const sorted=Object.entries(scores)
+    .map(([k,v])=>({key:k,score:v,info:NEEDS_INFO[k],desc:NEEDS_DESC[k]}))
+    .sort((a,b)=>b.score-a.score);
+
+  let rank=1;
+  sorted.forEach((d,i)=>{if(i>0&&d.score<sorted[i-1].score)rank=i+1;d.rank=rank;});
+
+  // 総合コメント：1位同点を勝手に1つへ絞らない
+  const topScore=sorted[0].score;
+  const topNeeds=sorted.filter(d=>d.score===topScore);
+  const overallText=topNeeds.length===1
+    ?topNeeds[0].desc.overall
+    :`今回は${topNeeds.map(d=>d.info.name).join('・')}が同点で最も高く出ています。どれか1つを代表と決めず、場面によって「何が満たされると動きやすいか」を振り返ると、自分の優先度をつかみやすくなります。`;
+
+  lastResult={scores,sorted,overallText};
+  recordNeedsResult(scores);
+
+  document.getElementById('ranking-rows').innerHTML=sorted.map(d=>`
+    <div class="rank-row">
+      <div class="rank-pos ${d.rank<=2?'top':''}">${d.rank}位</div>
+      <div class="rank-main">
+        <div class="rank-name-row">
+          <div class="rank-dot" style="background:${d.info.color};"></div>
+          <div class="rank-name">${d.info.name}</div>
+        </div>
+        <div class="rank-bar-wrap">
+          <div class="rank-bar" style="width:${d.score/8*100}%;background:${d.info.color};"></div>
+        </div>
+      </div>
+      <div class="rank-score" style="color:${d.info.color};">${d.score}<span style="font-size:10px;color:var(--gray);font-weight:400;font-family:'Noto Sans JP';">点</span></div>
+    </div>
+  `).join('');
+
+  document.getElementById('desc-cards').innerHTML=sorted.map((d,i)=>`
+    <div class="desc-card ${d.rank===1?'rank1':''}" style="${d.rank===1?`border-left-color:${d.info.color};`:''}">
+      <div class="desc-head">
+        <span class="desc-rank-badge" style="background:${d.info.bg};color:${d.info.color};">${d.rank}位</span>
+        <span class="desc-name" style="color:${d.info.color};">${d.info.name}</span>
+        <span class="desc-score" style="color:${d.info.color};">${d.score}点</span>
+      </div>
+      <div class="desc-text">${d.desc.desc}</div>
+      <div class="desc-kws">${d.desc.kws.map(k=>`<span class="kw">${k}</span>`).join('')}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('overall-text').textContent=overallText;
+  showScreen('screen-result');
+}
+
+function printPDF(){
+  if(!lastResult) return;
+  const {sorted,overallText}=lastResult;
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+
+  const rankHtml=sorted.map(d=>`
+    <div style="display:grid;grid-template-columns:36px 1fr 44px;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #E5E7EB;">
+      <div style="font-family:Montserrat,sans-serif;font-size:11pt;font-weight:700;color:${d.rank<=2?'#0F3D96':'#6B7280'};">${d.rank}位</div>
+      <div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:${d.info.color};flex-shrink:0;"></div>
+          <div style="font-size:11pt;font-weight:700;">${d.info.name}</div>
+        </div>
+        <div style="height:6px;background:#E5E7EB;border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${d.score/8*100}%;background:${d.info.color};border-radius:3px;"></div>
+        </div>
+      </div>
+      <div style="font-family:Montserrat,sans-serif;font-size:12pt;font-weight:700;color:${d.info.color};text-align:right;">${d.score}点</div>
+    </div>
+  `).join('');
+
+  const descHtml=sorted.slice(0,3).map((d,i)=>`
+    <div style="margin-bottom:10px;padding:10px 12px;border:1.5px solid #E5E7EB;border-left:4px solid ${d.info.color};border-radius:8px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <span style="font-size:8pt;font-weight:700;padding:2px 8px;border-radius:20px;background:${d.info.bg};color:${d.info.color};">${d.rank}位</span>
+        <span style="font-size:11pt;font-weight:700;color:${d.info.color};">${d.info.name}</span>
+        <span style="margin-left:auto;font-size:10pt;font-weight:700;color:${d.info.color};">${d.score}点</span>
+      </div>
+      <p style="font-size:9pt;line-height:1.75;color:#1F2937;margin-bottom:5px;">${d.desc.desc}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">${d.desc.kws.map(k=>`<span style="font-size:8pt;padding:2px 8px;border:1px solid #E5E7EB;border-radius:20px;color:#6B7280;">${k}</span>`).join('')}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('pdf-sheet').innerHTML=`
+    <div style="font-family:'Noto Sans JP',sans-serif;color:#1F2937;max-width:720px;margin:0 auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #0F3D96;">
+        <div>
+          <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14pt;color:#0F3D96;">Grow3</div>
+          <div style="font-size:16pt;font-weight:700;color:#1F2937;margin-top:2px;">欲求プロフィール</div>
+          <div style="font-size:9pt;color:#6B7280;margin-top:2px;">Basic Needs Profile　|　${dateStr}</div>
+        </div>
+      </div>
+      <p style="font-size:9.5pt;color:#6B7280;line-height:1.7;margin-bottom:14px;">このシートは「あなたはこういう人」と断定するものではありません。今の自分が何で満たされやすいかを確認し、相手との関わり方を考えるためのセルフアセスメントです。</p>
+      <div style="font-size:11pt;font-weight:700;margin-bottom:10px;">■ 今回の選択に表れた欲求の優先度</div>
+      <div style="background:#fff;border:1.5px solid #E5E7EB;border-radius:8px;padding:12px 14px;margin-bottom:14px;">${rankHtml}</div>
+      <div style="font-size:11pt;font-weight:700;margin-bottom:10px;">■ 上位3欲求の詳細</div>
+      ${descHtml}
+      <div style="background:#0F3D96;color:#fff;border-radius:8px;padding:14px 16px;margin-bottom:14px;">
+        <div style="font-family:Montserrat,sans-serif;font-size:8pt;letter-spacing:0.1em;opacity:0.75;margin-bottom:6px;">OVERALL　もっとも特徴が出た傾向</div>
+        <p style="font-size:10pt;line-height:1.8;">${overallText}</p>
+      </div>
+      <div style="border:1.5px solid #E5E7EB;border-radius:8px;padding:12px 14px;background:#F9FAFB;">
+        <div style="font-size:10pt;font-weight:700;color:#0F3D96;margin-bottom:8px;">📝 今日気づいたこと・試してみたいこと</div>
+        <div style="height:60px;border-bottom:1px solid #E5E7EB;margin-bottom:8px;"></div>
+        <div style="height:60px;"></div>
+      </div>
+      <div style="margin-top:14px;font-size:8pt;color:#9CA3AF;text-align:center;">Grow3 © 2025　|　ウィリアム・グラッサー博士の選択理論心理学をもとにした独自設計ツールです</div>
+    </div>
+  `;
+  setTimeout(()=>{window.print();},100);
+}
+
+function resetAll(){
+  answers={};currentQ=0;lastResult=null;recordSubmitted=false;tokenAssigned=false;participant={name:'',birthdate:'',org:'',dept:''};
+  updateHeader(-1);showScreen('screen-intro');
+  const input=document.getElementById('tokenInput');if(input){input.value=getSavedToken();input.readOnly=false;}
+  const authBtn=document.getElementById('startAuthBtn');if(authBtn){authBtn.style.display='block';authBtn.disabled=false;authBtn.textContent='トークンを確認する →';}
+  const panel=document.getElementById('profilePanel');if(panel)panel.style.display='none';
+  ['nameInput','birthdateInput','orgInput','deptInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const d=document.getElementById('diagDateInput');if(d)d.value=todayIso();
+  const pe=document.getElementById('profileError');if(pe)pe.textContent='';
+}
+
+const needsSavedToken=getSavedToken();
+if(needsSavedToken){const input=document.getElementById('tokenInput');if(input)input.value=needsSavedToken;}
+const needsDiagDate=document.getElementById('diagDateInput');if(needsDiagDate)needsDiagDate.value=todayIso();
+</script>
+</body>
+</html>
