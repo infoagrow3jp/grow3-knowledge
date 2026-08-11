@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>思考特性 | Grow3</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #F7F8FA;
+  font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+}
+.print-sheet { display: none; }
+
+/* Grow3 3診断 共通ヘッダー */
+.series-header {
+  background:#0F3D96;
+  padding:14px 20px 12px;
+  position:sticky;
+  top:0;
+  z-index:100;
+  box-shadow:0 2px 10px rgba(15,61,150,0.3);
+}
+.series-header-inner {
+  max-width:600px;
+  margin:0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.series-header-logo {
+  font-family:'Montserrat',sans-serif;
+  font-weight:800;
+  font-size:16px;
+  color:#fff;
+  letter-spacing:0.04em;
+}
+.series-header-sub {
+  font-size:10px;
+  color:rgba(255,255,255,0.65);
+  margin-top:1px;
+  letter-spacing:0.06em;
+}
+
+
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: white !important; margin: 0 !important; padding: 0 !important; }
+  .no-print { display: none !important; }
+  .print-sheet { display: block !important; }
+  @page { size: A4 portrait; margin: 7mm 10mm; }
+}
+</style>
+</head>
+<body>
+<div class="series-header no-print">
+  <div class="series-header-inner">
+    <div>
+      <div class="series-header-logo">Grow3</div>
+      <div class="series-header-sub">思考特性</div>
+    </div>
+  </div>
+</div>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+/* ── 象限定義 ─────────────────────── */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxN6MZZmZet7ltH98CyB5fz14qfqlUXxrJ6WLhb4oEMgP0ef6WicYFp4wNolmrG8CoNRQ/exec";
+const DIAG_TYPE = "thinking";
+const ASSESSMENT_VERSION = "thinking-v3.2.1";
+const TOKEN_SESSION_KEY = "grow3_assessment_token_thinking_v3";
+
+async function validateToken(token) {
+  if (GAS_URL.includes("PASTE_V3_GAS_WEB_APP_URL_HERE")) {
+    throw new Error("v3 GASのWebアプリURLが未設定です。");
+  }
+  const res = await fetch(GAS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({ action: "validate", token_code: token, diag_type: DIAG_TYPE }),
+  });
+  const data = await res.json();
+  return data;
+}
+
+async function recordResult({ token, info, scores, title, answersJson }) {
+  if (GAS_URL.includes("PASTE_V3_GAS_WEB_APP_URL_HERE")) {
+    throw new Error("v3 GASのWebアプリURLが未設定です。");
+  }
+  const res = await fetch(GAS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({
+      action: "record",
+      diag_type: DIAG_TYPE,
+      token_code: token,
+      diag_date:  info.date,
+      name:       info.name,
+      birthdate:  info.birthdate,
+      org:        info.org,
+      dept:       info.dept,
+      score_A:    scores.A,
+      score_B:    scores.B,
+      score_C:    scores.C,
+      score_D:    scores.D,
+      type_label: title,
+      assessment_version: ASSESSMENT_VERSION,
+      answers_json: answersJson,
+    }),
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.message || "結果を保存できませんでした。");
+  return data;
+}
+const Q = {
+  A: { name:"分析・論理", color:"#1a5f9e", bg:"#deeef8", light:"#f0f7fd", emoji:"🔍" },
+  D: { name:"創造・直感", color:"#c47a0a", bg:"#fef0d5", light:"#fef8ec", emoji:"💡" },
+  B: { name:"計画・堅実", color:"#2a7a50", bg:"#ddf0e7", light:"#f0faf4", emoji:"📋" },
+  C: { name:"共感・感性", color:"#b83228", bg:"#fce8e6", light:"#fdf5f5", emoji:"🤝" },
+};
+
+/* ── 設問データ（6ペア×6問=36問）────── */
+const QUESTIONS_DATA = [
+  // A vs D
+  {id:1,  left:{text:"根拠やデータをもとに判断する",         quad:"A"}, right:{text:"直感やひらめきをもとに判断する",       quad:"D"}},
+  {id:2,  left:{text:"今ある方法を分解し、改善点を見つける",       quad:"A"}, right:{text:"今ある前提を外し、別のやり方を発想する",   quad:"D"}},
+  {id:3,  left:{text:"事実を積み上げて結論を出す",           quad:"A"}, right:{text:"大きなビジョンから逆算して考える",     quad:"D"}},
+  {id:4,  left:{text:"情報を体系的に整理して理解する",       quad:"A"}, right:{text:"情報をアイデアの種として活用する",     quad:"D"}},
+  {id:5,  left:{text:"判断する前に、条件や根拠をできるだけ確かめたい", quad:"A"}, right:{text:"まず仮説や可能性を広げてから考えたい",       quad:"D"}},
+  {id:6,  left:{text:"説明は、根拠と因果関係が明確だと理解しやすい", quad:"A"}, right:{text:"説明は、全体像やイメージが見えると理解しやすい", quad:"D"}},
+  // A vs B
+  {id:7,  left:{text:"複雑な問題を深く分析・解明したい",     quad:"A"}, right:{text:"確実な手順で着実に物事を進めたい",     quad:"B"}},
+  {id:8,  left:{text:"データで根拠を示して判断する",         quad:"A"}, right:{text:"実績や前例をもとに判断する",           quad:"B"}},
+  {id:9,  left:{text:"物事の原因を深く掘り下げる",           quad:"A"}, right:{text:"リスクや不確実な点を先に確かめたい",     quad:"B"}},
+  {id:10, left:{text:"効率を追求して無駄を省く",             quad:"A"}, right:{text:"安全性・確実性を優先する",             quad:"B"}},
+  {id:11, left:{text:"客観的な事実を手がかりに判断する",               quad:"A"}, right:{text:"既存のルールや基準を手がかりに判断する",         quad:"B"}},
+  {id:12, left:{text:"考えるときは、最も合理的な答えを見つけたい", quad:"A"}, right:{text:"考えるときは、実行できる手順まで具体化したい", quad:"B"}},
+  // A vs C
+  {id:13, left:{text:"事実・データを最優先にする",           quad:"A"}, right:{text:"相手の気持ちや状況を最優先にする",     quad:"C"}},
+  {id:14, left:{text:"筋道が通る説明を重視する",               quad:"A"}, right:{text:"相手の気持ちに沿う説明を重視する",   quad:"C"}},
+  {id:15, left:{text:"客観的に判断して行動する",             quad:"A"}, right:{text:"場の雰囲気や人間関係を大切にする",     quad:"C"}},
+  {id:16, left:{text:"判断するとき、成果や客観的な結果を重視する", quad:"A"}, right:{text:"判断するとき、関わる人の納得感や関係性を重視する", quad:"C"}},
+  {id:17, left:{text:"効率的な解決策を求める",               quad:"A"}, right:{text:"みんなが納得できる解決策を求める",     quad:"C"}},
+  {id:18, left:{text:"問題が起きたら、まず事実関係を整理したくなる", quad:"A"}, right:{text:"問題が起きたら、まず関係者の受け止め方を確かめたくなる", quad:"C"}},
+  // B vs D
+  {id:19, left:{text:"見通しや枠組みを先につくりたい",   quad:"B"}, right:{text:"まず可能性を広げてから形を整えたい", quad:"D"}},
+  {id:20, left:{text:"安定して続けられる形に注意が向く",                 quad:"B"}, right:{text:"変化や新しさの可能性に注意が向く",                 quad:"D"}},
+  {id:21, left:{text:"見通しの立つ選択肢に目が向く",             quad:"B"}, right:{text:"新しい可能性のある選択肢に目が向く",       quad:"D"}},
+  {id:22, left:{text:"手順や前例を手がかりに考える",         quad:"B"}, right:{text:"手順や前例から離れて考える",   quad:"D"}},
+  {id:23, left:{text:"小さな要素を積み上げて考える",           quad:"B"}, right:{text:"大きな方向性から考える",             quad:"D"}},
+  {id:24, left:{text:"先の見通しが立つと、考えをまとめやすい",   quad:"B"}, right:{text:"先が読めない状況でも、可能性を広げて考えやすい", quad:"D"}},
+  // B vs C
+  {id:25, left:{text:"計画や期限を基準に、進め方を考える",       quad:"B"}, right:{text:"相手の状況や反応を見ながら、進め方を考える", quad:"C"}},
+  {id:26, left:{text:"組織の課題は、仕組みや役割から考える",         quad:"B"}, right:{text:"組織の課題は、関係性や対話から考える",         quad:"C"}},
+  {id:27, left:{text:"仕事では、効率や手順に注意が向く",           quad:"B"}, right:{text:"仕事では、人間関係や雰囲気に注意が向く",     quad:"C"}},
+  {id:28, left:{text:"役割や分担が明確だと、考えを整理しやすい", quad:"B"}, right:{text:"人と相談しながら、考えを整理しやすい", quad:"C"}},
+  {id:29, left:{text:"先に計画や段取りを組み立てる",                 quad:"B"}, right:{text:"対話しながら整理していく",             quad:"C"}},
+  {id:30, left:{text:"継続できる仕組みや運用を、まず考える",     quad:"B"}, right:{text:"関係者が安心して関われる状態を、まず考える", quad:"C"}},
+  // C vs D
+  {id:31, left:{text:"考えるとき、人にどう受け止められるかが気になる", quad:"C"}, right:{text:"考えるとき、これまでにない可能性があるかが気になる", quad:"D"}},
+  {id:32, left:{text:"意見が分かれたとき、共通点を探してつなげたい", quad:"C"}, right:{text:"意見が分かれたとき、新しい見方に組み替えたい", quad:"D"}},
+  {id:33, left:{text:"対話の中で相手の反応を受け取りながら考えがまとまる", quad:"C"}, right:{text:"自由に連想を広げているうちに考えがまとまる", quad:"D"}},
+  {id:34, left:{text:"判断するとき、周囲への影響を思い浮かべる", quad:"C"}, right:{text:"判断するとき、その先の可能性や全体像を思い浮かべる", quad:"D"}},
+  {id:35, left:{text:"新しい案では、関わる人が受け入れやすい形を考える", quad:"C"}, right:{text:"新しい案では、これまでの前提を超える形を考える", quad:"D"}},
+  {id:36, left:{text:"話し合いでは、相手の言葉の背景や気持ちに注意が向く", quad:"C"}, right:{text:"話し合いでは、話から広がるアイデアや可能性に注意が向く", quad:"D"}},
+];
+
+const TYPE_DESCS = {
+  A: "データ・事実・因果関係に注意が向きやすく、根拠を確かめながら論理的に考えることを好む傾向です。判断するときは、感覚よりも客観的な情報や筋道を重視しやすくなります。",
+  D: "全体像・可能性・新しい組み合わせに注意が向きやすく、前提にとらわれず発想を広げることを好む傾向です。判断するときは、細部よりも先の展開や直感的なつながりを重視しやすくなります。",
+  B: "計画・手順・見通し・継続性に注意が向きやすく、物事を具体化して順序立てることを好む傾向です。判断するときは、変化の大きさよりも実行可能性や確実さを重視しやすくなります。",
+  C: "人の受け止め方・感情・関係性に注意が向きやすく、対話や共感を通じて考えることを好む傾向です。判断するときは、事実だけでなく関わる人への影響や納得感も重視しやすくなります。",
+};
+
+const DUAL_DESCS = {
+  "A+D": "論理と創造の二重優位型。根拠や因果を確かめる視点と、可能性を広げる視点の両方が相対的に高く出ています。分析と発想を行き来しやすいプロフィールとして捉えられます。",
+  "A+B": "論理と計画の二重優位型。事実や根拠を確かめる視点と、手順や見通しを整える視点の両方が相対的に高く出ています。考えを具体化していく方向に注意が向きやすいプロフィールです。",
+  "A+C": "論理と共感の二重優位型。客観的な情報を見る視点と、人の受け止め方や関係性を見る視点の両方が相対的に高く出ています。事実と人の両面を判断材料にしやすいプロフィールです。",
+  "B+D": "創造と計画の二重優位型。新しい可能性を広げる視点と、実行の見通しを整える視点の両方が相対的に高く出ています。発想と具体化を行き来しやすいプロフィールです。",
+  "C+D": "創造と共感の二重優位型。人の受け止め方や関係性を見る視点と、新しい可能性を広げる視点の両方が相対的に高く出ています。対話から発想を広げやすいプロフィールです。",
+  "B+C": "計画と共感の二重優位型。手順や見通しを整える視点と、人の受け止め方や関係性を見る視点の両方が相対的に高く出ています。安心して進められる状態を具体化しやすいプロフィールです。",
+};
+
+/* ── 詳細特性データ ─────────────────── */
+const TYPE_DETAILS = {
+  A: {
+    keywords: ["論理","分析","事実","数量","因果"],
+    strength: "事実や根拠を確かめ、情報を整理して論点を明確にする場面で、この思考を自然に使いやすい傾向があります。",
+    weakness: "論理や正確さに意識が集中すると、人の感情やまだ言語化されていない可能性を判断材料から外しやすくなることがあります。",
+    teamrole: "根拠の確認、論点整理、数字や事実からの検証など、チームの判断を具体化する視点として活かせます。",
+    hint: "結論を出す前に「人はどう受け止めるか」「他の可能性はないか」を一度問いに加えると、思考の幅が広がります。",
+  },
+  D: {
+    keywords: ["全体像","直感","発想","可能性","革新"],
+    strength: "前提を外して可能性を広げたり、離れた情報をつないで新しい見方をつくる場面で、この思考を自然に使いやすい傾向があります。",
+    weakness: "可能性や全体像に意識が集中すると、根拠の確認や具体的な手順、継続運用の条件が後回しになることがあります。",
+    teamrole: "新しい視点、将来像、別の選択肢を持ち込み、チームの考えが固定化するのをほぐす視点として活かせます。",
+    hint: "発想した後に「根拠は何か」「誰が・いつ・どう実行するか」を問いに加えると、アイデアを実行へつなげやすくなります。",
+  },
+  B: {
+    keywords: ["計画","手順","詳細","見通し","継続"],
+    strength: "曖昧な話を手順や役割に落とし、先の見通しをつくる場面で、この思考を自然に使いやすい傾向があります。",
+    weakness: "計画や確実さに意識が集中すると、途中で生まれた新しい可能性や、状況変化に合わせた組み替えを受け取りにくくなることがあります。",
+    teamrole: "進め方の具体化、段取り、確認事項の整理など、アイデアを継続して動かせる形にする視点として活かせます。",
+    hint: "計画を守ること自体を目的にせず、「何のための計画か」を確認すると、必要な変更も取り込みやすくなります。",
+  },
+  C: {
+    keywords: ["対人","感情","対話","共感","関係"],
+    strength: "関わる人の受け止め方や感情を想像し、対話の中から意味や納得点を見つける場面で、この思考を自然に使いやすい傾向があります。",
+    weakness: "関係性や納得感に意識が集中すると、客観的な事実や厳しい論点、全体最適の判断を後回しにすることがあります。",
+    teamrole: "関係者の声や反応を判断材料に加え、異なる立場の間をつなぐ視点として活かせます。",
+    hint: "「相手はどう感じるか」に加えて「事実は何か」「目的に照らして何が必要か」も並べると、共感を保ちながら判断しやすくなります。",
+  },
+};
+
+/* ── 思考特性マップ 形状記述 ────────── */
+function getShapeDesc(scores, dominant) {
+  const ranked = Object.entries(scores).sort(([,a],[,b])=>b-a);
+  const [k1,v1]=ranked[0], [,v4]=ranked[3];
+  const spread = v1 - v4;
+  const domCount = dominant.length;
+  const hasA=dominant.includes("A"), hasB=dominant.includes("B");
+  const hasC=dominant.includes("C"), hasD=dominant.includes("D");
+  const isDiagAC = hasA && hasC;
+  const isDiagBD = hasB && hasD;
+
+  // 均衡型（優勢なし or 全体が均等）
+  if (domCount === 0 || spread < 35) {
+    return {
+      label:"均衡・バランス型",
+      shape:"4象限がほぼ等しい「正方形に近い形」",
+      text:"4つの視点がほぼ均等に分布しており、正方形に近い形を示しています。特定の象限だけが突出するというより、4つの思考の優先度が近いプロフィールです。場面によって、どの視点を使っているかを振り返ると自分の傾向をつかみやすくなります。"
+    };
+  }
+  // 対角二重優勢 A↔C
+  if (isDiagAC && domCount === 2) {
+    return {
+      label:"A・C 対角二重優勢型",
+      shape:"論理（A）と共感（C）が対角に張り出した「横長のひし形」",
+      text:"論理・分析（A）と共感・感性（C）という相反する2つの象限が同時に高く、横長のひし形を示しています。事実優先と感情優先という対照的な思考が共存するため、場面によって内的な葛藤が生じることがあります。この二面性は、事実と人の受け止めの両方を判断材料にしやすいプロフィールとして捉えられます。"
+    };
+  }
+  // 対角二重優勢 B↔D
+  if (isDiagBD && domCount === 2) {
+    return {
+      label:"B・D 対角二重優勢型",
+      shape:"計画（B）と創造（D）が対角に張り出した「縦長のひし形」",
+      text:"計画・堅実（B）と創造・直感（D）という相反する2つの象限が同時に高く、縦長のひし形を示しています。安定志向と変革志向という対照的な思考が共存するため、どちらを優先するか迷う場面が生じます。この両方が高いことは、変化を考える視点と実行の見通しを考える視点の両方に注意が向きやすいプロフィールとして捉えられます。"
+    };
+  }
+  // 三重優勢型
+  if (domCount >= 3) {
+    const low = ranked[ranked.length-1][0];
+    return {
+      label:`三重優勢型（${Q[low].name}が相対的に低い）`,
+      shape:`3象限が広く張り出した「${Q[low].name}方向が凹んだ形」`,
+      text:`3つの象限が60点以上となり、${Q[low].name}（${low}）が4象限の中では相対的に低く出た形状です。必要な場面で${Q[low].name}の視点も意識的に問いとして加えると、見落としに気づきやすくなります。`
+    };
+  }
+  // 隣接二重優勢型
+  if (domCount === 2) {
+    const [ka,kb] = dominant;
+    return {
+      label:`${Q[ka].name}・${Q[kb].name} 隣接二重優勢型`,
+      shape:`${ka}・${kb}方向に偏って広がった「非対称な四角形」`,
+      text:`${Q[ka].name}（${ka}）と${Q[kb].name}（${kb}）の2つが高く、その方向に偏った非対称な四角形を示しています。2つの思考の優先度が相対的に高く出ています。残りの2象限も必要な場面で問いとして意識すると、判断材料の幅を広げやすくなります。`
+    };
+  }
+  // 単一優勢型
+  return {
+    label:`${Q[k1].name} 単一集中型`,
+    shape:`${k1}方向に大きく伸びた「鋭い非対称形」`,
+    text:`${Q[k1].name}（${k1}）の象限が際立って高く、その方向に大きく伸びた形状です。この視点を優先して使いやすいプロフィールです。他の象限は相対的に低く出ているため、必要な場面では異なる視点を意識的に加えると、見落としを減らしやすくなります。`
+  };
+}
+
+/* ── ユーティリティ ─────────────────── */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function calcScores(answers) {
+  const raw = {A:0,B:0,C:0,D:0};
+  Object.values(answers).forEach(q => { raw[q]++; });
+  const total = Object.values(raw).reduce((a,b)=>a+b,0);
+  const norm = {};
+  Object.keys(raw).forEach(k => { norm[k] = Math.round(raw[k]/total*200); });
+  const s = Object.values(norm).reduce((a,b)=>a+b,0);
+  if (s !== 200) {
+    const maxK = Object.keys(norm).reduce((a,b)=>norm[a]>norm[b]?a:b);
+    norm[maxK] += (200-s);
+  }
+  return norm;
+}
+
+function getResultTitle(scores) {
+  const ranked = Object.entries(scores).sort(([,a],[,b])=>b-a);
+  const [top1] = ranked[0];
+  const dominant = ranked.filter(([,v]) => v >= 60).map(([k]) => k);
+  const dominantCount = dominant.length;
+  const showKeys = dominantCount >= 2 ? dominant : [top1];
+
+  const typeLabel = dominantCount >= 3 ? "三重優勢型"
+                  : dominantCount === 2 ? "二重優勢型"
+                  : dominantCount === 1 ? "優勢型"
+                  : "傾向型";
+
+  return dominantCount >= 2
+    ? `${showKeys.map(k => Q[k].name).join(" × ")}　${typeLabel}`
+    : `${Q[top1].name}　${typeLabel}`;
+}
+
+/* ── ダイヤモンドチャート ─────────────── */
+function DiamondChart({ scores, size=240 }) {
+  const cx=size/2, cy=size/2;
+  const clamp = v => Math.min(v,100)/100;
+  const sA=clamp(scores.A), sD=clamp(scores.D);
+  const sB=clamp(scores.B), sC=clamp(scores.C);
+  const pA=[cx-cx*sA, cy-cy*sA];
+  const pD=[cx+cx*sD, cy-cy*sD];
+  const pC=[cx+cx*sC, cy+cy*sC];
+  const pB=[cx-cx*sB, cy+cy*sB];
+  const pts=`${pA} ${pD} ${pC} ${pB}`;
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+      style={{display:"block",overflow:"visible"}}>
+      {/* 象限背景 */}
+      <rect x={0}  y={0}  width={cx} height={cy} fill={Q.A.bg} opacity="0.7"/>
+      <rect x={cx} y={0}  width={cx} height={cy} fill={Q.D.bg} opacity="0.7"/>
+      <rect x={0}  y={cy} width={cx} height={cy} fill={Q.B.bg} opacity="0.7"/>
+      <rect x={cx} y={cy} width={cx} height={cy} fill={Q.C.bg} opacity="0.7"/>
+      {/* グリッド線 */}
+      <line x1={cx} y1={0} x2={cx} y2={size} stroke="rgba(0,0,0,0.15)" strokeWidth="1"/>
+      <line x1={0} y1={cy} x2={size} y2={cy} stroke="rgba(0,0,0,0.15)" strokeWidth="1"/>
+      {[0.25,0.5,0.75,1.0].map(lv=>{
+        const gA=[cx-cx*lv,cy-cy*lv],gD=[cx+cx*lv,cy-cy*lv];
+        const gC=[cx+cx*lv,cy+cy*lv],gB=[cx-cx*lv,cy+cy*lv];
+        return <polygon key={lv} points={`${gA} ${gD} ${gC} ${gB}`}
+          fill="none" stroke="rgba(0,0,0,0.12)"
+          strokeWidth={lv===1?"1":"0.5"} strokeDasharray={lv<1?"3,3":""}/>;
+      })}
+      {/* 対角軸 */}
+      {[[0,0],[size,0],[0,size],[size,size]].map(([x,y],i)=>
+        <line key={i} x1={cx} y1={cy} x2={x} y2={y}
+          stroke="rgba(0,0,0,0.1)" strokeWidth="0.5" strokeDasharray="4,4"/>
+      )}
+      {/* スコアポリゴン */}
+      <polygon points={pts} fill="rgba(30,70,160,0.2)"
+        stroke="#1e3a6e" strokeWidth="2.5" strokeLinejoin="round"/>
+      {/* 頂点 */}
+      {[{p:pA,k:"A"},{p:pD,k:"D"},{p:pC,k:"C"},{p:pB,k:"B"}].map(({p,k})=>(
+        <g key={k}>
+          <circle cx={p[0]} cy={p[1]} r="8" fill={Q[k].color} opacity="0.2"/>
+          <circle cx={p[0]} cy={p[1]} r="5" fill={Q[k].color} stroke="white" strokeWidth="2"/>
+        </g>
+      ))}
+      {/* スコア数値 */}
+      <text x="5"      y="16"       fontSize="13" fontWeight="800" fill={Q.A.color}>{scores.A}</text>
+      <text x={size-5} y="16"       fontSize="13" fontWeight="800" fill={Q.D.color} textAnchor="end">{scores.D}</text>
+      <text x="5"      y={size-4}   fontSize="13" fontWeight="800" fill={Q.B.color}>{scores.B}</text>
+      <text x={size-5} y={size-4}   fontSize="13" fontWeight="800" fill={Q.C.color} textAnchor="end">{scores.C}</text>
+      {/* 象限ラベル */}
+      <text x="8"       y={cy-6}  fontSize="10" fontWeight="800" fill={Q.A.color} opacity="0.8">A</text>
+      <text x={size-8}  y={cy-6}  fontSize="10" fontWeight="800" fill={Q.D.color} textAnchor="end" opacity="0.8">D</text>
+      <text x="8"       y={cy+15} fontSize="10" fontWeight="800" fill={Q.B.color} opacity="0.8">B</text>
+      <text x={size-8}  y={cy+15} fontSize="10" fontWeight="800" fill={Q.C.color} textAnchor="end" opacity="0.8">C</text>
+    </svg>
+  );
+}
+
+/* ── 設問表示位置のバランス調整 ─────────
+   6つの象限ペアそれぞれで3問ずつ左右を反転。
+   「左を選びやすい／右を選びやすい」という位置バイアスが
+   特定象限の得点へそのまま乗らないようにする。
+*/
+function prepareQuestions() {
+  const flipPattern = [false,true,false,true,false,true];
+  return shuffle(QUESTIONS_DATA.map(q => {
+    const flip = flipPattern[(q.id - 1) % 6];
+    return flip ? {...q, left:q.right, right:q.left} : {...q};
+  }));
+}
+
+/* ══════════════════════════════════════════
+   メインアプリ
+══════════════════════════════════════════ */
+function App() {
+  const [phase,     setPhase]     = useState("intro");
+  const [questions, setQuestions] = useState([]);
+  const [answers,   setAnswers]   = useState({});
+  const [sides,     setSides]     = useState({});
+  const [scores,    setScores]    = useState(null);
+  const [isResponseBiased, setIsResponseBiased] = useState(false);
+  const [animKey,   setAnimKey]   = useState(0);
+  const [selected,   setSelected]  = useState(null);
+  const [token,      setToken]     = useState("");
+  const [tokenError, setTokenError]= useState("");
+  const [tokenOk,    setTokenOk]   = useState(false);
+  const [tokenAssigned, setTokenAssigned] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [sending,    setSending]   = useState(false);
+  const [autoRecordStatus, setAutoRecordStatus] = useState("idle");
+  const [info,      setInfo]      = useState({
+    date: new Date().toISOString().slice(0,10),
+    name: "", birthdate: "", org: "", dept: "",
+  });
+
+  useEffect(() => {
+    setQuestions(prepareQuestions());
+    try {
+      const saved = sessionStorage.getItem(TOKEN_SESSION_KEY);
+      if (saved) setToken(saved);
+    } catch (_) {}
+  }, []);
+
+  const total    = QUESTIONS_DATA.length;
+  const answered = Object.keys(answers).length;
+  const currentQ = questions.find(q => answers[q.id] === undefined);
+
+  function handleAnswer(qId, side) {
+    if (selected !== null) return;
+    setSelected(side);
+    const quad = side==="left" ? currentQ.left.quad : currentQ.right.quad;
+    setTimeout(() => {
+      const newAns = {...answers, [qId]: quad};
+      const newSides = {...sides, [qId]: side};
+      setAnswers(newAns);
+      setSides(newSides);
+      setSelected(null);
+      setAnimKey(k=>k+1);
+      if (Object.keys(newAns).length === total) {
+        const allSameSide =
+          Object.keys(newSides).length === total &&
+          new Set(Object.values(newSides)).size === 1;
+        const finalScores = allSameSide ? {A:50,B:50,C:50,D:50} : calcScores(newAns);
+        const finalTitle = getResultTitle(finalScores);
+        setIsResponseBiased(allSameSide);
+        setScores(finalScores);
+        setAutoRecordStatus("sending");
+        const answersJson = JSON.stringify({
+          answers: newAns,
+          sides: newSides,
+          response_biased: allSameSide,
+        });
+        recordResult({ token, info, scores: finalScores, title: finalTitle, answersJson })
+          .then(() => setAutoRecordStatus("saved"))
+          .catch(() => setAutoRecordStatus("error"));
+        setTimeout(()=>setPhase("result"), 150);
+      }
+    }, 300);
+  }
+
+  function restart() {
+    setAnswers({}); setSides({}); setScores(null); setIsResponseBiased(false);
+    setQuestions(prepareQuestions());
+    setAnimKey(0); setSelected(null); setPhase("intro");
+    setToken(""); setTokenError(""); setTokenOk(false); setTokenAssigned(false); setProfileError(""); setSending(false); setAutoRecordStatus("idle");
+    setInfo({date:new Date().toISOString().slice(0,10),name:"",birthdate:"",org:"",dept:""});
+  }
+
+  /* 共通スタイル */
+  const wrap = {
+    minHeight:"100vh", padding:"24px 16px 48px",
+    display:"flex", flexDirection:"column", alignItems:"center",
+    background:"#F7F8FA",
+  };
+  const card = {
+    background:"white", borderRadius:"16px",
+    boxShadow:"0 4px 16px rgba(15,61,150,0.06)",
+    border:"0.5px solid #D8E2F0",
+    padding:"36px 32px", maxWidth:"600px", width:"100%", marginTop:"20px",
+  };
+  const commonInputStyle = {
+    width:"100%", padding:"9px 12px", border:"1.5px solid #d0dae8", borderRadius:"8px",
+    fontSize:"14px", color:"#334", outline:"none", fontFamily:"inherit", boxSizing:"border-box",
+  };
+  const commonLabelStyle = {
+    fontSize:"12px", fontWeight:"700", color:"#8898aa", letterSpacing:"0.05em",
+    marginBottom:"4px", display:"block",
+  };
+
+  /* ─── イントロ ─────────────────────── */
+  if (phase==="intro") return (
+    <div style={wrap} className="no-print">
+      <div style={card}>
+        <div style={{textAlign:"center",marginBottom:"28px"}}>
+          <div style={{fontSize:"52px",lineHeight:1,marginBottom:"10px"}}>🧠</div>
+          <h1 style={{fontSize:"22px",fontWeight:"800",color:"#1a2740",margin:"0 0 6px",letterSpacing:"0.02em"}}>
+            思考特性
+          </h1>
+          <p style={{color:"#8898aa",fontSize:"13px",margin:0,letterSpacing:"0.08em"}}>
+            THINKING PREFERENCES
+          </p>
+        </div>
+        <div style={{background:"#f8fafc",borderRadius:"14px",padding:"20px",marginBottom:"22px"}}>
+          <p style={{color:"#445",fontSize:"13.5px",lineHeight:"1.9",margin:"0 0 16px"}}>
+            2つの選択肢のうち、<strong>より自分に当てはまる方</strong>を選んでください。
+            36問に回答することで、あなたが使いやすい視点を4つの象限（合計200点）で可視化します。
+          </p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
+            {Object.entries(Q).map(([k,v])=>(
+              <div key={k} style={{
+                background:v.bg,borderRadius:"10px",padding:"10px 14px",
+                display:"flex",alignItems:"center",gap:"10px",
+                border:`1px solid ${v.color}28`,
+              }}>
+                <span style={{fontSize:"20px"}}>{v.emoji}</span>
+                <div>
+                  <div style={{fontSize:"11px",fontWeight:"800",color:v.color,letterSpacing:"0.05em"}}>{k}</div>
+                  <div style={{fontSize:"12.5px",fontWeight:"600",color:"#334"}}>{v.name}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p style={{color:"#8898aa",fontSize:"12px",textAlign:"center",marginBottom:"12px"}}>
+          所要時間：約5〜8分 ／ 全36問
+        </p>
+        <p style={{
+          color:"#7a8899",fontSize:"12px",textAlign:"center",
+          marginBottom:"20px",lineHeight:"1.8",
+          background:"#f0f4f8",borderRadius:"10px",padding:"10px 16px",
+        }}>
+          この診断は能力や適性を測るものではありません。<br/>
+          4つの思考のうち「どの視点を使いやすいか」を相対的に見て、自己理解と対話に活用するものです。
+        </p>
+        <div style={{marginBottom:"16px"}}>
+          <label style={{fontSize:"12px",fontWeight:"700",color:"#8898aa",
+            display:"block",marginBottom:"6px",letterSpacing:"0.05em"}}>
+            参加者トークン
+          </label>
+          <input
+            value={token}
+            onChange={e=>{ setToken(e.target.value); setTokenError(""); }}
+            placeholder="例：TS-2025-001"
+            style={{
+              width:"100%",padding:"10px 14px",
+              border:`1.5px solid ${tokenError?"#e05050":"#d0dae8"}`,
+              borderRadius:"10px",fontSize:"15px",color:"#334",
+              outline:"none",fontFamily:"inherit",marginBottom:"6px",
+            }}
+          />
+          {tokenError && (
+            <p style={{color:"#c0392b",fontSize:"12px",margin:"0 0 8px"}}>{tokenError}</p>
+          )}
+          <p style={{color:"#aab",fontSize:"11px",margin:"0 0 14px"}}>
+            ※ 事前に配布されたトークンを入力してください
+          </p>
+          <button
+            onClick={async () => {
+              if (!token.trim()) { setTokenError("トークンを入力してください。"); return; }
+              setSending(true);
+              try {
+                const result = await validateToken(token.trim());
+                if (result.ok) {
+                  const normalizedToken = token.trim().toUpperCase().replace(/\s+/g, "");
+                  setToken(normalizedToken);
+                  setTokenOk(true);
+                  setTokenAssigned(Boolean(result.assigned));
+                  try { sessionStorage.setItem(TOKEN_SESSION_KEY, normalizedToken); } catch (_) {}
+                  setPhase("profile");
+                } else {
+                  setTokenError(result.message);
+                }
+              } catch {
+                setTokenError("通信エラーが発生しました。インターネット接続を確認してください。");
+              } finally {
+                setSending(false);
+              }
+            }}
+            disabled={sending}
+            style={{
+              width:"100%",padding:"15px",border:"none",borderRadius:"12px",
+              background: sending ? "#aab" : "#0F3D96",
+              color:"white",fontSize:"15px",fontWeight:"600",
+              cursor: sending ? "default" : "pointer",
+              letterSpacing:"0.05em",
+            }}
+          >
+            {sending ? "確認中…" : "診断を始める →"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ─── 診断情報 ───────────────────────── */
+  if (phase==="profile") return (
+    <div style={wrap} className="no-print">
+      <div style={card}>
+        <div style={{textAlign:"center",marginBottom:"24px"}}>
+          <div style={{fontSize:"13px",fontWeight:"800",color:"#0F3D96",letterSpacing:"0.08em",marginBottom:"6px"}}>ASSESSMENT INFO</div>
+          <h2 style={{fontSize:"20px",fontWeight:"800",color:"#1a2740",margin:"0 0 8px"}}>診断情報の確認</h2>
+          <p style={{color:"#8898aa",fontSize:"12px",lineHeight:1.7,margin:0}}>
+            診断日を確認してください。{tokenAssigned ? "このトークンは登録済み受験者に紐づいています。氏名等は空欄でも受験できます。" : "未割当トークンのため、氏名を入力してください。"}
+          </p>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px"}}>
+          <div>
+            <label style={commonLabelStyle}>診断日</label>
+            <input type="date" style={commonInputStyle} value={info.date}
+              onChange={e=>{setInfo({...info,date:e.target.value});setProfileError("");}} />
+          </div>
+          <div>
+            <label style={commonLabelStyle}>氏名{!tokenAssigned ? "（必須）" : "（任意）"}</label>
+            <input style={commonInputStyle} value={info.name}
+              onChange={e=>{setInfo({...info,name:e.target.value});setProfileError("");}} placeholder="例：山田 太郎"/>
+          </div>
+          <div>
+            <label style={commonLabelStyle}>生年月日（任意）</label>
+            <input type="date" style={commonInputStyle} value={info.birthdate}
+              onChange={e=>{setInfo({...info,birthdate:e.target.value});setProfileError("");}} />
+          </div>
+          <div>
+            <label style={commonLabelStyle}>所属組織（任意）</label>
+            <input style={commonInputStyle} value={info.org}
+              onChange={e=>setInfo({...info,org:e.target.value})} placeholder="例：株式会社○○"/>
+          </div>
+          <div style={{gridColumn:"1 / -1"}}>
+            <label style={commonLabelStyle}>所属部署（任意）</label>
+            <input style={commonInputStyle} value={info.dept}
+              onChange={e=>setInfo({...info,dept:e.target.value})} placeholder="例：営業部 第一課"/>
+          </div>
+        </div>
+        {profileError && <p style={{color:"#c0392b",fontSize:"12px",margin:"12px 0 0"}}>{profileError}</p>}
+        <button onClick={()=>{
+            if(!info.date){setProfileError("診断日を入力してください。");return;}
+            if(!tokenAssigned && !info.name.trim()){setProfileError("氏名を入力してください。");return;}
+            setProfileError(""); setPhase("questions");
+          }}
+          style={{width:"100%",padding:"15px",border:"none",borderRadius:"12px",background:"#0F3D96",color:"white",fontSize:"15px",fontWeight:"600",cursor:"pointer",marginTop:"20px",letterSpacing:"0.05em"}}>
+          この内容で診断を始める →
+        </button>
+      </div>
+    </div>
+  );
+
+  /* ─── 設問 ──────────────────────────── */
+  if (phase==="questions" && currentQ) {
+    const progress = answered/total;
+    const choiceStyle = (side) => {
+      const isSel = selected===side, isOth = selected!==null && selected!==side;
+      return {
+        flex:1, padding:"22px 18px",
+        border:`1.5px solid ${isSel?"#0F3D96":"#e4eaf2"}`,
+        borderLeft:`${isSel?"4px":"1.5px"} solid ${isSel?"#0F3D96":"#e4eaf2"}`,
+        borderRadius:"14px",
+        background:isSel?"#EEF3FA":"white",
+        cursor:selected!==null?"default":"pointer",
+        fontSize:"15px",fontWeight:isSel?"600":"500",
+        color:isSel?"#0F3D96":"#334",
+        textAlign:"center",lineHeight:"1.7",
+        transition:"all 0.2s ease",
+        opacity:isOth?0.4:1,
+        transform:isSel?"scale(1.01)":"scale(1)",
+        boxShadow:isSel?"0 4px 16px rgba(15,61,150,0.08)":"none",
+        minHeight:"90px",display:"flex",alignItems:"center",justifyContent:"center",
+      };
+    };
+    return (
+      <div style={wrap} className="no-print">
+        <style>{`@keyframes qFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
+        <div style={card}>
+          <div style={{marginBottom:"24px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:"12px",color:"#8898aa",marginBottom:"8px"}}>
+              <span style={{fontWeight:"600"}}>設問 {answered+1} / {total}</span>
+              <span>{Math.round(progress*100)}% 完了</span>
+            </div>
+            <div style={{background:"#e8eef5",borderRadius:"6px",height:"7px",overflow:"hidden"}}>
+              <div style={{
+                width:`${progress*100}%`,height:"100%",borderRadius:"6px",
+                background:"#0F3D96",
+                transition:"width 0.35s ease",
+              }}/>
+            </div>
+          </div>
+          <div key={animKey} style={{animation:"qFade 0.28s ease"}}>
+            <p style={{textAlign:"center",fontSize:"13px",fontWeight:"600",color:"#8898aa",
+              letterSpacing:"0.1em",margin:"0 0 20px"}}>
+              より自分に当てはまるものはどちらですか？
+            </p>
+            <div style={{display:"flex",gap:"14px",alignItems:"stretch",marginBottom:"20px"}}>
+              <button onClick={()=>handleAnswer(currentQ.id,"left")} style={choiceStyle("left")}>
+                {currentQ.left.text}
+              </button>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",
+                flexShrink:0,width:"36px",color:"#c8d0dc",fontSize:"13px",fontWeight:"800"}}>
+                OR
+              </div>
+              <button onClick={()=>handleAnswer(currentQ.id,"right")} style={choiceStyle("right")}>
+                {currentQ.right.text}
+              </button>
+            </div>
+            <p style={{textAlign:"center",fontSize:"11.5px",color:"#aab",margin:0}}>
+              ※ 正解はありません。直感で選んでください
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ─── 結果 ──────────────────────────── */
+  if (phase==="result" && scores) {
+    const ranked = Object.entries(scores).sort(([,a],[,b])=>b-a);
+    const [top1] = ranked[0];
+    const [top2] = ranked[1];
+
+    // 60点以上を「優勢」と判定
+    const dominant = ranked.filter(([,v]) => v >= 60).map(([k]) => k);
+    const dominantCount = dominant.length;
+    const showKeys = dominantCount >= 2 ? dominant : [top1];
+    const show1 = showKeys[0];
+
+    const typeLabel = dominantCount >= 3 ? "三重優勢型"
+                    : dominantCount === 2 ? "二重優勢型"
+                    : dominantCount === 1 ? "優勢型"
+                    : "傾向型";
+    const dualKey  = dominantCount === 2 ? [...showKeys].sort().join("+") : null;
+    const dualDesc = dualKey ? DUAL_DESCS[dualKey] : null;
+
+    const balanceDesc = `${Q[top1].name}（${top1}）が最も高く出ていますが、4象限の中での差は比較的小さく、特定の思考だけに強く寄らないプロフィールです。`;
+    const tripleDesc = dominantCount >= 3
+      ? `3つの視点が相対的に高く出ています。状況によって複数の視点を使いやすい一方、残る1象限は今回の4象限内では相対的に使う優先度が低く出ています。`
+      : "";
+
+    const title = dominantCount >= 2
+      ? `${showKeys.map(k => Q[k].name).join(" × ")}　${typeLabel}`
+      : `${Q[top1].name}　${typeLabel}`;
+    const desc = dominantCount === 0
+      ? balanceDesc
+      : dominantCount >= 3
+        ? tripleDesc
+        : dominantCount === 2 && dualDesc
+          ? dualDesc
+          : TYPE_DESCS[top1];
+
+    // 形状記述
+    const shapeDesc = getShapeDesc(scores, dominant);
+
+    const inputStyle = {
+      width:"100%", padding:"8px 12px",
+      border:"1.5px solid #d0dae8", borderRadius:"8px",
+      fontSize:"14px", color:"#334",
+      outline:"none", fontFamily:"inherit",
+    };
+    const labelStyle = {
+      fontSize:"12px", fontWeight:"700", color:"#8898aa",
+      letterSpacing:"0.05em", marginBottom:"4px", display:"block",
+    };
+
+    return (
+      <>
+        {/* ══ 画面表示 ══════════════════════════ */}
+        <div style={wrap} className="no-print">
+          <div style={{...card, maxWidth:"660px"}}>
+            <h2 style={{textAlign:"center",fontSize:"18px",fontWeight:"800",color:"#1a2740",
+              marginTop:0,marginBottom:"16px"}}>
+              思考特性の結果
+            </h2>
+            <p style={{fontSize:"11.5px",color:"#7a8899",lineHeight:"1.7",textAlign:"center",margin:"-6px 0 14px"}}>
+              点数は4象限の中での相対的な配分です。能力・適性や、他者より優れている／劣っていることを示すものではありません。
+            </p>
+            {/* 保存処理は通常時は表示せず、失敗時だけ受験者へ案内する */}
+            {autoRecordStatus === "error" && (
+              <div style={{
+                background:"#fff8f0",borderRadius:"10px",padding:"10px 14px",marginBottom:"20px",
+                border:"0.5px solid #F3D7B0",borderLeft:"4px solid #c47a0a",
+              }}>
+                <p style={{fontSize:"12px",color:"#7a4a00",lineHeight:"1.7",margin:0,fontWeight:"600"}}>
+                  結果の保存に失敗しました。画面を閉じず、担当者にお知らせください。
+                </p>
+              </div>
+            )}
+
+            {/* チャート */}
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:"24px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",width:"240px",marginBottom:"5px"}}>
+                <span style={{fontSize:"11px",fontWeight:"800",color:Q.A.color}}>A {Q.A.name}</span>
+                <span style={{fontSize:"11px",fontWeight:"800",color:Q.D.color}}>{Q.D.name} D</span>
+              </div>
+              <DiamondChart scores={scores} size={240}/>
+              <div style={{display:"flex",justifyContent:"space-between",width:"240px",marginTop:"5px"}}>
+                <span style={{fontSize:"11px",fontWeight:"800",color:Q.B.color}}>B {Q.B.name}</span>
+                <span style={{fontSize:"11px",fontWeight:"800",color:Q.C.color}}>{Q.C.name} C</span>
+              </div>
+            </div>
+
+            {/* 回答偏りの通知 */}
+            {isResponseBiased && (
+              <div style={{
+                background:"#fff8f0",borderRadius:"10px",padding:"12px 16px",
+                marginBottom:"16px",
+                border:"0.5px solid #e8c88a",
+                borderLeft:"4px solid #c47a0a",
+              }}>
+                <div style={{fontSize:"12px",fontWeight:"600",color:"#c47a0a",marginBottom:"4px"}}>
+                  ⚠ 回答に偏りが見られました
+                </div>
+                <p style={{fontSize:"12px",color:"#2B2F33",lineHeight:"1.75",margin:0}}>
+                  すべての選択肢が同じ方向に偏っていたため、スコアは参考値として均等表示しています。もう一度、ご自身のペースで回答してみてください。
+                </p>
+              </div>
+            )}
+
+            {/* タイプ説明 */}
+            <div style={{
+              background:"#EEF3FA",
+              borderRadius:"12px",padding:"16px 20px",marginBottom:"18px",
+              borderLeft:`4px solid #0F3D96`,
+              border:"0.5px solid #B5D4F4",
+              borderLeftWidth:"4px",borderLeftColor:"#0F3D96",
+            }}>
+              <div style={{fontSize:"16px",fontWeight:"600",color:"#0F3D96",marginBottom:"8px"}}>
+                {title}
+              </div>
+              <p style={{color:"#2B2F33",fontSize:"13px",lineHeight:"1.85",margin:0}}>{desc}</p>
+            </div>
+
+            {/* スコア */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"24px"}}>
+              {ranked.map(([k,v],i)=>(
+                <div key={k} style={{
+                  background:Q[k].bg,borderRadius:"12px",padding:"14px 16px",
+                  borderLeft:`4px solid ${Q[k].color}`,
+                  display:"flex",justifyContent:"space-between",alignItems:"center",
+                  border:`1.5px solid ${dominant.includes(k)?Q[k].color+"80":"transparent"}`,
+                  borderLeftWidth:"4px",borderLeftColor:Q[k].color,
+                }}>
+                  <div>
+                    <div style={{fontSize:"10px",fontWeight:"800",color:Q[k].color,marginBottom:"3px",display:"flex",alignItems:"center",gap:"5px"}}>
+                      #{i+1} {k} {Q[k].emoji}
+                      {dominant.includes(k) && (
+                        <span style={{background:Q[k].color,color:"white",fontSize:"9px",
+                          padding:"1px 5px",borderRadius:"10px",fontWeight:"700"}}>優勢</span>
+                      )}
+                    </div>
+                    <div style={{fontSize:"13px",fontWeight:"700",color:"#334"}}>{Q[k].name}</div>
+                  </div>
+                  <div style={{fontSize:"24px",fontWeight:"700",color:Q[k].color,lineHeight:1}}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* 個人情報入力 */}
+            <div style={{background:"#f8fafc",borderRadius:"14px",padding:"20px",marginBottom:"22px",
+              border:"1.5px solid #e0e8f0"}}>
+              <h3 style={{fontSize:"14px",fontWeight:"700",color:"#1a2740",marginBottom:"16px",
+                paddingBottom:"10px",borderBottom:"1px solid #e0e8f0"}}>
+                📝 結果シートに記載する情報
+              </h3>
+              <div style={{background:"#EEF3FA",borderRadius:"8px",padding:"8px 12px",marginBottom:"14px",fontSize:"11px",color:"#556",lineHeight:1.6}}>
+                ここでの変更はPDF表示にのみ反映されます。
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px"}}>
+                <div>
+                  <label style={labelStyle}>診断日</label>
+                  <input style={inputStyle} value={info.date}
+                    onChange={e=>setInfo({...info,date:e.target.value})} placeholder="例：2025/4/30"/>
+                </div>
+                <div>
+                  <label style={labelStyle}>氏名</label>
+                  <input style={inputStyle} value={info.name}
+                    onChange={e=>setInfo({...info,name:e.target.value})} placeholder="例：山田 太郎"/>
+                </div>
+                <div>
+                  <label style={labelStyle}>所属組織</label>
+                  <input style={inputStyle} value={info.org}
+                    onChange={e=>setInfo({...info,org:e.target.value})} placeholder="例：株式会社○○"/>
+                </div>
+                <div style={{gridColumn:"1 / -1"}}>
+                  <label style={labelStyle}>所属部署</label>
+                  <input style={inputStyle} value={info.dept}
+                    onChange={e=>setInfo({...info,dept:e.target.value})} placeholder="例：営業部 第一課"/>
+                </div>
+              </div>
+            </div>
+
+            {/* 振り返りの問い */}
+            <div style={{
+              background:"white",borderRadius:"12px",padding:"20px",marginBottom:"22px",
+              borderLeft:"4px solid #0F3D96",
+              border:"0.5px solid #B5D4F0",
+              borderLeftWidth:"4px",borderLeftColor:"#0F3D96",
+              boxShadow:"0 4px 16px rgba(15,61,150,0.06)",
+            }}>
+              <h3 style={{fontSize:"14px",fontWeight:"600",color:"#0F3D96",marginBottom:"14px",
+                paddingBottom:"8px",borderBottom:"0.5px solid #D8E2F0"}}>
+                振り返りの問い
+              </h3>
+              {[
+                "この結果で、しっくりくるところはどこですか？",
+                "少し意外だったところはどこですか？",
+                "他の人と仕事を進めるとき、意識したいことは何ですか？",
+              ].map((q,i)=>(
+                <div key={i} style={{display:"flex",gap:"10px",marginBottom:i<2?"10px":0}}>
+                  <span style={{
+                    flexShrink:0,width:"22px",height:"22px",borderRadius:"50%",
+                    background:"#EEF3FA",color:"#0F3D96",fontSize:"11px",fontWeight:"600",
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                  }}>{i+1}</span>
+                  <p style={{fontSize:"13px",color:"#2B2F33",lineHeight:"1.7",margin:0}}>{q}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* ボタン */}
+            <button onClick={() => window.print()} style={{
+              width:"100%",padding:"15px",border:"none",borderRadius:"12px",
+              background:"#0F3D96",
+              color:"white",fontSize:"15px",fontWeight:"600",
+              cursor:"pointer",
+              marginBottom:"10px",letterSpacing:"0.03em",
+            }}>
+              PDFで保存（印刷）
+            </button>
+            <p style={{textAlign:"center",fontSize:"11.5px",color:"#aab",marginBottom:"14px"}}>
+              印刷ダイアログで「PDFに保存」を選択してください
+            </p>
+            <button onClick={restart} style={{
+              width:"100%",padding:"13px",border:"0.5px solid #D8E2F0",borderRadius:"12px",
+              background:"white",color:"#2B2F33",fontSize:"14px",fontWeight:"500",cursor:"pointer",
+            }}>
+              もう一度診断する
+            </button>
+          </div>
+        </div>
+
+        {/* ══ 印刷専用レイアウト（A4） ══════════════ */}
+        <div className="print-sheet" style={{
+          width:"100%",background:"white",
+          fontFamily:"'Helvetica Neue',Arial,'Hiragino Kaku Gothic ProN','Hiragino Sans',Meiryo,sans-serif",
+        }}>
+          {/* ヘッダー */}
+          <div style={{
+            background:"#0F3D96",
+            color:"white",padding:"7px 13px",borderRadius:"5px",
+            marginBottom:"7px",display:"flex",alignItems:"center",justifyContent:"space-between",
+          }}>
+            <div>
+              <div style={{fontSize:"13px",fontWeight:"700",letterSpacing:"0.04em"}}>思考特性の結果</div>
+              <div style={{fontSize:"8.5px",opacity:0.75,marginTop:"1px",letterSpacing:"0.1em"}}>THINKING PREFERENCES — Grow3 Inc.</div>
+            </div>
+            <div style={{fontSize:"8.5px",opacity:0.75}}>合計スコア：200点</div>
+          </div>
+
+          {/* 個人情報テーブル */}
+          <table style={{width:"100%",borderCollapse:"collapse",marginBottom:"7px",
+            border:"1px solid #ccd6e0",fontSize:"10px"}}>
+            <tbody>
+              <tr>
+                {[["診断日",info.date,"12%","38%"],["氏名",info.name,"12%","38%"]].map(([label,val,lw,vw])=>(
+                  <React.Fragment key={label}>
+                    <td style={{background:"#f0f4f8",padding:"4px 7px",fontWeight:"700",color:"#556",
+                      borderRight:"1px solid #ccd6e0",borderBottom:"1px solid #ccd6e0",
+                      whiteSpace:"nowrap",width:lw}}>{label}</td>
+                    <td style={{padding:"4px 8px",borderRight:"1px solid #ccd6e0",
+                      borderBottom:"1px solid #ccd6e0",width:vw}}>{val||"　"}</td>
+                  </React.Fragment>
+                ))}
+              </tr>
+              <tr>
+                <td style={{background:"#f0f4f8",padding:"4px 7px",fontWeight:"700",color:"#556",
+                  borderRight:"1px solid #ccd6e0",whiteSpace:"nowrap"}}>所属組織</td>
+                <td style={{padding:"4px 8px",borderRight:"1px solid #ccd6e0"}}>{info.org||"　"}</td>
+                <td style={{background:"#f0f4f8",padding:"4px 7px",fontWeight:"700",color:"#556",
+                  borderRight:"1px solid #ccd6e0",whiteSpace:"nowrap"}}>所属部署</td>
+                <td style={{padding:"4px 8px"}}>{info.dept||"　"}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* メインエリア：チャート＋スコア */}
+          <div style={{display:"flex",gap:"10px",marginBottom:"7px",alignItems:"flex-start"}}>
+            {/* チャート */}
+            <div style={{flexShrink:0}}>
+              <div style={{fontSize:"8.5px",fontWeight:"800",color:"#556",
+                textAlign:"center",marginBottom:"3px",letterSpacing:"0.08em"}}>思考特性マップ</div>
+              <div style={{display:"flex",justifyContent:"space-between",width:"175px",marginBottom:"2px"}}>
+                <span style={{fontSize:"7.5px",fontWeight:"800",color:Q.A.color}}>A {Q.A.name}</span>
+                <span style={{fontSize:"7.5px",fontWeight:"800",color:Q.D.color}}>{Q.D.name} D</span>
+              </div>
+              <DiamondChart scores={scores} size={175}/>
+              <div style={{display:"flex",justifyContent:"space-between",width:"175px",marginTop:"2px"}}>
+                <span style={{fontSize:"7.5px",fontWeight:"800",color:Q.B.color}}>B {Q.B.name}</span>
+                <span style={{fontSize:"7.5px",fontWeight:"800",color:Q.C.color}}>{Q.C.name} C</span>
+              </div>
+            </div>
+
+            {/* スコア一覧 */}
+            <div style={{flex:1}}>
+              <div style={{fontSize:"8.5px",fontWeight:"800",color:"#556",
+                marginBottom:"4px",letterSpacing:"0.08em"}}>スコア一覧</div>
+              <div style={{display:"flex",flexDirection:"column",gap:"4px",marginBottom:"7px"}}>
+                {ranked.map(([k,v],i)=>(
+                  <div key={k} style={{
+                    background:Q[k].bg,borderRadius:"5px",padding:"5px 9px",
+                    display:"flex",justifyContent:"space-between",alignItems:"center",
+                    border:`1.5px solid ${dominant.includes(k)?Q[k].color+"80":"#e0eaf0"}`,
+                    borderLeftWidth:"3px",borderLeftColor:Q[k].color,borderLeftStyle:"solid",
+                  }}>
+                    <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
+                      <span style={{fontSize:"9.5px",fontWeight:"800",color:Q[k].color}}>#{i+1} {k}</span>
+                      <span style={{fontSize:"9.5px",fontWeight:"600",color:"#445"}}>{Q[k].name}</span>
+                      {dominant.includes(k) && (
+                        <span style={{background:Q[k].color,color:"white",fontSize:"7.5px",
+                          padding:"1px 4px",borderRadius:"8px",fontWeight:"700"}}>優勢</span>
+                      )}
+                    </div>
+                    <span style={{fontSize:"17px",fontWeight:"900",color:Q[k].color,lineHeight:1}}>{v}</span>
+                  </div>
+                ))}
+              </div>
+              {/* 処理スタイル指標 */}
+              {(()=>{
+                const lr=scores.A+scores.B, rl=scores.C+scores.D;
+                const pct=Math.round(lr/(lr+rl)*100);
+                return (
+                  <div style={{background:"#f8fafc",borderRadius:"5px",padding:"5px 9px",
+                    border:"1px solid #dde6f0"}}>
+                    <div style={{fontSize:"8.5px",fontWeight:"700",color:"#556",
+                      marginBottom:"3px",letterSpacing:"0.05em"}}>処理スタイル指標（参考）</div>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px",fontSize:"8.5px"}}>
+                      <span style={{color:"#1a5f9e",fontWeight:"700"}}>分析・計画系 {pct}%</span>
+                      <span style={{color:"#b83228",fontWeight:"700"}}>共感・創造系 {100-pct}%</span>
+                    </div>
+                    <div style={{background:"#dde6f0",borderRadius:"3px",height:"5px",overflow:"hidden"}}>
+                      <div style={{width:`${pct}%`,height:"100%",
+                        background:"#0F3D96"}}/>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* ── 思考特性マップ 形状の特徴 ── */}
+          <div style={{
+            border:"1.5px solid #b0bcd0",borderRadius:"6px",
+            overflow:"hidden",marginBottom:"7px",
+          }}>
+            <div style={{
+              background:"#0F3D96",
+              padding:"5px 11px",display:"flex",alignItems:"center",gap:"8px",
+            }}>
+              <span style={{fontSize:"10.5px",fontWeight:"700",color:"white",letterSpacing:"0.04em"}}>
+                思考特性マップの形状特徴　―　{shapeDesc.label}
+              </span>
+            </div>
+            <div style={{
+              background:"#EEF3FA",
+              padding:"7px 11px",display:"flex",gap:"10px",alignItems:"flex-start",
+            }}>
+              <div style={{
+                flexShrink:0,background:"white",border:"1px solid #c8d8e8",
+                borderRadius:"5px",padding:"4px 8px",fontSize:"9px",
+                color:"#3a5a7a",fontWeight:"700",lineHeight:"1.5",
+                textAlign:"center",minWidth:"80px",
+              }}>
+                {shapeDesc.shape.split("「").map((s,i)=>
+                  i===0 ? <div key={i}>{s}</div>
+                        : <div key={i} style={{color:"#1a5f9e",fontWeight:"800"}}>「{s}</div>
+                )}
+              </div>
+              <p style={{fontSize:"9.5px",color:"#334",lineHeight:"1.65",margin:0,flex:1}}>
+                {shapeDesc.text}
+              </p>
+            </div>
+          </div>
+
+          {/* ── 特性解説セクション ── */}
+          <div style={{
+            border:`1.5px solid ${Q[show1].color}40`,
+            borderRadius:"6px",overflow:"hidden",marginBottom:"6px",
+          }}>
+            {/* セクションヘッダー */}
+            <div style={{
+              background:"#0F3D96",
+              padding:"5px 11px",display:"flex",alignItems:"center",gap:"5px",
+            }}>
+              <span style={{fontSize:"10.5px",fontWeight:"700",color:"white",letterSpacing:"0.03em"}}>
+                {title}　特性解説
+              </span>
+            </div>
+            {/* 概要 */}
+            <div style={{
+              background:"#EEF3FA",
+              padding:"6px 11px",borderBottom:"1px solid #D8E2F0",
+            }}>
+              <p style={{color:"#334",fontSize:"9.5px",lineHeight:"1.6",margin:0}}>{desc}</p>
+            </div>
+
+            {/* 詳細グリッド */}
+            {showKeys.map(k => {
+              const d = TYPE_DETAILS[k];
+              if (!d) return null;
+              return (
+                <div key={k} style={{padding:"6px 11px",borderBottom:"1px solid #eef2f7"}}>
+                  {/* キーワード行 */}
+                  <div style={{display:"flex",alignItems:"center",gap:"4px",marginBottom:"5px",flexWrap:"wrap"}}>
+                    <span style={{fontSize:"9px",fontWeight:"800",color:Q[k].color,
+                      letterSpacing:"0.05em"}}>{k} {Q[k].name}</span>
+                    {d.keywords.map(kw=>(
+                      <span key={kw} style={{
+                        background:Q[k].bg,color:Q[k].color,fontSize:"8.5px",fontWeight:"700",
+                        padding:"1px 5px",borderRadius:"10px",border:`1px solid ${Q[k].color}40`,
+                      }}>{kw}</span>
+                    ))}
+                  </div>
+                  {/* 4ボックス */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px"}}>
+                    {[
+                      {bg:"#f0f7f0",bc:"#2a7a50",icon:"💪",label:"自然に使いやすい視点",text:d.strength},
+                      {bg:"#fff8f0",bc:"#c47a0a",icon:"⚠",label:"補うとよい視点",text:d.weakness},
+                      {bg:"#f0f4fa",bc:"#1a5f9e",icon:"👥",label:"チームで活かせる視点",text:d.teamrole},
+                      {bg:"#faf0f4",bc:"#b83228",icon:"💡",label:"さらに活かすヒント",text:d.hint},
+                    ].map(({bg,bc,icon,label,text})=>(
+                      <div key={label} style={{
+                        background:bg,borderRadius:"4px",padding:"5px 7px",
+                        borderLeft:`2.5px solid ${bc}`,
+                      }}>
+                        <div style={{fontSize:"8.5px",fontWeight:"800",color:bc,
+                          marginBottom:"2px",letterSpacing:"0.03em"}}>{icon} {label}</div>
+                        <p style={{fontSize:"9px",color:"#334",lineHeight:"1.55",margin:0}}>{text}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* フッター */}
+          <div style={{
+            borderTop:"1px solid #D8E2F0",paddingTop:"5px",marginTop:"5px",
+          }}>
+            {/* 振り返りの問い */}
+            <div style={{
+              border:"1px solid #B5D4F0",borderLeft:"3px solid #0F3D96",
+              borderRadius:"4px",padding:"5px 9px",marginBottom:"6px",background:"#EEF3FA",
+            }}>
+              <div style={{fontSize:"8.5px",fontWeight:"700",color:"#0F3D96",marginBottom:"4px",letterSpacing:"0.04em"}}>
+                振り返りの問い
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:"3px"}}>
+                {[
+                  "この結果で、しっくりくるところはどこですか？",
+                  "少し意外だったところはどこですか？",
+                  "他の人と仕事を進めるとき、意識したいことは何ですか？",
+                ].map((q,i)=>(
+                  <div key={i} style={{display:"flex",gap:"5px",alignItems:"flex-start"}}>
+                    <span style={{fontSize:"8px",fontWeight:"700",color:"#0F3D96",flexShrink:0,
+                      marginTop:"1px"}}>{i+1}.</span>
+                    <span style={{fontSize:"8.5px",color:"#2B2F33",lineHeight:"1.55"}}>{q}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p style={{fontSize:"7.5px",color:"#8898aa",textAlign:"center",margin:"0 0 3px",lineHeight:"1.6"}}>
+              この結果は能力の高低ではなく、4象限の中での思考の相対的な使いやすさを示すものです。自己理解と対話のきっかけとして活用してください。
+            </p>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{fontSize:"7.5px",color:"#aab"}}>思考特性 — Thinking Preferences</span>
+              <span style={{fontSize:"7.5px",color:"#aab"}}>
+                © {new Date().getFullYear()} Grow3 Inc. All rights reserved.　合計：{Object.values(scores).reduce((a,b)=>a+b,0)}点
+              </span>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return null;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

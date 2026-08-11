@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>行動特性 | Grow3</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue: #0F3D96;
+  --blue-mid: #1a52c8;
+  --pale: #EEF3FA;
+  --text: #1F2937;
+  --border: #E5E7EB;
+  --white: #ffffff;
+  --gray: #6B7280;
+  --accent: #E8F0FF;
+  --expr:      #E84B6A; --expr-bg:   #FEF0F3;
+  --assert:    #F5A623; --assert-bg: #FEF5E7;
+  --flex:      #27AE60; --flex-bg:   #EAFAF2;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; }
+body { font-family:'Noto Sans JP',sans-serif; background:var(--pale); color:var(--text); }
+
+/* HEADER */
+.header { background:var(--blue); padding:14px 20px 12px; position:sticky; top:0; z-index:100; box-shadow:0 2px 10px rgba(15,61,150,0.3); }
+.header-inner { max-width:600px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; }
+.header-logo { font-family:'Montserrat',sans-serif; font-weight:800; font-size:16px; color:#fff; letter-spacing:0.04em; }
+.header-sub { font-size:10px; color:rgba(255,255,255,0.65); margin-top:1px; }
+.header-right { display:flex; align-items:center; gap:8px; }
+.header-counts { display:flex; flex-direction:column; align-items:flex-end; gap:1px; }
+.header-count-main { font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700; color:rgba(255,255,255,0.95); white-space:nowrap; }
+.header-count-sub  { font-family:'Montserrat',sans-serif; font-size:10px; font-weight:600; color:rgba(255,255,255,0.65); white-space:nowrap; }
+.progress-track { width:64px; height:4px; background:rgba(255,255,255,0.22); border-radius:2px; overflow:hidden; }
+.progress-fill { height:100%; background:#fff; border-radius:2px; transition:width 0.4s ease; }
+
+.screen { display:none; }
+.screen.active { display:block; }
+
+/* INTRO */
+.container { max-width:560px; margin:0 auto; padding:24px 16px 80px; }
+.intro-card { background:var(--white); border-radius:16px; padding:28px 22px; box-shadow:0 2px 16px rgba(15,61,150,0.08); }
+.intro-title { font-family:'Montserrat',sans-serif; font-size:20px; font-weight:800; color:var(--blue); margin-bottom:4px; }
+.intro-ja { font-size:11px; color:var(--gray); margin-bottom:18px; letter-spacing:0.06em; }
+.intro-desc { font-size:13px; line-height:1.9; margin-bottom:16px; }
+.axis-list { border-radius:12px; padding:4px 0; margin-bottom:20px; display:flex; flex-direction:column; gap:8px; }
+.axis-item { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border-radius:10px; }
+.axis-item.expr   { background:var(--expr-bg); }
+.axis-item.assert { background:var(--assert-bg); }
+.axis-item.flex   { background:var(--flex-bg); }
+.axis-num { color:#fff; font-family:'Montserrat',sans-serif; font-size:10px; font-weight:700; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+.axis-num.expr   { background:var(--expr); }
+.axis-num.assert { background:var(--assert); }
+.axis-num.flex   { background:var(--flex); }
+.axis-text { font-size:13px; line-height:1.6; }
+.axis-label { font-weight:700; }
+.axis-label.expr   { color:var(--expr); }
+.axis-label.assert { color:var(--assert); }
+.axis-label.flex   { color:var(--flex); }
+.intro-note { font-size:12px; color:var(--gray); line-height:1.8; margin-bottom:22px; background:var(--pale); border-radius:8px; padding:12px 14px; }
+
+/* QUESTION */
+#screen-question { height:calc(100vh - 58px); display:none; flex-direction:column; }
+#screen-question.active { display:flex; }
+.q-top { padding:16px 16px 12px; max-width:600px; margin:0 auto; width:100%; }
+.q-axis-tag { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:#fff; padding:4px 12px; border-radius:20px; margin-bottom:8px; }
+.q-label { font-family:'Montserrat',sans-serif; font-size:10px; font-weight:700; color:var(--gray); letter-spacing:0.08em; }
+.q-split { display:grid; grid-template-columns:1fr 24px 1fr; padding:0 12px; max-width:600px; margin:0 auto; width:100%; align-items:stretch; height:200px; }
+.q-side { display:flex; align-items:center; justify-content:center; padding:16px 12px; border-radius:12px; border:2px solid var(--border); background:var(--white); cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; transition:all 0.15s; text-align:center; }
+.q-side:active { transform:scale(0.97); }
+.q-side-text { font-size:12px; line-height:1.65; color:var(--text); }
+.q-side.flashed { border-width:2px; }
+.q-divider { display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--gray); }
+.q-bottom { padding:0 16px 12px; max-width:600px; margin:0 auto; width:100%; display:flex; flex-direction:column; gap:4px; }
+.skip-btn { background:none; border:none; color:var(--gray); font-size:11px; cursor:pointer; padding:6px 0; text-align:center; font-family:'Noto Sans JP',sans-serif; display:block; width:100%; -webkit-tap-highlight-color:transparent; text-decoration:underline; text-decoration-color:var(--border); }
+.back-btn { background:none; border:none; color:var(--gray); font-size:11px; cursor:pointer; padding:4px 0; text-align:center; font-family:'Noto Sans JP',sans-serif; display:block; width:100%; -webkit-tap-highlight-color:transparent; }
+
+@keyframes slideInR  { from{opacity:0;transform:translateX(36px)} to{opacity:1;transform:translateX(0)} }
+@keyframes slideOutL { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(-36px)} }
+@keyframes fadeInUp  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.anim-enter { animation:slideInR 0.22s ease forwards; }
+.anim-leave  { animation:slideOutL 0.18s ease forwards; }
+.screen.active:not(#screen-question) { animation:fadeInUp 0.3s ease; }
+
+/* BUTTONS */
+.btn-primary { display:block; width:100%; padding:15px; background:var(--blue); color:#fff; border:none; border-radius:12px; font-family:'Noto Sans JP',sans-serif; font-size:15px; font-weight:700; cursor:pointer; letter-spacing:0.05em; transition:background 0.2s,transform 0.1s; -webkit-tap-highlight-color:transparent; }
+.btn-primary:active { background:var(--blue-mid); transform:scale(0.98); }
+.btn-secondary { display:block; width:100%; padding:13px; background:var(--white); color:var(--blue); border:2px solid var(--blue); border-radius:12px; font-family:'Noto Sans JP',sans-serif; font-size:14px; font-weight:700; cursor:pointer; margin-top:10px; -webkit-tap-highlight-color:transparent; }
+
+/* RESULT */
+.result-intro { background:var(--blue); border-radius:14px; padding:20px 22px; color:#fff; margin-bottom:14px; }
+.result-label { font-family:'Montserrat',sans-serif; font-size:10px; letter-spacing:0.12em; opacity:0.75; margin-bottom:4px; }
+.result-title { font-size:19px; font-weight:700; margin-bottom:4px; }
+.result-sub { font-size:12px; opacity:0.8; line-height:1.6; }
+.axes-summary { display:flex; flex-direction:column; gap:12px; margin-bottom:14px; }
+.axis-card { background:var(--white); border:2px solid var(--border); border-radius:14px; padding:18px; position:relative; }
+.axis-card::before { content:''; position:absolute; top:0; left:0; width:4px; height:100%; border-radius:2px 0 0 2px; }
+.axis-card.expr::before   { background:var(--expr); }
+.axis-card.assert::before { background:var(--assert); }
+.axis-card.flex::before   { background:var(--flex); }
+.axis-card-head { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.axis-roman { color:#fff; font-family:'Montserrat',sans-serif; font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; }
+.axis-roman.expr   { background:var(--expr); }
+.axis-roman.assert { background:var(--assert); }
+.axis-roman.flex   { background:var(--flex); }
+.axis-card-name { font-size:14px; font-weight:700; }
+.axis-card-name.expr   { color:var(--expr); }
+.axis-card-name.assert { color:var(--assert); }
+.axis-card-name.flex   { color:var(--flex); }
+.axis-tendency { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; margin-bottom:10px; }
+.tend-expr   { background:var(--expr-bg);   color:var(--expr); }
+.tend-assert { background:var(--assert-bg); color:var(--assert); }
+.tend-flex   { background:var(--flex-bg);   color:var(--flex); }
+.tend-mid    { background:#F0FDF4; color:#10B981; }
+.scale-wrap { margin-bottom:12px; }
+.scale-poles { display:flex; justify-content:space-between; margin-bottom:4px; }
+.scale-pole-label { font-size:10px; color:var(--gray); font-weight:500; }
+.scale-track-wide { position:relative; height:8px; background:var(--border); border-radius:4px; }
+.scale-fill-r { position:absolute; left:50%; top:0; height:100%; border-radius:4px; opacity:0.5; }
+.scale-fill-l { position:absolute; right:50%; top:0; height:100%; border-radius:4px; opacity:0.5; }
+.scale-dot { position:absolute; top:50%; transform:translate(-50%,-50%); width:14px; height:14px; border-radius:50%; border:2px solid #fff; }
+.scale-score { text-align:center; font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700; margin-top:4px; }
+.axis-desc-text { font-size:13px; line-height:1.85; margin-bottom:10px; }
+.axis-kws { display:flex; flex-wrap:wrap; gap:5px; }
+.kw { background:var(--pale); border:1px solid var(--border); color:var(--gray); font-size:11px; padding:3px 10px; border-radius:20px; }
+
+/* 総合コメント */
+.overall-card { background:var(--blue); color:#fff; border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+.overall-label { font-family:'Montserrat',sans-serif; font-size:10px; letter-spacing:0.1em; opacity:0.75; margin-bottom:6px; }
+.overall-text { font-size:13px; line-height:1.85; }
+
+.note-box { background:var(--pale); border-radius:10px; padding:14px 16px; font-size:12px; color:var(--gray); line-height:1.8; margin-bottom:14px; }
+.next-link-box { background:var(--white); border:1.5px solid var(--border); border-radius:12px; padding:16px 18px; margin-bottom:14px; }
+.next-link-title { font-size:12px; font-weight:700; color:var(--blue); margin-bottom:10px; }
+.next-link-btn { display:block; padding:11px 14px; background:var(--pale); border:1.5px solid var(--border); border-radius:8px; font-size:13px; color:var(--text); margin-bottom:6px; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.next-link-btn:last-child { margin-bottom:0; }
+
+/* PDF出力ボタン */
+.pdf-btn { display:block; width:100%; padding:13px; background:var(--white); color:var(--blue); border:2px solid var(--blue); border-radius:12px; font-family:'Noto Sans JP',sans-serif; font-size:14px; font-weight:700; cursor:pointer; margin-top:10px; text-align:center; -webkit-tap-highlight-color:transparent; }
+
+.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
+.footer-brand { text-align:center; padding:16px; font-family:'Montserrat',sans-serif; font-size:10px; color:var(--gray); letter-spacing:0.08em; }
+
+/* PDF印刷用スタイル */
+@media print {
+  body { background:#fff; font-size:11pt; }
+  .screen { display:none !important; }
+  #pdf-sheet { display:block !important; }
+  @page { size:A4 portrait; margin:15mm 15mm 15mm 15mm; }
+}
+#pdf-sheet { display:none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-logo">Grow3</div>
+      <div class="header-sub">行動特性</div>
+    </div>
+    <div class="header-right" id="headerProgress" style="display:none;">
+      <div class="header-counts">
+        <div class="header-count-main" id="headerCountMain">Q1 / 27</div>
+        <div class="header-count-sub"  id="headerCountSub">Ⅰ　1 / 9</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="screen active" id="screen-intro">
+  <div class="container">
+    <div class="intro-card">
+      <div class="intro-title">行動特性</div>
+      <div class="intro-ja">Behavioral Tendencies</div>
+      <p class="intro-desc">人と人は違います。同じ出来事でも、どう動くかはひとりひとり異なります。このツールでは、あなたが外からどう見えやすいかを3つの軸で確認します。</p>
+      <div class="axis-list">
+        <div class="axis-item expr">
+          <div class="axis-num expr">Ⅰ</div>
+          <div class="axis-text"><span class="axis-label expr">自己表現性</span>　感情や意見をどれだけ外に出しやすいか</div>
+        </div>
+        <div class="axis-item assert">
+          <div class="axis-num assert">Ⅱ</div>
+          <div class="axis-text"><span class="axis-label assert">自己主張性</span>　自分の考えや方向性を前に出し、周囲に働きかける度合い</div>
+        </div>
+        <div class="axis-item flex">
+          <div class="axis-num flex">Ⅲ</div>
+          <div class="axis-text"><span class="axis-label flex">一貫・順応</span>　自分の基準を保つか、状況や相手に合わせて組み替えるか</div>
+        </div>
+      </div>
+      <div class="intro-note">左右に2つの選択肢が1問ずつ表示されます。<strong>より自分に近い方を直感でタップ</strong>してください。全27問・約4分。正解はありません。<br><br>3つの軸はいずれも「高い方が良い／低い方が悪い」という尺度ではなく、普段どちらの行動が出やすいかを見るものです。</div>
+      <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--border);">
+        <label for="tokenInput" style="display:block;font-size:12px;font-weight:700;color:var(--gray);margin-bottom:6px;">参加者トークン</label>
+        <input id="tokenInput" type="text" autocomplete="off" placeholder="事前に配布されたトークン"
+          style="width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#fff;">
+        <div id="tokenError" style="min-height:18px;margin-top:5px;font-size:11px;color:#B83228;"></div>
+        <button class="btn-primary" id="startAuthBtn" onclick="authenticateAndStart()">トークンを確認する →</button>
+        <div id="profilePanel" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <div id="profileHint" style="font-size:11px;line-height:1.7;color:var(--gray);margin-bottom:12px;"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label for="diagDateInput" style="display:block;font-size:11px;font-weight:700;color:var(--gray);margin-bottom:4px;">診断日</label>
+              <input id="diagDateInput" type="date" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;box-sizing:border-box;">
+            </div>
+            <div>
+              <label for="nameInput" id="nameLabel" style="display:block;font-size:11px;font-weight:700;color:var(--gray);margin-bottom:4px;">氏名</label>
+              <input id="nameInput" type="text" autocomplete="name" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;box-sizing:border-box;">
+            </div>
+            <div>
+              <label for="birthdateInput" style="display:block;font-size:11px;font-weight:700;color:var(--gray);margin-bottom:4px;">生年月日（任意）</label>
+              <input id="birthdateInput" type="date" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;box-sizing:border-box;">
+            </div>
+            <div>
+              <label for="orgInput" style="display:block;font-size:11px;font-weight:700;color:var(--gray);margin-bottom:4px;">所属組織（任意）</label>
+              <input id="orgInput" type="text" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;box-sizing:border-box;">
+            </div>
+            <div style="grid-column:1 / -1;">
+              <label for="deptInput" style="display:block;font-size:11px;font-weight:700;color:var(--gray);margin-bottom:4px;">所属部署（任意）</label>
+              <input id="deptInput" type="text" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;box-sizing:border-box;">
+            </div>
+          </div>
+          <div id="profileError" style="min-height:18px;margin-top:6px;font-size:11px;color:#B83228;"></div>
+          <button class="btn-primary" id="profileStartBtn" onclick="startAfterProfile()">この内容で診断を始める →</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-brand">Grow3 © 2025</div>
+  </div>
+</div>
+
+<!-- QUESTION -->
+<div class="screen" id="screen-question"></div>
+
+<!-- RESULT -->
+<div class="screen" id="screen-result">
+  <div class="container">
+    <div class="result-intro">
+      <div class="result-label">RESULT</div>
+      <div class="result-title">行動特性の結果</div>
+      <div class="result-sub">3つの軸で、あなたがどちらに寄りやすいかを示しています。固定的な性格ではなく、今の行動の傾向として読んでください。</div>
+    </div>
+    <div id="recordStatus" style="display:none;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;font-weight:700;line-height:1.6;"></div>
+    <div class="axes-summary" id="axes-summary"></div>
+    <div class="overall-card" id="overall-card">
+      <div class="overall-label">OVERALL　もっとも特徴が出た傾向</div>
+      <div class="overall-text" id="overall-text"></div>
+    </div>
+    <div class="note-box">このプロフィールは「あなたはこういう人」と断定するものではありません。同じ出来事でも、自分と相手では反応の出やすさが違う——そのことを対話のきっかけにしてみてください。</div>
+    <div class="next-link-box">
+      <div class="next-link-title">🔗 他の診断について</div>
+      <div style="font-size:12px;line-height:1.7;color:var(--gray);">欲求プロフィールなど別の診断は、それぞれ専用トークンで受験します。案内されたタイミングでご利用ください。</div>
+    </div>
+    <hr class="divider">
+    <button class="pdf-btn" onclick="printPDF()">📄 結果をPDFで保存する</button>
+    <button class="btn-secondary" onclick="resetAll()">もう一度診断する</button>
+    <div class="footer-brand">Grow3 © 2025</div>
+  </div>
+</div>
+
+<!-- PDF出力シート（印刷時のみ表示） -->
+<div id="pdf-sheet"></div>
+
+<script>
+// ===================== Grow3 token / GAS =====================
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxN6MZZmZet7ltH98CyB5fz14qfqlUXxrJ6WLhb4oEMgP0ef6WicYFp4wNolmrG8CoNRQ/exec";
+const TOKEN_SESSION_KEY = "grow3_assessment_token_behavior_v3";
+
+function getSavedToken() {
+  try { return sessionStorage.getItem(TOKEN_SESSION_KEY) || ''; } catch (_) { return ''; }
+}
+function saveToken(v) {
+  try { sessionStorage.setItem(TOKEN_SESSION_KEY, v); } catch (_) {}
+}
+function todayIso() { return new Date().toISOString().slice(0,10); }
+
+async function gasPost(payload) {
+  if(GAS_URL.includes('PASTE_V3_GAS_WEB_APP_URL_HERE')) throw new Error('v3 GASのWebアプリURLが未設定です。');
+  const res = await fetch(GAS_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.message || '通信処理に失敗しました。');
+  return data;
+}
+
+function showTokenError(message) {
+  const el=document.getElementById('tokenError');
+  if(el) el.textContent=message || '';
+}
+
+function setRecordStatus(state, message) {
+  const el=document.getElementById('recordStatus');
+  if(!el) return;
+  if(state!=='error'){
+    el.style.display='none';
+    el.textContent='';
+    return;
+  }
+  el.style.display='block';
+  el.style.background='#FFF8F0';
+  el.style.color='#B45309';
+  el.textContent='結果の保存に失敗しました。画面を閉じず、担当者にお知らせください。';
+}
+
+const DIAG_TYPE = 'behavior';
+const ASSESSMENT_VERSION = 'behavior-v3.2';
+let authToken = '';
+let participant = {name:'',birthdate:'',org:'',dept:''};
+let tokenAssigned = false;
+let recordSubmitted = false;
+
+async function authenticateAndStart() {
+  const input=document.getElementById('tokenInput');
+  const btn=document.getElementById('startAuthBtn');
+  const token=(input?.value||'').trim().toUpperCase().replace(/\s+/g,'');
+  showTokenError('');
+  if(!token){showTokenError('トークンを入力してください。');return;}
+  if(btn){btn.disabled=true;btn.textContent='確認中…';}
+  try{
+    const data=await gasPost({action:'validate',token_code:token,diag_type:DIAG_TYPE});
+    authToken=token;
+    tokenAssigned=Boolean(data.assigned);
+    saveToken(token);
+    if(input){input.value=token;input.readOnly=true;}
+    if(btn) btn.style.display='none';
+    const panel=document.getElementById('profilePanel');
+    if(panel) panel.style.display='block';
+    const date=document.getElementById('diagDateInput');
+    if(date && !date.value) date.value=todayIso();
+    const hint=document.getElementById('profileHint');
+    if(hint) hint.textContent=tokenAssigned
+      ? 'このトークンは登録済み受験者に紐づいています。氏名・所属等は空欄でも受験できます。入力した場合は受験時点の情報として記録します。'
+      : 'このトークンはまだ受験者に割り当てられていません。氏名を入力すると、受験完了時に新しい受験者として登録されます。';
+    const label=document.getElementById('nameLabel');
+    if(label) label.textContent=tokenAssigned?'氏名（任意）':'氏名（必須）';
+  }catch(err){
+    showTokenError(err.message || '通信エラーが発生しました。');
+  }finally{
+    if(btn && btn.style.display!=='none'){btn.disabled=false;btn.textContent='トークンを確認する →';}
+  }
+}
+
+function startAfterProfile() {
+  const diagDate=(document.getElementById('diagDateInput')?.value||'').trim();
+  const name=(document.getElementById('nameInput')?.value||'').trim();
+  const error=document.getElementById('profileError');
+  if(error) error.textContent='';
+  if(!diagDate){if(error)error.textContent='診断日を入力してください。';return;}
+  if(!tokenAssigned && !name){if(error)error.textContent='氏名を入力してください。';return;}
+  participant={
+    name,
+    birthdate:(document.getElementById('birthdateInput')?.value||'').trim(),
+    org:(document.getElementById('orgInput')?.value||'').trim(),
+    dept:(document.getElementById('deptInput')?.value||'').trim(),
+    diag_date:diagDate,
+  };
+  startQuiz();
+}
+
+async function recordBehaviorResult(diffs,strs,overallLabel) {
+  if(recordSubmitted) return;
+  recordSubmitted=true;
+  setRecordStatus('sending','');
+  try{
+    await gasPost({
+      action:'record',diag_type:DIAG_TYPE,token_code:authToken,diag_date:participant.diag_date||todayIso(),
+      name:participant.name,birthdate:participant.birthdate,org:participant.org,dept:participant.dept,
+      score_s1:diffs[0],score_s2:diffs[1],score_s3:diffs[2],
+      assessment_version:ASSESSMENT_VERSION,answers_json:JSON.stringify(answers),
+    });
+    setRecordStatus('saved','');
+  }catch(err){
+    recordSubmitted=false;
+    console.error('record error',err); setRecordStatus('error','保存失敗');
+  }
+}
+
+// ===================== DATA =====================
+const AXES = [
+  {
+    key:'s1', roman:'Ⅰ', name:'自己表現性',
+    cls:'expr', color:'#E84B6A', bg:'#FEF0F3',
+    poleL:'表現控えめ', poleR:'表現強め',
+    questions:[
+      {l:'考えがまとまってから言葉にすることが多い',                 r:'考えながらでも、その場で言葉にすることが多い'},
+      {l:'人と一緒にいるときも、静かに過ごすことが多い',         r:'人と一緒にいると、自然に話す量が増える'},
+      {l:'感情はあまり表に出さず、内側で整理することが多い',       r:'感情や反応が自然と表情や言葉に出やすい'},
+      {l:'話す内容は、要点を絞って短めに伝えることが多い',           r:'話すときは、背景やエピソードまで広げて伝えることが多い'},
+      {l:'会話では、相手の話を聞く側に回ることが多い',             r:'会話では、自分から話を始めることが多い'},
+      {l:'自分のことは、必要な範囲だけ話すことが多い',       r:'自分のことも、自然に話すことが多い'},
+      {l:'身振り手振りは少なく、静かに話す方だ',                   r:'話すとき、身振り手振りが自然と多くなる'},
+      {l:'初対面の場では、まず様子を見てから関わることが多い',     r:'初対面でも、自分から話しかけることが多い'},
+      {l:'グループでは、自分の考えを求められてから話すことが多い',   r:'グループでは、求められなくても自分の考えを伝えることが多い'},
+    ]
+  },
+  {
+    key:'s2', roman:'Ⅱ', name:'自己主張性',
+    cls:'assert', color:'#F5A623', bg:'#FEF5E7',
+    poleL:'主張控えめ', poleR:'主張強め',
+    questions:[
+      {l:'意見が違うときも、できるだけ穏やかに収めたい',   r:'意見が違うときは、自分の考えをはっきり伝えたい'},
+      {l:'グループでは、場を整えるサポート役に回ることが多い',     r:'グループでは、方向を示すリード役に回ることが多い'},
+      {l:'自分の案が採用されなくても、話し合いの結論に合わせて進めることが多い', r:'良いと思う自分の案は、採用されるよう周囲に働きかけることが多い'},
+      {l:'意見がまとまるまで、周囲の様子も見ながら進めたい',         r:'自分の判断が固まったら、周囲に働きかけて進めたい'},
+      {l:'結論をまとめるとき、みんなの納得をできるだけ待ちたい',     r:'結論をまとめるとき、自分の考えを明確に示して前に進めたい'},
+      {l:'方向が曖昧なときは、まず周囲の動きを見てから関わる',       r:'方向が曖昧なときほど、自分から案を出して働きかける'},
+      {l:'人当たりがよく、柔らかい印象と言われることが多い',       r:'はっきり伝える、意志が伝わりやすいと言われることが多い'},
+      {l:'相手と意見が違うときは、まず相手の考えを受け止める方だ',       r:'相手と意見が違っていても、自分の考えはその場で伝える方だ'},
+      {l:'周囲との調和を保ちながら、無理なく関わる方が心地よい',   r:'意見の衝突もいとわず、議論を通じて前進したい'},
+    ]
+  },
+  {
+    key:'s3', roman:'Ⅲ', name:'一貫・順応',
+    cls:'flex', color:'#27AE60', bg:'#EAFAF2',
+    poleL:'一貫寄り', poleR:'順応寄り',
+    questions:[
+      {l:'自分の考えを大切にし、簡単には変えない方だ',             r:'相手の意見を受けると、自分の考えを変えることが多い'},
+      {l:'予定や環境が変わったときは、これまでのペースを保ちながら慣れていく方だ',         r:'予定や環境が変わったときは、その変化に合わせてペースを変える方だ'},
+      {l:'自分と違う意見は、納得できるまでは自分の考えを保つ方だ', r:'自分と違う意見でも、いったん取り入れて考えてみる方だ'},
+      {l:'一度決めた方針は、できるだけ軸を保って進める方だ',   r:'新しい情報が入ると、決めた方針を見直すことが多い'},
+      {l:'予定変更が重なると、まず全体を立て直してから進める方だ',         r:'予定変更が重なると、その都度組み替えながら進める方だ'},
+      {l:'やり方が決まっていると、そのやり方を保って進めることが多い',     r:'やり方が決まっていても、途中で変えることが多い'},
+      {l:'自分と違う進め方を見ると、自分の基準との違いをまず確かめる',       r:'自分と違う進め方を見ると、取り入れられる点をまず確かめる'},
+      {l:'役割やルールが曖昧だと、まず整理してから進む方だ',         r:'役割やルールが曖昧なままでも、状況に合わせながら進む方だ'},
+      {l:'意見がぶつかったときは、自分の基準を守る方を優先する',     r:'意見がぶつかったときは、相手との折り合いを探す方を優先する'},
+    ]
+  }
+];
+
+const ALL_QUESTIONS = [];
+// 左右連打で片側の傾向に偏りにくくするため、各軸9問中4問は左右表示を反転します。
+// l/r は表示位置、leftScore/rightScore は診断上の向きです。
+// -1 = 左側の極（内省寄り・受け止め寄り・一貫寄り）
+// +1 = 右側の極（表現寄り・主導寄り・順応寄り）
+const DISPLAY_FLIPS_BY_AXIS = [false, true, false, true, false, true, false, true, false];
+
+AXES.forEach(ax => {
+  ax.questions.forEach((q, qIdx) => {
+    const flip = DISPLAY_FLIPS_BY_AXIS[qIdx];
+    ALL_QUESTIONS.push({
+      axisKey: ax.key,
+      axisRoman: ax.roman,
+      axisName: ax.name,
+      axisIdx: AXES.indexOf(ax),
+      cls: ax.cls,
+      color: ax.color,
+      bg: ax.bg,
+      poleL: ax.poleL,
+      poleR: ax.poleR,
+      l: flip ? q.r : q.l,
+      r: flip ? q.l : q.r,
+      leftScore: flip ? 1 : -1,
+      rightScore: flip ? -1 : 1
+    });
+  });
+});
+const TOTAL = ALL_QUESTIONS.length; // 27
+
+// ===================== コメントデータ =====================
+const AXIS_RESULT = [
+  {
+    name:'自己表現性', cls:'expr', color:'#E84B6A', bg:'#FEF0F3',
+    poleL:'表現控えめ', poleR:'表現強め',
+    strong:{
+      tag:'表現強め',
+      desc:'考えや感情を、その場で言葉・表情・反応として外に出す行動が多い傾向です。周囲から反応が見えやすい一方、表現控えめな相手にはペースが速く感じられることがあります。相手が考える時間を取ると、やり取りしやすくなります。',
+      kws:['考えを外に出しやすい','反応が伝わりやすい','自分から話しやすい','表情や身振りに出やすい']
+    },
+    weak:{
+      tag:'表現控えめ',
+      desc:'考えや感情をいったん内側で整理し、必要なことを選んで外に出す行動が多い傾向です。沈黙や反応の小ささが「納得している」「関心がない」と受け取られることがあるため、途中の状態を一言伝えると誤解を減らせます。',
+      kws:['考えてから話す','反応は控えめ','聞き役になりやすい','必要なことを選んで話す']
+    },
+    neutral:{
+      tag:'中間（偏りが小さい）',
+      desc:'今回の9問では、自己表現に一方向への大きな偏りは見られません。どんな場面で表現が増える／控えめになるかを振り返ると、自分の特徴をつかみやすくなります。',
+      kws:['場面で出方が変わる','表現量の偏りが小さい']
+    },
+    overall:{
+      strong:'今回は自己表現が強めに出ています。自分の反応が周囲に伝わりやすい一方、表現控えめな相手には考える時間を残すと、対話のペースを合わせやすくなります。',
+      weak:'今回は自己表現が控えめに出ています。考えている途中でも「少し考えています」「まだ迷っています」と一言添えると、沈黙による誤解を減らしやすくなります。',
+      neutral:'今回は自己表現の偏りが小さい結果です。どんな場面で表現が増える／控えめになるかを振り返り、大切な場面では自分が今どう考えているかを言葉にすると伝わりやすくなります。'
+    }
+  },
+  {
+    name:'自己主張性', cls:'assert', color:'#F5A623', bg:'#FEF5E7',
+    poleL:'主張控えめ', poleR:'主張強め',
+    strong:{
+      tag:'主張強め',
+      desc:'自分の意見や方向性を明確に示し、周囲に働きかけて前へ進めようとする行動が多い傾向です。主張控えめな相手には結論を急がされたように感じられることがあるため、相手の前提や懸念も先に確認すると噛み合いやすくなります。',
+      kws:['意見を明確に出す','働きかける','方向を示す','対立を避けすぎない']
+    },
+    weak:{
+      tag:'主張控えめ',
+      desc:'相手の意見や場の納得を優先し、自分の主張を強く前に出さない行動が多い傾向です。周囲には「異論がない」「任せてよいのかわからない」と受け取られることがあるため、小さくても自分の見立てを言葉にすると意思が伝わりやすくなります。',
+      kws:['主張を控えやすい','相手の意見を尊重する','対立を避けやすい','サポート側に回りやすい']
+    },
+    neutral:{
+      tag:'中間（偏りが小さい）',
+      desc:'今回の9問では、自己主張に一方向への大きな偏りは見られません。どんな場面で自分から押し出す／相手や場を優先するかを振り返ると、自分の特徴をつかみやすくなります。',
+      kws:['場面で出方が変わる','主張の偏りが小さい']
+    },
+    overall:{
+      strong:'今回は自己主張が強めに出ています。自分の考えを明確に出すことに加え、相手の前提や懸念を確認すると、押し合いではなく対話として進めやすくなります。',
+      weak:'今回は自己主張が控えめに出ています。相手を尊重しながらも、自分の見立てを小さく言葉にすると、周囲があなたの考えを受け取りやすくなります。',
+      neutral:'今回は自己主張の偏りが小さい結果です。「今は聞く」「ここは伝える」の判断基準を振り返ると、自分の関わり方をつかみやすくなります。'
+    }
+  },
+  {
+    name:'一貫・順応', cls:'flex', color:'#27AE60', bg:'#EAFAF2',
+    poleL:'一貫寄り', poleR:'順応寄り',
+    strong:{
+      tag:'順応寄り',
+      desc:'状況の変化や異なる意見を受けて、やり方や判断を組み替える行動が多い傾向です。合わせることが続くと自分の基準が周囲に見えにくくなることがあるため、「ここは変えられる／ここは大切にしたい」を言葉にすると関わりやすくなります。',
+      kws:['変更に合わせやすい','異なる意見を取り入れる','やり方を組み替える','折り合いを探す']
+    },
+    weak:{
+      tag:'一貫寄り',
+      desc:'一度決めた方針や自分の基準を保ち、簡単には変えない行動が多い傾向です。急な変更では周囲と摩擦が起きることもあるため、変更の理由や判断材料を確認し、自分が何を守りたいのかを言葉にすると擦り合わせやすくなります。',
+      kws:['決めた方針を保つ','自分の基準を大切にする','変更は理由を確かめる','一貫して進める']
+    },
+    neutral:{
+      tag:'中間（偏りが小さい）',
+      desc:'今回の9問では、一貫・順応のどちらか一方への大きな偏りは見られません。どんな場面で基準を保つ／状況に合わせるかを振り返ると、自分の特徴をつかみやすくなります。',
+      kws:['場面で出方が変わる','一貫と順応の偏りが小さい']
+    },
+    overall:{
+      strong:'今回は順応寄りに出ています。状況に合わせて変えるだけでなく、自分が大切にしたい基準も言葉にすると、柔軟さと一貫性の両方を扱いやすくなります。',
+      weak:'今回は一貫寄りに出ています。変更に納得しにくいときは、理由や判断材料を確認すると、自分の基準を守りながら必要な変更を考えやすくなります。',
+      neutral:'今回は一貫・順応の偏りが小さい結果です。変える／変えないを決める基準を振り返ると、自分の傾向がつかみやすくなります。'
+    }
+  }
+]
+
+// 全軸中間・同点時コメント
+const OVERALL_BALANCED = '今回の結果では、3つの軸とも一方向への大きな偏りは見られません。「どんな場面でどちらの行動が出やすいか」を振り返ると、自分の特徴をつかみやすくなります。';
+const OVERALL_MULTI    = '今回は複数の軸に同程度の特徴が出ています。ひとつに絞って見るより、「どの場面でどの傾向が出やすいか」を振り返ると、自分の行動の傾向を捉えやすくなります。';
+
+// ===================== STATE =====================
+let answers = {};
+let currentQ = 0;
+let isAnimating = false;
+let lastResult = null; // PDF用に保存
+
+// ===================== HEADER =====================
+function updateHeader(idx) {
+  const el = document.getElementById('headerProgress');
+  if (idx < 0) { el.style.display='none'; return; }
+  el.style.display='flex';
+  const q = ALL_QUESTIONS[idx];
+  const axIdx = q.axisIdx;
+  const qInAxis = idx - AXES.slice(0, axIdx).reduce((s,a)=>s+a.questions.length,0);
+  document.getElementById('headerCountMain').textContent = `Q${idx+1} / ${TOTAL}`;
+  document.getElementById('headerCountSub').textContent  = `${q.axisRoman}　${qInAxis+1} / ${AXES[axIdx].questions.length}`;
+  document.getElementById('progressFill').style.width = `${(idx/TOTAL)*100}%`;
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id!=='screen-question') window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ===================== QUESTION =====================
+function renderQuestion(idx) {
+  const q = ALL_QUESTIONS[idx];
+  const scr = document.getElementById('screen-question');
+  scr.innerHTML = `
+    <div class="q-top">
+      <div class="q-axis-tag" style="background:${q.color};">${q.axisRoman}　${q.axisName}</div>
+      <div class="q-label">Q${idx+1} / ${TOTAL}　どちらが自分に近いですか？</div>
+    </div>
+    <div class="q-split anim-enter">
+      <div class="q-side" id="sideL" onclick="selectAnswer('l')">
+        <div class="q-side-text">${q.l}</div>
+      </div>
+      <div class="q-divider">or</div>
+      <div class="q-side" id="sideR" onclick="selectAnswer('r')">
+        <div class="q-side-text">${q.r}</div>
+      </div>
+    </div>
+  `;
+  fitHeight();
+}
+
+function fitHeight() {
+  const scr = document.getElementById('screen-question');
+  const hh = document.querySelector('.header').offsetHeight;
+  scr.style.height = (window.innerHeight - hh) + 'px';
+}
+window.addEventListener('resize', () => {
+  if (document.getElementById('screen-question').classList.contains('active')) fitHeight();
+});
+
+function startQuiz() {
+  currentQ=0; answers={};
+  showScreen('screen-question');
+  updateHeader(0);
+  renderQuestion(0);
+}
+
+function selectAnswer(side) {
+  if (isAnimating) return;
+  isAnimating = true;
+  answers[currentQ] = side;
+  const q = ALL_QUESTIONS[currentQ];
+  const el = document.getElementById(side==='l'?'sideL':'sideR');
+  el.classList.add('flashed');
+  el.style.background = q.bg;
+  el.style.borderColor = q.color;
+  setTimeout(()=>{ advance(); }, 260);
+}
+
+function goBack() {
+  if (isAnimating || currentQ===0) return;
+  currentQ--;
+  updateHeader(currentQ);
+  renderQuestion(currentQ);
+}
+
+function advance() {
+  const split = document.querySelector('.q-split');
+  if (split) { split.classList.remove('anim-enter'); split.classList.add('anim-leave'); }
+  setTimeout(()=>{
+    currentQ++;
+    if (currentQ >= TOTAL) showResult();
+    else { updateHeader(currentQ); renderQuestion(currentQ); }
+    isAnimating = false;
+  }, 180);
+}
+
+// ===================== RESULT =====================
+function getAxisDiff(axisKey) {
+  let diff = 0;
+  ALL_QUESTIONS.forEach((q,i) => {
+    if (q.axisKey !== axisKey) return;
+    if (answers[i] === 'l') diff += q.leftScore;
+    if (answers[i] === 'r') diff += q.rightScore;
+  });
+  return diff;
+}
+
+function getStrength(d) { return d>2?'strong':d<-2?'weak':'neutral'; }
+
+function showResult() {
+  const missingIndex = Array.from({length:TOTAL},(_,i)=>i).find(i=>answers[i]===undefined);
+  if(missingIndex!==undefined){
+    currentQ=missingIndex;
+    isAnimating=false;
+    showScreen('screen-question');
+    updateHeader(currentQ);
+    renderQuestion(currentQ);
+    return;
+  }
+  updateHeader(-1);
+  const diffs = AXES.map(ax => getAxisDiff(ax.key));
+  const strs  = diffs.map(d => getStrength(d));
+
+  // 総合コメントロジック
+  // 全軸中間判定（全部 -2〜+2 の範囲）
+  const allMid = strs.every(s => s==='neutral');
+  // 最大差分
+  const absDiffs = diffs.map(d=>Math.abs(d));
+  const maxAbs = Math.max(...absDiffs);
+  // 同点判定（複数軸が最大値と同値）
+  const dominantIdxs = absDiffs.reduce((acc,v,i)=>{ if(v===maxAbs) acc.push(i); return acc; }, []);
+  const multiDominant = dominantIdxs.length > 1 && maxAbs > 2;
+
+  let overallText = '';
+  let overallLabel = '';
+  if (allMid) {
+    overallText = OVERALL_BALANCED;
+    overallLabel = '全軸中間（状況対応型）';
+  } else if (multiDominant) {
+    overallText = OVERALL_MULTI;
+    overallLabel = '複数軸に同程度の特徴';
+  } else {
+    const di = dominantIdxs[0];
+    overallText = AXIS_RESULT[di].overall[strs[di]];
+    overallLabel = `${AXES[di].name}：${AXIS_RESULT[di][strs[di]].tag}`;
+  }
+
+  // 結果保存（PDF用）
+  lastResult = { diffs, strs, overallText, overallLabel };
+  recordBehaviorResult(diffs,strs,overallLabel);
+
+  // 軸カード描画
+  document.getElementById('axes-summary').innerHTML = AXES.map((ax, i) => {
+    const d   = diffs[i];
+    const str = strs[i];
+    const info = AXIS_RESULT[i];
+    const rd   = info[str];
+    const pct  = Math.abs(d)/9*50;
+    const isR  = d >= 0;
+    const mPct = 50 + (d/9*50);
+    return `
+      <div class="axis-card ${info.cls}">
+        <div class="axis-card-head">
+          <div class="axis-roman ${info.cls}">${ax.roman}</div>
+          <div class="axis-card-name ${info.cls}">${ax.name}</div>
+        </div>
+        <div class="axis-tendency tend-${info.cls}">● ${rd.tag}</div>
+        <div class="scale-wrap">
+          <div class="scale-poles">
+            <div class="scale-pole-label">${info.poleL}</div>
+            <div class="scale-pole-label">${info.poleR}</div>
+          </div>
+          <div class="scale-track-wide">
+            <div class="${isR?'scale-fill-r':'scale-fill-l'}" style="width:${pct}%;background:${info.color};"></div>
+            <div class="scale-dot" style="left:${mPct}%;background:${info.color};box-shadow:0 0 0 2px ${info.color};"></div>
+          </div>
+          <div class="scale-score" style="color:${info.color};">${d>0?'+':''}${d}</div>
+        </div>
+        <div class="axis-desc-text">${rd.desc}</div>
+        <div class="axis-kws">${rd.kws.map(k=>`<span class="kw">${k}</span>`).join('')}</div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('overall-text').textContent = overallText;
+  showScreen('screen-result');
+}
+
+// ===================== PDF出力 =====================
+function printPDF() {
+  if (!lastResult) return;
+  const { diffs, strs, overallText } = lastResult;
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+
+  const axesHtml = AXES.map((ax, i) => {
+    const d    = diffs[i];
+    const str  = strs[i];
+    const info = AXIS_RESULT[i];
+    const rd   = info[str];
+    const pct  = Math.abs(d)/9*50;
+    const isR  = d >= 0;
+    const mPct = 50 + (d/9*50);
+    return `
+      <div style="margin-bottom:14px;padding:12px 14px;border:1.5px solid #E5E7EB;border-left:4px solid ${info.color};border-radius:8px;background:#fff;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="background:${info.color};color:#fff;font-family:Montserrat,sans-serif;font-size:9pt;font-weight:700;padding:2px 8px;border-radius:20px;">${ax.roman}</span>
+          <span style="font-size:12pt;font-weight:700;color:${info.color};">${ax.name}</span>
+          <span style="margin-left:auto;font-size:10pt;font-weight:700;color:${info.color};background:${info.bg};padding:2px 10px;border-radius:20px;">● ${rd.tag}</span>
+        </div>
+        <div style="margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:8pt;color:#6B7280;margin-bottom:3px;">
+            <span>${info.poleL}</span><span>${info.poleR}</span>
+          </div>
+          <div style="position:relative;height:8px;background:#E5E7EB;border-radius:4px;">
+            <div style="position:absolute;${isR?'left:50%':'right:50%'};top:0;height:100%;width:${pct}%;background:${info.color};opacity:0.5;border-radius:4px;"></div>
+            <div style="position:absolute;left:${mPct}%;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:${info.color};border:2px solid #fff;box-shadow:0 0 0 2px ${info.color};"></div>
+          </div>
+          <div style="text-align:center;font-size:9pt;font-weight:700;color:${info.color};margin-top:3px;">${d>0?'+':''}${d}</div>
+        </div>
+        <p style="font-size:9.5pt;line-height:1.75;color:#1F2937;margin-bottom:6px;">${rd.desc}</p>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">${rd.kws.map(k=>`<span style="font-size:8pt;padding:2px 8px;border:1px solid #E5E7EB;border-radius:20px;color:#6B7280;">${k}</span>`).join('')}</div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('pdf-sheet').innerHTML = `
+    <div style="font-family:'Noto Sans JP',sans-serif;color:#1F2937;max-width:720px;margin:0 auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #0F3D96;">
+        <div>
+          <div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:14pt;color:#0F3D96;">Grow3</div>
+          <div style="font-size:16pt;font-weight:700;color:#1F2937;margin-top:2px;">行動特性</div>
+          <div style="font-size:9pt;color:#6B7280;margin-top:2px;">Behavioral Tendencies　|　${dateStr}</div>
+        </div>
+      </div>
+      <p style="font-size:9.5pt;color:#6B7280;line-height:1.7;margin-bottom:14px;">このシートは「あなたはこういう人」と断定するものではありません。今の自分がどう動きやすいかを確認し、相手との関わり方を考えるためのセルフアセスメントです。</p>
+      <div style="font-size:11pt;font-weight:700;color:#1F2937;margin-bottom:10px;">■ 3軸の傾向</div>
+      ${axesHtml}
+      <div style="background:#0F3D96;color:#fff;border-radius:8px;padding:14px 16px;margin-bottom:14px;">
+        <div style="font-family:Montserrat,sans-serif;font-size:8pt;letter-spacing:0.1em;opacity:0.75;margin-bottom:6px;">OVERALL　もっとも特徴が出た傾向</div>
+        <p style="font-size:10pt;line-height:1.8;">${overallText}</p>
+      </div>
+      <div style="border:1.5px solid #E5E7EB;border-radius:8px;padding:12px 14px;background:#F9FAFB;">
+        <div style="font-size:10pt;font-weight:700;color:#0F3D96;margin-bottom:8px;">📝 今日気づいたこと・試してみたいこと</div>
+        <div style="height:60px;border-bottom:1px solid #E5E7EB;margin-bottom:8px;"></div>
+        <div style="height:60px;"></div>
+      </div>
+      <div style="margin-top:14px;font-size:8pt;color:#9CA3AF;text-align:center;">Grow3 © 2025　|　ウィリアム・グラッサー博士の選択理論心理学をもとにした独自設計ツールです</div>
+    </div>
+  `;
+
+  setTimeout(() => { window.print(); }, 100);
+}
+
+function resetAll() {
+  answers={}; currentQ=0; lastResult=null; recordSubmitted=false;
+  updateHeader(-1);
+  showScreen('screen-intro');
+  tokenAssigned=false; participant={name:'',birthdate:'',org:'',dept:''};
+  const input=document.getElementById('tokenInput');
+  if(input){input.value=getSavedToken();input.readOnly=false;}
+  const authBtn=document.getElementById('startAuthBtn');
+  if(authBtn){authBtn.style.display='block';authBtn.disabled=false;authBtn.textContent='トークンを確認する →';}
+  const panel=document.getElementById('profilePanel'); if(panel)panel.style.display='none';
+  ['nameInput','birthdateInput','orgInput','deptInput'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const d=document.getElementById('diagDateInput');if(d)d.value=todayIso();
+  const pe=document.getElementById('profileError');if(pe)pe.textContent='';
+}
+
+const behaviorSavedToken=getSavedToken();
+if(behaviorSavedToken){const input=document.getElementById('tokenInput');if(input)input.value=behaviorSavedToken;}
+const behaviorDiagDate=document.getElementById('diagDateInput');if(behaviorDiagDate)behaviorDiagDate.value=todayIso();
+</script>
+</body>
+</html>
