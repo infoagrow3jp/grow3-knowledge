@@ -196,12 +196,21 @@ LINE Producer Botの `doPost(e)` と診断GASの `doPost(e)` が共存してい�
 
 が返り、診断validateのJSONがブラウザへ返らなかった。
 
-現在の本番Apps Scriptでは、LINE Bot側を一時的に `lineBotDoPost(e)` へ改名し、
+現在の本番Apps Scriptでは、LINE Bot側を `lineBotDoPost(e)` へ改名し、
 診断用 `doPost(e)` のみを有効にしている。
 
-**恒久方針：LINE Producer Botは別Apps Scriptプロジェクトへ分離する。**
+その後の実査で、このApps Script上のLINE Botコードは**旧実装の残骸**であり、本番のLINE Producer BotはRender上で稼働していることが判明した。
 
-診断GASプロジェクトへ、診断以外の `doPost` を追加しない。
+```text
+LINE → Render（grow3-producer-bot-1）→ Claude API → Supabase
+```
+
+したがって「LINE Producer Botを別Apps Scriptプロジェクトへ分離する」作業は不要である。
+構成の詳細は `integrations/line-producer-bot/README.md` を参照する。
+
+残骸コードの削除は、診断GAS側の掃除として別途扱う。
+
+**原則：診断GASプロジェクトへ、診断以外の `doPost` を追加しない。**
 
 ---
 
