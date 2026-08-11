@@ -22,10 +22,11 @@
       }
     },
     "grow3-frameworks.md": {
-      "metadata_source_hash": "sha256:f05e274a060d7d6ab0de3da270734ffebf1bc116cbbcbbcc0ca2b2140cd8ad76",
+      "metadata_source_hash": "sha256:8ba0c1eea149cd2557c3d2cd7cf914405d3fe5ec98c092563c19378181a2b0d7",
       "regenerations": [
         "2026-08-04",
-        "2026-08-04"
+        "2026-08-04",
+        "2026-08-11"
       ],
       "structure": {
         "domain": [
@@ -88,7 +89,7 @@
           "評価結果分析（甘辛・ばらつき・部署差）",
           "SSR理論（人材力・組織力・関係力）",
           "思考特性4象限（Herrmann型・A/B/C/D）",
-          "行動スタイル3軸（自己表現・自己主張・柔軟性）",
+          "行動特性3軸（自己表現・自己主張・一貫・順応）",
           "欲求プロフィール（5つの欲求）"
         ],
         "related": [],

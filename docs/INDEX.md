@@ -4,8 +4,8 @@
 
 | ファイル | 種別 | status | domain | 概要 |
 | --- | --- | --- | --- | --- |
-| [Issue案：3診断の実装語を grow3-frameworks.md へ同期する](ISSUE_diagnostics-framework-sync.md) | — | — | — | 2026-08-11の本番確定で正式名称が以下に収束した。 |
-| [3診断 実装語と grow3-frameworks.md の同期メモ](diagnostics-framework-sync_20260811.md) | implementation-note | pending | frameworks, diagnostics | 2026-08-11に本番化した3診断の正式名称・軸名称と、 |
+| [【完了】Issue案：3診断の実装語を grow3-frameworks.md へ同期する](ISSUE_diagnostics-framework-sync.md) | — | — | — | 下記の同期はすべて実施済み。未着手の作業予定として扱わない。 |
+| [3診断 実装語と grow3-frameworks.md の同期メモ](diagnostics-framework-sync_20260811.md) | implementation-note | frozen | frameworks, diagnostics | 本メモに記載した5項目は `grow3-frameworks.md` へ反映済み（DEC-023）。 |
 | [financial-analysis 指標定義書 v0.2](financial-analysis_指標定義書_v0.2.md) | — | draft | — | 本書は financial-analysis（財務分析サブエージェント）が使用する指標の定義・算式・ |
 | [financial-analysis 設計メモ](financial-analysis_設計メモ_20260711.md) | — | draft | — | 財務分析サブエージェント（名称：`financial-analysis`）を新設する。役割は投資・融資の助言ではなく、経営判断材料の作成である。 |
 | [organization-diagnosis schema設計メモ v0.1](organization-diagnosis_schema設計メモ_v0.1.md) | — | frozen | — | 本書は、凍結済み `docs/organization-diagnosis_設計メモ_v0.1.md`（DEC-008）を |

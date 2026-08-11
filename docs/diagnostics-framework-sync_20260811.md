@@ -1,11 +1,19 @@
 ---
 id: diagnostics-framework-sync-20260811
 type: implementation-note
-status: pending
+status: frozen
 domain: [frameworks, diagnostics]
 ---
 
 # 3診断 実装語と grow3-frameworks.md の同期メモ
+
+## 同期完了（2026-08-11）
+
+本メモに記載した5項目は `grow3-frameworks.md` へ反映済み（DEC-023）。
+色コードは同期対象に含まれないため変更していない。
+
+**本メモは完了済みの記録であり、再実行の対象ではない。**
+以下は同期時の指示内容の記録である。作業指示として読まない。
 
 ## 目的
 

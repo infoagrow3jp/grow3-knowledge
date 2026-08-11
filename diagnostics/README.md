@@ -13,9 +13,6 @@
 概念・理論の説明は `grow3-frameworks.md` を参照する。
 HTML/GAS、画面文言、assessment_version、保存スキーマ、デプロイ運用についてはこのディレクトリを正本とする。
 
-> 2026-08-11時点で `grow3-frameworks.md` には旧運用語（例：行動スタイル、柔軟性）が一部残っている。
-> 実装上の正式名称は本READMEの定義を優先し、概念正本側の文言同期は `docs/diagnostics-framework-sync_20260811.md` に従って行う。
-
 ---
 
 ## 正式名称とversion
