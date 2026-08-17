@@ -43,6 +43,9 @@ docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	§22-6表
 docs/organization-diagnosis_schema設計メモ_v0.1.md	1	deferred_v0.2	§22-6表で複数MTG差分自動生成を後続送付した行を残すため	| 複数MTG差分自動生成 | 未確定 |
 docs/organization-diagnosis_schema設計メモ_v0.1.md	1	meta_check	検出対象の保留を推測補完していないことの自己確認行を残すため	- [x] 未確定事項を勝手に埋めていない（§4・§22-5）
 
+# --- docs/frameworks-3layer-split_設計メモ_20260817.md ---
+docs/frameworks-3layer-split_設計メモ_20260817.md	1	meta_check	未確定数値を意図的に入れていないことの明示であり、書きかけの未確定箇所ではないため	提供価値の定義／BMCの状態（項目別ステータス）／顧客ジャーニー（ループ）と認知変化ステージ／月次対話をハブにする商品構成／顧客選択4基準／3シグナルの営業・発信への転用と匿名化ルール／固定しない項目。公開リポジトリのため顧客名・パートナー個人名・価格等の未確定数値は入れていない。
+
 # --- 正本OS（業務用語）---
 grow3-frameworks.md	1	domain_term	賃金移行シミュレーションの操作手順であり、書きかけの未確定箇所ではないため	- 現行給与を入力し、範囲給に含める手当を決め、新等級を仮置きして○/over/shortを判定する。
 grow3-hr-system-design-os.md	1	domain_term	個人目標シートの記入項目名（TOBEと対になる正式名称）であり、未確定箇所ではないため	- 個人目標シート：上位目標を踏まえ個人目標3つを「達成基準（TOBE）／達成のための具体的行動（TODO）」で記述。

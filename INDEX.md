@@ -7,10 +7,12 @@
 | [スキルeval運用ガイド（合格条件方式）](evals-README.md) | — | — | — | スキルが下位モデル（Sonnet/Haiku）でも判断の型を守れるかを測定する。 |
 | [Grow3 ブログ概念対応表](grow3-blog-concept-map.md) | map | canonical | blog | 目的：ブログ・ステップメール執筆時の概念のブレを防ぐ。 |
 | [グロウスリー ブログ執筆コンテキスト v4（統合版）](grow3-blog-writing-context.md) | — | — | — | ミニコンテキスト＋文体原則＋第3〜6シーズン執筆ルールを統合した1ファイル完結版。 |
+| [Grow3 事業モデル・顧客ジャーニー](grow3-business-model.md) | os | draft | marketing | 目的：`grow3-support-os.md`（見立ての型）を、誰に・どんな順で・どんな器で顧客価値として届けるかの設計を体系化する。 |
 | [Grow3 育成・コーチング研修OS](grow3-coaching-training-os.md) | — | — | — | 目的：コーチング・1on1・部下育成系研修の「中身の哲学・定義・型」を体系化する。 |
 | [Grow3 構造・フレーム収集](grow3-frameworks.md) | os | canonical | frameworks | 研修設計・コンサル・コンテンツ制作で使う「構造」を蓄積するファイル。 |
 | [Grow3 人事制度設計OS](grow3-hr-system-design-os.md) | os | canonical | hr | 目的：人事制度を「どう作り・どう運用するか」の設計の型を体系化する。 |
 | [グロウスリー マーケティングOS v13（統合完全版）](grow3-marketing-os.md) | os | canonical | marketing | 株式会社グロウスリー　小林裕司 |
+| [Grow3 支援OS（見立ての型）](grow3-support-os.md) | os | draft | frameworks | 目的：Grow3のあらゆる支援（WS・研修・人事制度・組織診断・経営の見立て・顧問）を貫く「今、何を見るべきか」の判断の型を体系化する。 |
 | [Grow3 研修設計 実装テンプレート v1](grow3-training-design-implementation-templates.md) | — | — | — | OS本体（`grow3-training-design-os.md`）から分離した実装用テンプレート集。判断原則はOS本体、概念の正本は`grow3-fram… |
 | [Grow3 研修設計OS](grow3-training-design-os.md) | os | canonical | training | 目的：研修・ワークショップを「どう組み立てるか」の設計の型を体系化する。 |
 | [コーチング研修2026改定　意思決定ログ](コーチング研修2026改定_意思決定ログ.md) | — | — | — | 作成日：2026年7月4日　対象：2026年7月8日（水）実施回 |

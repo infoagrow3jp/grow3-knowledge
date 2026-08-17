@@ -22,11 +22,12 @@
       }
     },
     "grow3-frameworks.md": {
-      "metadata_source_hash": "sha256:8ba0c1eea149cd2557c3d2cd7cf914405d3fe5ec98c092563c19378181a2b0d7",
+      "metadata_source_hash": "sha256:401d198026d2cde2343e9184a2714d5e54e216a1ffda01a7bf7daca24e762f1b",
       "regenerations": [
         "2026-08-04",
         "2026-08-04",
-        "2026-08-11"
+        "2026-08-11",
+        "2026-08-17"
       ],
       "structure": {
         "domain": [
