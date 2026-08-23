@@ -195,10 +195,11 @@
       }
     },
     "grow3-training-design-os.md": {
-      "metadata_source_hash": "sha256:9dca952bed651da38692c0ece8ebd765c84e646f4d59e5383c5de8b889b27529",
+      "metadata_source_hash": "sha256:825e1b09355f7de89a37a0526245f31ed3fa76250891384e1ae21f2cc5175ef5",
       "regenerations": [
         "2026-08-04",
         "2026-08-04",
+        "2026-08-23",
         "2026-08-23"
       ],
       "structure": {

@@ -773,3 +773,22 @@ DEC-019の承認フローに基づく機械的な承認記録であり、新し�
   - `grow3-training-design-os.md` 内（185行・201行）および `.claude/skills/coaching-training/SKILL.md` 内（11行・148行）に残る `grow3-training-scoring-axes.md` への参照切れの修正、または採点軸の正本統合は、基準書を扱う別変更単位として判断する。
   - この参照切れは search-friction の canonical_not_found に相当するが、`logs/search-friction.yaml` は本変更単位の対象外指定のため追記していない（本DECと完了報告を記録先とする）。
 - 見直し条件：正本参照方式によって、実行時の読込漏れ・性能低下・判断不能が実際に発生した場合。
+
+### DEC-028｜研修採点の参照切れ4箇所を実在資産へのルーティングで修復する
+
+- 日付：2026-08-23
+- 状態：確定
+- 対象：`grow3-training-design-os.md`（第6部・運用メモ）、`.claude/skills/coaching-training/SKILL.md`（位置づけ・運用メモ）
+- 決定：
+  - DEC-027で確認された、存在しない `grow3-training-scoring-axes.md` への運用上の参照4箇所を修復した。
+  - 存在しない採点軸ファイルは新設しない。
+  - 現在の実在資産による分岐を正式な参照先とする：`.claude/skills/grow3-judgment/references/training-review.md` で研修タイプを分類→参加型・行動変容型は `.claude/skills/coaching-training/SKILL.md` の参加型3軸→知識習得型・短時間講義は `training-review.md` の一般5軸→案件固有軸があれば追加。迷った場合は推測せず研修タイプ判定へ戻る。
+  - 参加型3軸と知識習得型5軸の統合は、今回決めない。
+  - 参照切れ修復と採点基準書の新設・統合は、変更単位を分ける（後者は standards-authoring の6工程を適用する別変更単位）。
+  - DEC-027等、過去の事実を記録した歴史的言及は削除・置換しない。
+- 理由：存在しない単一ファイルへの参照が採点時の停止要因になっており、確定済みの採点ルーティング（training-design SKILLへ収録済み）を正本OS側・coaching-training側にも反映して整合させるため。
+- 採用しなかった案：
+  - 存在しないファイルへの参照を残す案（採点のたびに停止が発火する）。
+  - 実体のないファイルを参照解消のためだけに新設する案（内容の裏付けなく正本を作ることになる）。
+  - 今回の修復と同時に採点軸全体を再設計する案（基準書の改訂は standards-authoring の工程を要する別変更単位）。
+- 見直し条件：採点軸の単一正本化が必要かどうかは、重複更新・判定不整合・第三の研修タイプの出現などの実害が確認された場合に再検討する。

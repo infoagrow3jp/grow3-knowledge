@@ -8,7 +8,7 @@ description: Score participatory training/workshop material (slide decks, progra
 > **適用制約（必読）**：本スキルは参加型・行動変容型の研修（コーチング、ハラスメント、マネジメント、ビジネスマナー等）を対象とする。すべての研修に機械的に適用しない。研修タイプの判定および評価軸の選択は、先に `grow3-judgment` スキル（`references/training-review.md`）を参照すること。知識習得・法令解説・制度説明を主目的とする研修（管理会計研修、法改正セミナー等）では、本スキルの3軸をそのまま適用せず、grow3-judgment側の汎用5軸を用いる。
 
 > 出自：2026年コーチング研修改定（52点→82点）で実際に使った診断軸を汎用化したもの。
-> 位置づけ：`grow3-training-design-os.md` 第6部が参照する `grow3-training-scoring-axes.md`（研修採点軸）の「スライドデッキ評価」枠のうち3軸に相当する。GitHub側との同期は運用メモ参照。
+> 位置づけ：`grow3-training-design-os.md` 第6部の採点ルーティングのうち「参加型・行動変容型」の3軸を担う。研修タイプの判定元は `grow3-judgment` スキルの `references/training-review.md`。本スキルには二つの役割がある——採点時は参加型研修の3軸ルーブリック、コーチング研修の設計時はテーマ固有の設計資産（`grow3-coaching-training-os.md`）への入口。
 > コーチング固有の中身（定義・型）は `grow3-coaching-training-os.md` を参照。本スキルは中身ではなく「構造の良し悪し」を見る。
 
 ## このスキルを使うとき
@@ -145,7 +145,7 @@ Grow3の目標値は `grow3-training-design-os.md` 第1部の哲学（ワーク�
 ## 運用メモ
 
 - 本スキルは構造（座学偏重・ワーク設計・メッセージの絞り込み）を見るための汎用軸。研修の中身の哲学・定義（コーチングとは何か、等）は扱わない。テーマ固有の中身は各テーマの内容OSファイル（例：`grow3-coaching-training-os.md`）を参照する。
-- GitHub上の `grow3-training-scoring-axes.md`（研修採点軸）と重複する可能性がある。同ファイルの内容を確認できる場合は、本スキルとの整合を確認し、必要なら統合を検討する。
+- 採点軸の単一正本ファイルは存在しない（DEC-027で確認）。本スキルの参加型3軸と `grow3-judgment` の `references/training-review.md` の一般5軸の使い分けが正式な参照体系。統合の要否は、重複更新・判定不整合などの実害が確認された場合に別変更単位で検討する。
 - 打ち手パターンは2026年コーチング研修改定（52点→82点）での実績ベース。新しい研修で異なるパターンが有効だった場合は、この打ち手一覧に追記していく。
 
 判断に迷ったら references/examples.md の『判断の分かれ目』を参照する。
