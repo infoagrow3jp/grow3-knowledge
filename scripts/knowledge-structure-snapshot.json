@@ -22,12 +22,13 @@
       }
     },
     "grow3-frameworks.md": {
-      "metadata_source_hash": "sha256:401d198026d2cde2343e9184a2714d5e54e216a1ffda01a7bf7daca24e762f1b",
+      "metadata_source_hash": "sha256:fc0f6869beed91a42247c004fc8b590521b5321b266de7194369c2dd6bbb31df",
       "regenerations": [
         "2026-08-04",
         "2026-08-04",
         "2026-08-11",
-        "2026-08-17"
+        "2026-08-17",
+        "2026-08-23"
       ],
       "structure": {
         "domain": [
@@ -194,10 +195,11 @@
       }
     },
     "grow3-training-design-os.md": {
-      "metadata_source_hash": "sha256:1181ff0ec28d849a5870cd83534f6a65c8b89f2701fe7bd6ca2be6923f97af53",
+      "metadata_source_hash": "sha256:9dca952bed651da38692c0ece8ebd765c84e646f4d59e5383c5de8b889b27529",
       "regenerations": [
         "2026-08-04",
-        "2026-08-04"
+        "2026-08-04",
+        "2026-08-23"
       ],
       "structure": {
         "domain": [
