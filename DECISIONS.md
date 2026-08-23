@@ -748,3 +748,28 @@ DEC-019の承認フローに基づく機械的な承認記録であり、新し�
   - 実施後の返りが、今回記載した学習機構では説明できない。
   - 発見の所有権を守る三値判断が、複数講師で再現できない。
   - 現場語を畳んだことで、異なる打ち手や重大な誤読が生じる。
+
+### DEC-027｜training-design SKILLをコピー型からルーティング・手順型へ変更する
+
+- 日付：2026-08-23
+- 状態：確定
+- 対象：`.claude/skills/training-design/SKILL.md`
+- 決定：
+  - training-design SKILLを、研修設計原則を複製する「コピー型」から、正本を必ず読み込ませる「ルーティング・手順型」へ変更する。
+  - 研修の定義・設計思想・学習原則は `grow3-training-design-os.md` を唯一の正本とする。理論・フレームの定義の正本は `grow3-frameworks.md`。
+  - SKILL.mdは、発火条件（frontmatter）、必須読込順序、採点資産の振り分け、実行手順、使い分け、停止条件、完了時検証のみを保持する。
+  - 正本本文（設計哲学・学習の最小機構・ワークの型・採点軸等）はSKILL.mdへ再掲しない。
+  - 採点は実在資産へルーティングする：`grow3-judgment` references/training-review.md で研修タイプを判定し、参加型は coaching-training スキルの3軸、知識習得型は training-review.md の一般5軸を使う。
+- 理由：
+  - コピー型は正本の更新のたびにドリフトが再発する。実測では、DEC-026の正本更新直後にSKILLとの類似度が0.886→0.734へ低下し、新規6概念（研修の定義・介入境界・学習の最小機構・三人の読み手・仮想体験ゲーム・発見の所有権）がSKILL側に1つも存在しない状態になった。
+  - `financial-analysis` スキルが既に「正本を複製せず、ルーティングと手順のみを持つ」型で運用されており、既存実装例として参照した（構造は training-design の役割に合わせて再設計し、機械的コピーはしていない）。
+- 採用しなかった案：
+  - 同じ原則をSKILLへ同期し続ける案（更新のたびにドリフトが再発するため）。
+  - 採点軸の正本 `grow3-training-scoring-axes.md` を新設してから参照する案（今回のスコープ外。基準書の新設は standards-authoring を適用する別変更単位）。
+- 付随確認事項（2026-08-23確認・今回は対処しない）：
+  - `grow3-training-scoring-axes.md` は現物にもgit全履歴にも存在しない（追加・削除の記録なし）。
+  - 現在の採点資産は、参加型3軸（`.claude/skills/coaching-training/SKILL.md`）と知識伝達型5軸（`.claude/skills/grow3-judgment/references/training-review.md`）に分かれている。
+  - 今回は実在資産へルーティングし、架空の正本は新設しない。
+  - `grow3-training-design-os.md` 内（185行・201行）および `.claude/skills/coaching-training/SKILL.md` 内（11行・148行）に残る `grow3-training-scoring-axes.md` への参照切れの修正、または採点軸の正本統合は、基準書を扱う別変更単位として判断する。
+  - この参照切れは search-friction の canonical_not_found に相当するが、`logs/search-friction.yaml` は本変更単位の対象外指定のため追記していない（本DECと完了報告を記録先とする）。
+- 見直し条件：正本参照方式によって、実行時の読込漏れ・性能低下・判断不能が実際に発生した場合。
