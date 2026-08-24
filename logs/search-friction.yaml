@@ -22,6 +22,11 @@
 #   query: "育休の助成金要件の正本はどれか"
 #   searched: [grow3-frameworks, grow3-hr-system-design-os]
 #   result: fallback_used
+- date: 2026-08-20
+  type: canonical_not_found
+  query: "検品前提v2／生成経路A・B・C／面談用ワークシートAの正本はどこか"
+  searched: [grow3-frameworks, grow3-support-os, docs, .claude/skills]
+  result: canonical_not_found
 - date: 2026-08-24
   type: canonical_not_found
   query: "各文書が正本化済みかを判定する単一の基準はどれか（MANAGED_FILES・status canonical・DECISIONS.mdの確定DEC・status reviewed/approved/final/frozen の4系統に分裂）"
