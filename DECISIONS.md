@@ -792,3 +792,24 @@ DEC-019の承認フローに基づく機械的な承認記録であり、新し�
   - 実体のないファイルを参照解消のためだけに新設する案（内容の裏付けなく正本を作ることになる）。
   - 今回の修復と同時に採点軸全体を再設計する案（基準書の改訂は standards-authoring の工程を要する別変更単位）。
 - 見直し条件：採点軸の単一正本化が必要かどうかは、重複更新・判定不整合・第三の研修タイプの出現などの実害が確認された場合に再検討する。
+
+### DEC-029｜Practice Lens（業種横断の観点カード）を `schemas/practice-lens/` と `practice-lens/` に追加する
+
+- 日付：2026-10-10
+- 状態：確定
+- 対象：`schemas/practice-lens/`、`practice-lens/`（agents／framework／industries／library／tools）
+- 決定：
+  - 設計は凍結済みの v0.2.2 をそのまま取り込む。カード・schema・rubric・エージェント定義の内容は変更しない。例外は、取り込み時に配置に合わせて行った次の修正のみとする。
+    - `tools/schema_check.py` のパス指定（リポジトリ直下基準への変更と、表示パスの区切り文字の統一）
+    - `practice-lens/` 配下の文書内のパス表記
+    - `framework/sources.md` の旧設計の記述1行の訂正
+  - organization-diagnosis には手を入れず、common.schema.json の部品（日時・拡張領域・機密度・各ID）を `$ref` で借りる。`$id` は DEC-010 の規約に沿い `https://grow3.jp/schemas/practice-lens/v0.1/` とする。
+  - 公開側は、顧客に紐づく記録を持たない。カード・schema・検査ツールに加え、エージェント定義・rubric・出典台帳・業種調査（公的資料に基づくもの）を置く。顧客Evidenceに紐づく promotion record と切り出し記録（edition）は非公開の案件領域に置き、公開リポジトリに `library/editions/` は持たない。
+  - 検査は4ゲート（schema／rubric／provenance／cases_count）。正式Library（`library/lens_library.json`）の採用は Grow3 が判断し、最初の1枚の採用時に作る。
+  - tools は `practice-lens/` を基準フォルダとして動く。`schema_check.py` は `schemas/organization-diagnosis/common.schema.json` をリポジトリ内の正本から読む。
+- 理由：カードは case 横断で、case_id 必須の既存 registerEnvelope に入らない。common.schema.json の enum を変えずに済ませる。公開リポジトリに顧客由来の情報を持ち込まない。
+- 採用しなかった案：
+  - registerType に `observation_cards` を足す案（common を触ることになり、DEC-014 が別途要る）。
+  - Pattern register に載せる案（「2件以上の反復」という定義を汚す）。
+  - リポジトリ直下に tools／framework／agents／library／industries を展開する案（直下の名前の衝突と混在を避けるため）。
+- 見直し条件：正式Libraryに最初のカードを採用するとき。promotion record の運用を非公開領域で始めるとき。
