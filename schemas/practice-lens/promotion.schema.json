@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grow3.jp/schemas/practice-lens/v0.1/promotion.schema.json",
+  "title": "Lens Promotion Record (private)",
+  "description": "公開Lensと実案件のEvidenceの紐付け記録。Lensを生んだ根拠（origin）と、Lensを使って有効性を確認した記録（field_use）の2種類を record_kind で区別する。非公開領域にのみ置く。公開カード側には顧客との紐付けを残さない。",
+  "type": "object",
+  "required": ["schema_version", "record_type", "last_updated_at", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "0.1.0" },
+    "record_type": { "const": "lens_promotion" },
+    "last_updated_at": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/dateTime" },
+    "items": { "type": "array", "items": { "$ref": "#/$defs/promotion" } },
+    "extensions": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/extensions" }
+  },
+  "$defs": {
+    "promotionId": { "type": "string", "pattern": "^PRM-[0-9]{3,}$" },
+    "promotion": {
+      "type": "object",
+      "required": ["promotion_id", "record_kind", "lens_id", "case_id", "evidence_ids", "sensitivity", "recorded_at"],
+      "additionalProperties": false,
+      "properties": {
+        "promotion_id": { "$ref": "#/$defs/promotionId" },
+        "record_kind": {
+          "type": "string",
+          "enum": ["origin", "field_use"],
+          "description": "originはLens生成の根拠。field_useはLensを実案件で問いとして使用し、有効性を確認した記録。cases_countにはfield_useのみを算入する。使ったが効かなかった記録はここに入れず、顧客側のEvidence・打合せ記録に残す。"
+        },
+        "lens_id": { "$ref": "card.schema.json#/$defs/cardId" },
+        "case_id": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/caseId" },
+        "mtg_session_id": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/mtgSessionId" },
+        "evidence_ids": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/evidenceId" }
+        },
+        "abstraction_note": {
+          "type": "string",
+          "description": "何を落として一般化したか（例：固有の仕上げ部位の指定を外し『見えにくい部分まで品質対象』へ）。原文の逐語は写さない。Evidence側にある。"
+        },
+        "sensitivity": {
+          "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/sensitivity",
+          "description": "参照したEvidenceの最大値を下回らせない（継承規則）。exclude_from_org_diagnosis のEvidenceは参照しない。"
+        },
+        "recorded_at": {
+          "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/dateTime",
+          "description": "この記録を作った日時。originでもfield_useでも同じ意味。Libraryへの正式採用の日時ではない。"
+        },
+        "extensions": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/extensions" }
+      }
+    }
+  }
+}

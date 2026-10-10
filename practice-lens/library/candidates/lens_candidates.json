@@ -1,0 +1,927 @@
+{
+  "schema_version": "0.1.0",
+  "library_type": "practice_lens",
+  "last_updated_at": "2026-10-10T15:20:00+09:00",
+  "items": [
+    {
+      "card_id": "LENS-001",
+      "title": "現地で何を持ち帰るかを、後工程の必要から先に決める",
+      "business_model_tags": [
+        "project_based"
+      ],
+      "value_chain_stages": [
+        "survey"
+      ],
+      "boundary_context": null,
+      "observation": "設置場所・施工場所を見に行くとき、写真・寸法・周辺状況・搬入経路のうち、設計・見積・施工がそれぞれ必要とするものを、出発前に決める。",
+      "why_it_matters": "持ち帰り漏れは設計・見積のやり直しと施工当日の手戻りになり、効率と品質に直結する。",
+      "examples": [
+        {
+          "industry": "signage",
+          "scene": "営業担当が看板の設置予定地に行き、設計と施工のために壁面の寸法・取付け面の状態・周辺道路・電源の位置まで撮ってから帰る。"
+        },
+        {
+          "industry": "electrical",
+          "scene": "電気工事の担当者が見積前に現地へ行き、機器の設置位置と配線の経路、既設の盤の状態を見て仕様書に書き込んでから見積りに落とす。"
+        }
+      ],
+      "prompt": "現地を見に行ったとき、後の人のために必ず持ち帰るものは何ですか。",
+      "anti_pattern": "「写真を撮ってきた」で終わり、何を撮るかが行った人任せになっている。",
+      "sources": [
+        "屋外広告業 モデル評価シート・モデルカリキュラム（厚労省報道発表別添 2012-05）",
+        "JOB tag 看板制作",
+        "JOB tag 電気工事士",
+        "職業能力評価基準 電気通信工事業"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-002",
+      "title": "見積りを、誰の目を通してから出すかを決める",
+      "business_model_tags": [
+        "project_based",
+        "store_retail"
+      ],
+      "value_chain_stages": [
+        "intake"
+      ],
+      "boundary_context": {
+        "from": "store_retail",
+        "to": "project_based"
+      },
+      "observation": "材料の種類判定と工数の積み上げを、担当者が一人で出すか、前例の有無を見て上級者の判断を通してから出すかを決める。",
+      "why_it_matters": "見積りの精度は粗利と手戻りを決め、上級者だけが持つ積算の判断は継承の対象になる。",
+      "examples": [
+        {
+          "industry": "signage",
+          "scene": "前例の無い形状の看板の見積りで、担当者が材料と工数を積み上げたあと、ベテランの職人に材料の種類判定を見直してもらってから依頼主に出す。"
+        },
+        {
+          "industry": "retail",
+          "scene": "菓子店で祝い用の注文菓子を受けたとき、材料と手間を積み上げた見積りを親方が見てから客に金額を伝える。"
+        },
+        {
+          "industry": "electrical",
+          "scene": "電気工事の営業担当が、前例の無い改修案件の見積りを出す前に、施工側の職長に工法と工数を確かめてから金額を出す。"
+        }
+      ],
+      "prompt": "見積りを出す前に、誰が、どこを見て直しますか。",
+      "anti_pattern": null,
+      "sources": [
+        "広告美術仕上げ技能士（技能検定）",
+        "職業能力評価基準 屋外広告業",
+        "菓子製造技能検定 試験科目及びその範囲並びにその細目（厚労省）",
+        "職業能力評価基準 電気通信工事業",
+        "JOB tag 電気工事士"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-003",
+      "title": "計画・契約の外の依頼を、受けるか断るか戻すかを決める",
+      "business_model_tags": [
+        "store_retail",
+        "human_service",
+        "project_based"
+      ],
+      "value_chain_stages": [
+        "intake",
+        "production",
+        "handoff",
+        "after"
+      ],
+      "boundary_context": {
+        "from": "store_retail",
+        "to": "project_based"
+      },
+      "observation": "予約・贈答・保険外・工事の追加のように計画や契約の外にある依頼を受けたとき、その場で受けるか、区分して受けるか、断って正式な変更（見積・計画変更・上長対応）に戻すかを決める。",
+      "why_it_matters": "受ける線が人で違うと、約束の履行・採算・記録・同意が案件ごとにぶれ、顧客価値と効率を同時に損なう。",
+      "examples": [
+        {
+          "industry": "retail",
+          "scene": "繁忙期に客から贈答用の包装と予約を頼まれたレジ係が、その場で受けるか、店長に確かめてから受けるかを決める。"
+        },
+        {
+          "industry": "care",
+          "scene": "訪問中に利用者の家族から家族の部屋の掃除も頼まれた訪問介護員が、その場で断って理由を説明するか、サービス提供責任者に戻して計画の話にするかを決める。"
+        },
+        {
+          "industry": "care",
+          "scene": "利用者から大掃除や草むしりを頼まれたサービス提供責任者が、保険外サービスとして区分して受けるか、他の支援先を案内するかを決める。"
+        },
+        {
+          "industry": "electrical",
+          "scene": "現場で元請から工事内容の追加を頼まれた施工管理者が、その場で作業に入るか、見積りを出して下請と工期を調整してから入るかを決める。"
+        },
+        {
+          "industry": "retail",
+          "scene": "返品を持ち込まれたレジ係が、その場で処理するか、店長に上げるかを決める。"
+        }
+      ],
+      "prompt": "「それもお願い」と言われたとき、受ける・受けないを何で決めていますか。",
+      "anti_pattern": null,
+      "sources": [
+        "JOB tag スーパーレジ係",
+        "スーパーマーケット白書 2025年版",
+        "JOB tag スーパー店長",
+        "職業能力評価基準 スーパーマーケット業",
+        "老振第76号 指定訪問介護事業所の事業運営の取扱等について",
+        "札幌市 訪問介護 自己点検シート（基準条例・解釈通知の再掲）",
+        "千葉県 集団指導資料 訪問介護（R5）",
+        "キャリアマップ・職業能力評価シート 導入・活用マニュアル（在宅介護業）",
+        "JOB tag 訪問介護のサービス提供責任者",
+        "職業能力評価基準 電気通信工事業",
+        "JOB tag 建築施工管理技術者",
+        "国土交通省 電気通信設備工事監督技術基準（案）令和6年3月"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-004",
+      "title": "制度・条例の線を、入口で引くか現場で引くかを決める",
+      "business_model_tags": [
+        "project_based",
+        "human_service"
+      ],
+      "value_chain_stages": [
+        "intake",
+        "survey",
+        "design"
+      ],
+      "boundary_context": null,
+      "observation": "自治体の条例や給付範囲など「できる・できない」を決める制度の線を、受注・計画の段階で確認して顧客と合意しておくか、現場の担当者が初めて引くかを決める。",
+      "why_it_matters": "現場で初めて線を引くと、断る相手が目の前の顧客になり、適法性（品質）と顧客価値の両方を損なう。",
+      "examples": [
+        {
+          "industry": "signage",
+          "scene": "受注の打合せの段階で、営業担当が設置予定地の自治体の屋外広告物条例を調べ、看板の大きさと設置可否を依頼主に伝えてから設計に回す。"
+        },
+        {
+          "industry": "care",
+          "scene": "契約のとき、サービス提供責任者が利用者と家族に介護保険でできる家事とできない家事を説明して合意しておき、訪問介護員が現場で初めて断らなくて済むようにする。"
+        }
+      ],
+      "prompt": "「それはできません」の線を、契約や計画の段階で、誰がどう伝えていますか。",
+      "anti_pattern": null,
+      "sources": [
+        "屋外広告業 モデル評価シート・モデルカリキュラム（厚労省報道発表別添 2012-05）",
+        "JOB tag 看板制作",
+        "老振第76号 指定訪問介護事業所の事業運営の取扱等について",
+        "札幌市 訪問介護 自己点検シート（基準条例・解釈通知の再掲）"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-005",
+      "title": "資格・法令上、その作業を誰ならやってよいかを決める",
+      "business_model_tags": [
+        "project_based"
+      ],
+      "value_chain_stages": [
+        "design",
+        "install",
+        "close"
+      ],
+      "boundary_context": null,
+      "observation": "資格や法令で担当者が限定される作業（構造計算・電源接続・完了検査）について、案件の規模と設備の種類から必要な資格を見て、その作業を誰ならやってよいかを着手前に決める。",
+      "why_it_matters": "線が曖昧なまま進むと法令違反と事故の両方のリスクになり、安全と品質に直結する。",
+      "examples": [
+        {
+          "industry": "signage",
+          "scene": "大型の自立看板の案件で、製作・施工管理者が風圧・重量の計算を社内で済ませてよい規模か、建築士でないとできない規模かを見分ける。"
+        },
+        {
+          "industry": "signage",
+          "scene": "電飾付きの看板で、施工管理者が電源の接続を自社の作業員がやってよい範囲か、電気工事士でないとできない作業かを見分ける。"
+        },
+        {
+          "industry": "electrical",
+          "scene": "工事が終わったあと、完了検査を作業した本人がやってよいか、主任電気工事士でないとできないかを見て、検査する人を決める。"
+        }
+      ],
+      "prompt": "資格がないとできない作業は、誰ならやってよいかをどこで決めていますか。",
+      "anti_pattern": null,
+      "sources": [
+        "JOB tag 看板制作",
+        "屋外広告士（日広連）",
+        "広告美術仕上げ技能士（技能検定）",
+        "経済産業省（近畿）令和5年度電気工事業立入検査結果"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T05:49:09+09:00"
+    },
+    {
+      "card_id": "LENS-006",
+      "title": "自社でやるか外に出すかを、何を見て決めるか",
+      "business_model_tags": [
+        "project_based"
+      ],
+      "value_chain_stages": [
+        "production",
+        "install"
+      ],
+      "boundary_context": null,
+      "observation": "法令上は自社でもできる工程（構造体・基礎工事など）を、自社の技能・設備・納期・原価を見て、自社施工にするか外注にするかを案件ごとに決める。",
+      "why_it_matters": "線が会社として決まっていないと、品質・納期・原価が案件ごとに担当者任せになり効率を損なう。",
+      "examples": [
+        {
+          "industry": "signage",
+          "scene": "大型看板の構造体を、製作・施工管理者が自社の工場で組むか鉄骨業者に出すかを、規模と納期を見て決める。"
+        },
+        {
+          "industry": "signage",
+          "scene": "自立看板の基礎工事を、施工担当が自社で掘って打つか土木業者に出すかを、看板の重さと設置方法を見て決める。"
+        },
+        {
+          "industry": "electrical",
+          "scene": "施工管理者が配管工事の一部を、自社の人員の空きと工期を見て、自社で持つか協力業者に出すかを決める。"
+        }
+      ],
+      "prompt": "外に出す・出さないは、御社では何で決まりますか。",
+      "anti_pattern": null,
+      "sources": [
+        "JOB tag 看板制作",
+        "職業能力評価基準 屋外広告業",
+        "職業能力評価基準 ディスプレイ業",
+        "JOB tag 建築施工管理技術者",
+        "職業能力評価基準 総合工事業"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T05:45:59+09:00"
+    },
+    {
+      "card_id": "LENS-007",
+      "title": "外から受け取るとき、数量で済ませるか品質と作り手まで見るかを決める",
+      "business_model_tags": [
+        "project_based",
+        "store_retail"
+      ],
+      "value_chain_stages": [
+        "production",
+        "handoff"
+      ],
+      "boundary_context": null,
+      "observation": "外注先・納入先から受け取る物を、数量と納期の確認で済ませるか、品質と誰が実際に作ったかまで見るかを決める。",
+      "why_it_matters": "受け取り時に見なかったものは、次工程か顧客の前で見つかり品質を損なう。",
+      "examples": [
+        {
+          "industry": "retail",
+          "scene": "納品された青果を受ける店員が、伝票の数量を合わせるだけで倉庫に入れるか、箱を開けて傷みを見てから受けるかを決める。"
+        },
+        {
+          "industry": "signage",
+          "scene": "外注した構造体が戻ってきたとき、施工管理者が寸法と納期だけ確かめるか、溶接と塗装の仕上がりまで見てから施工に回すかを決める。"
+        },
+        {
+          "industry": "electrical",
+          "scene": "下請に出した工事の完了報告を受けた施工管理者が、実際に作業した人の氏名まで確かめて帳簿に書く。"
+        }
+      ],
+      "prompt": "入ってきたものを受け取るとき、数のほかに何を見ますか。",
+      "anti_pattern": null,
+      "sources": [
+        "JOB tag スーパー店員",
+        "職業能力評価基準 スーパーマーケット業 導入・活用マニュアル",
+        "職業能力評価基準 外食産業",
+        "職業能力評価基準 屋外広告業",
+        "JOB tag 看板制作",
+        "経済産業省（近畿）令和5年度電気工事業立入検査結果"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-008",
+      "title": "渡す前に、図面・計画のほかに何を渡すかを決める",
+      "business_model_tags": [
+        "repetitive_production",
+        "project_based",
+        "human_service",
+        "store_retail"
+      ],
+      "value_chain_stages": [
+        "handoff"
+      ],
+      "boundary_context": {
+        "from": "repetitive_production",
+        "to": "project_based"
+      },
+      "observation": "製作から施工へ、計画者から実施者へ渡すとき、図面や計画書に載らない現場条件（営業時間・停電時間・作業範囲・留意事項・特売価格）のうち、何を文書で渡すかを決める。",
+      "why_it_matters": "渡らなかった条件は現場で初めて露わになり、手戻りと事故の原因になる（安全・効率）。",
+      "examples": [
+        {
+          "industry": "signage",
+          "scene": "工場で看板ができあがったとき、製作・施工管理者が図面と完成品に加えて、依頼主の閉店時刻と現地調査の写真を施工班に渡す。"
+        },
+        {
+          "industry": "electrical",
+          "scene": "病院の設備工事で、元請の責任者が着手前に、下請と施設側の技師に作業範囲・作業時間・停電時間を文書で示す。"
+        },
+        {
+          "industry": "care",
+          "scene": "サービス提供責任者が新しい利用者の訪問を割り当てるとき、計画書とは別に、持病と家族の在宅状況と最近の変化を留意事項として書いて訪問介護員に渡す。"
+        },
+        {
+          "industry": "retail",
+          "scene": "開店前に売場担当が、当日の特売品の種類と価格をレジ係に伝えてからレジを開ける。"
+        }
+      ],
+      "prompt": "図面や計画のほかに、渡す相手に必ず伝えていることは何ですか。",
+      "anti_pattern": "「図面を渡した＝伝えた」になっている。",
+      "sources": [
+        "屋外広告業 モデル評価シート・モデルカリキュラム（厚労省報道発表別添 2012-05）",
+        "JOB tag 看板制作",
+        "職場のあんぜんサイト（厚労省・労働災害事例）",
+        "JOB tag 建築施工管理技術者",
+        "札幌市 訪問介護 自己点検シート（基準条例・解釈通知の再掲）",
+        "千葉県 集団指導資料 訪問介護（R5）",
+        "居宅サービス事業所におけるICT機器・ソフトウェア導入に関する手引き（R3改訂版）",
+        "JOB tag 訪問介護のサービス提供責任者",
+        "JOB tag スーパーレジ係",
+        "職業能力評価基準 スーパーマーケット業"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-009",
+      "title": "図面・計画に無い意図を、誰に確認してから着手するかを決める",
+      "business_model_tags": [
+        "project_based",
+        "repetitive_production",
+        "human_service"
+      ],
+      "value_chain_stages": [
+        "handoff",
+        "design",
+        "production"
+      ],
+      "boundary_context": {
+        "from": "project_based",
+        "to": "repetitive_production"
+      },
+      "observation": "図面・計画書を受け取ったとき、書かれていない設計意図や目標の粒度を、作った人に確認してから着手するか、自分で補って進めるかを決める。",
+      "why_it_matters": "意図が渡らないまま進むと、図面どおりでも依頼と違うものができ、顧客価値と効率を損なう。",
+      "examples": [
+        {
+          "industry": "electrical",
+          "scene": "施工図を受け取った施工管理者が、配線ルートの意図が読めない箇所を、着手前に設計者と打ち合わせて確かめる。"
+        },
+        {
+          "industry": "signage",
+          "scene": "設計図を受けた製作担当が、寸法の取り方に迷う箇所を自分で製作図に起こして進めるか、設計担当に聞いてから起こすかを決める。"
+        },
+        {
+          "industry": "care",
+          "scene": "施設サービス計画を受け取った介護職員が、「自立を支援する」と書かれた目標を、日々の介助で何を変えることなのか計画の作成者に確かめてから介助に入る。"
+        }
+      ],
+      "prompt": "図面や計画を受け取って「どういう意図？」と聞くのは、誰に、いつですか。",
+      "anti_pattern": null,
+      "sources": [
+        "JOB tag 建築施工管理技術者",
+        "職業能力評価基準 総合工事業",
+        "屋外広告業 モデル評価シート・モデルカリキュラム（厚労省報道発表別添 2012-05）",
+        "広告美術仕上げ技能士（技能検定）",
+        "東京都 集団指導資料 指定介護老人福祉施設（R5）"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-010",
+      "title": "現場で気づいたことを、上げるか手元に留めるかを決める",
+      "business_model_tags": [
+        "human_service",
+        "store_retail",
+        "repetitive_production",
+        "project_based"
+      ],
+      "value_chain_stages": [
+        "handoff",
+        "close",
+        "production",
+        "after",
+        "support"
+      ],
+      "boundary_context": {
+        "from": "store_retail",
+        "to": "repetitive_production"
+      },
+      "observation": "現場で実施した人が、利用者の普段との違い・計画外の依頼・売れ残り・点検で見つけた劣化のような気づきを、記録や報告で計画側に上げるか、手元に留めて様子を見るかを決める。",
+      "why_it_matters": "上がらなかった気づきは次の計画・翌日の製造量・予防保全に反映されず、安全と顧客価値が担当者の経験に依存する。",
+      "examples": [
+        {
+          "industry": "care",
+          "scene": "一人で訪問した訪問介護員が、利用者の食欲がいつもより落ちているのに気づき、記録に一言書いて立ち寄り時に出すか、訪問先からサービス提供責任者に電話するかを決める。"
+        },
+        {
+          "industry": "care",
+          "scene": "夜勤の介護職員が巡回で利用者の皮膚の赤みに気づき、看護職員にその場で伝えるか、記録に書いて朝の申し送りに回すかを決める。"
+        },
+        {
+          "industry": "retail",
+          "scene": "菓子店の販売担当が閉店時に、売れ残った品目と売り切れた時刻を翌朝の製造担当に伝えるか、廃棄して終わりにするかを決める。"
+        },
+        {
+          "industry": "retail",
+          "scene": "店長が地域の競合店の値下げに気づいたとき、本部に報告するか、自店の値付けで対応して報告しないかを決める。"
+        },
+        {
+          "industry": "electrical",
+          "scene": "保守点検で古い配線の劣化を見つけた電気技術者が、その場で修理して終えるか、顧客に予防保全の提案として上げるかを決める。"
+        }
+      ],
+      "prompt": "現場で気づいたことは、誰に、どの形で戻していますか。戻らないものは何ですか。",
+      "anti_pattern": null,
+      "sources": [
+        "札幌市 訪問介護 自己点検シート（基準条例・解釈通知の再掲）",
+        "千葉県 集団指導資料 訪問介護（R5）",
+        "介護職員初任者研修 到達目標・評価・内容",
+        "居宅サービス事業所におけるICT機器・ソフトウェア導入に関する手引き（R3改訂版）",
+        "東京都 集団指導資料 指定介護老人福祉施設（R5）",
+        "JOB tag 訪問介護員",
+        "JOB tag 施設介護員",
+        "職業能力評価基準 スーパーマーケット業 導入・活用マニュアル",
+        "JOB tag スーパー店長",
+        "JOB tag 洋菓子製造、パティシエ",
+        "JOB tag 電気技術者",
+        "JOB tag 電気工事士"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-013",
+      "title": "型どおりで済ませるか、目的に照らして型から外すかを決める",
+      "business_model_tags": [
+        "store_retail",
+        "project_based"
+      ],
+      "value_chain_stages": [
+        "production",
+        "design"
+      ],
+      "boundary_context": null,
+      "observation": "規格・記入例・手順が用意されているとき、それどおりに作って済ませるか、今回の目的（売場・案件）に合わせて型から外すかを決める。",
+      "why_it_matters": "型どおりは速く均質だが、目的に合わないものが量産され顧客価値を損なう。",
+      "examples": [
+        {
+          "industry": "retail",
+          "scene": "青果売場の特売POPを作る担当が、決められた規格のPOPをそのまま付けるか、売場と客の目線に合わせて大きさと置き場所を変えるかを決める。"
+        },
+        {
+          "industry": "signage",
+          "scene": "道路使用許可の届出を作る担当が、過去の記入例をそのまま写して出すか、今回の工事内容に合わせて書き換えるかを決める。"
+        }
+      ],
+      "prompt": "決まった型があるとき、型から外すのはどんなときですか。誰が決めますか。",
+      "anti_pattern": "規格を守ったことが成果になり、目的が問われない。",
+      "sources": [
+        "職業能力評価基準 スーパーマーケット業 導入・活用マニュアル",
+        "屋外広告業 モデル評価シート・モデルカリキュラム（厚労省報道発表別添 2012-05）",
+        "JOB tag 看板制作"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-014",
+      "title": "工程を引くとき、図面の外の何まで見るかを決める",
+      "business_model_tags": [
+        "project_based"
+      ],
+      "value_chain_stages": [
+        "handoff",
+        "install"
+      ],
+      "boundary_context": null,
+      "observation": "設置日・作業順を決めるとき、製作の進みだけで引くか、申請の状況と現場の条件（営業時間・他業者の作業・停電できる時間帯）まで見てから引くかを決める。",
+      "why_it_matters": "見ずに引いた工程は現場の待ちと手戻りになり、経験者だけが持つ見方は継承の対象になる。",
+      "examples": [
+        {
+          "industry": "signage",
+          "scene": "施工管理者が設置日を決めるとき、製作の進みに加えて、道路使用許可の見込みと依頼主の閉店時刻を見てから工程表を引く。"
+        },
+        {
+          "industry": "electrical",
+          "scene": "現場管理者が翌週の段取りを組むとき、自分の班の作業だけでなく、他業者との相番の日程と停電できる時間帯を確かめてから順序を決める。"
+        }
+      ],
+      "prompt": "明日の段取りを組むとき、最初に何を確認しますか。",
+      "anti_pattern": null,
+      "sources": [
+        "JOB tag 看板制作",
+        "職業能力評価基準 屋外広告業",
+        "職業能力評価基準 電気通信工事業",
+        "JOB tag 建築施工管理技術者"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-015",
+      "title": "予定した作業を、中止・代替に切り替える線を決める",
+      "business_model_tags": [
+        "human_service",
+        "store_retail",
+        "project_based"
+      ],
+      "value_chain_stages": [
+        "production",
+        "install"
+      ],
+      "boundary_context": null,
+      "observation": "当日の体調・相場・設置先の営業時間を見て、予定どおりやるか、やめるか、代替（清拭・別日・夜間）に切り替えるかを、事前に置いた線で決める。",
+      "why_it_matters": "切り替えの線が無いと、安全側に倒すか予定を優先するかが担当者で分かれ、安全と顧客価値を損なう。",
+      "examples": [
+        {
+          "industry": "care",
+          "scene": "朝のバイタル測定で利用者の体温がいつもより高いとき、介護職員が今日の入浴を中止して清拭に替えるか、予定どおり入浴するかを決める。"
+        },
+        {
+          "industry": "retail",
+          "scene": "米の相場が急に上がった週に、店長が予定していた米の特売をやめるか、数量を絞って続けるかを決める。"
+        },
+        {
+          "industry": "signage",
+          "scene": "店舗の看板の取付け日が決まったとき、施工管理者が営業中の昼間にやるか、閉店後の夜間に回すかを決める。"
+        }
+      ],
+      "prompt": "「今日はやめよう」と決めるのは、何を見たときですか。",
+      "anti_pattern": null,
+      "sources": [
+        "東京都 集団指導資料 指定介護老人福祉施設（R5）",
+        "スーパーマーケット白書 2025年版",
+        "JOB tag 看板制作"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-016",
+      "title": "動いているものを止めてから手を入れるか、動かしたまま済ませるかを決める",
+      "business_model_tags": [
+        "project_based",
+        "store_retail"
+      ],
+      "value_chain_stages": [
+        "install",
+        "production",
+        "support"
+      ],
+      "boundary_context": null,
+      "observation": "配線・清掃・修理に入る前に、電源や機械を止める範囲（スイッチか盤内ブレーカーか元電源か）を決めるか、周囲への影響を理由に動かしたまま作業するかを決める。",
+      "why_it_matters": "動かしたまま作業する習慣は感電死亡・巻き込まれの直接原因になる（安全）。",
+      "examples": [
+        {
+          "industry": "electrical",
+          "scene": "病院の天井裏で配線を直す電気技師が、他の病室への影響を理由に活線のまま作業するか、停電の範囲を決めて止めてから作業するかを決める。"
+        },
+        {
+          "industry": "electrical",
+          "scene": "配電盤の配線を変える作業者が、盤内のブレーカーを切っただけで作業に入るか、電気室の元電源まで切ってから入るかを決める。"
+        },
+        {
+          "industry": "retail",
+          "scene": "惣菜売場の担当が閉店後に挽肉機械を洗うとき、電源を切って止めてから手を入れるか、動かしたまま洗うかを決める。"
+        }
+      ],
+      "prompt": "手を入れる前に止めるものは何ですか。止めずにやるのはどんなときですか。",
+      "anti_pattern": null,
+      "sources": [
+        "職場のあんぜんサイト（厚労省・労働災害事例）",
+        "厚労省 第三次産業（小売業・飲食店・社会福祉施設）の労働災害防止資料"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-017",
+      "title": "できあがりを、何と照合して完了と言うかを決める",
+      "business_model_tags": [
+        "project_based",
+        "repetitive_production",
+        "human_service"
+      ],
+      "value_chain_stages": [
+        "close"
+      ],
+      "boundary_context": {
+        "from": "repetitive_production",
+        "to": "project_based"
+      },
+      "observation": "完了を確認するとき、図面・配線図・計画書と照合するか、依頼内容・利用者の目標と照合するかを決める。",
+      "why_it_matters": "製作側と施工側で照合先が違うと、図面どおりでも依頼と違うものが「完了」になり、顧客価値と品質を損なう。",
+      "examples": [
+        {
+          "industry": "signage",
+          "scene": "看板を取り付け終えた施工担当が、図面どおりの寸法と位置だけ確かめて帰るか、打合せで依頼主が言った見え方まで確かめてから帰るかを決める。"
+        },
+        {
+          "industry": "electrical",
+          "scene": "配線を終えた電気工事士が配線図と違う箇所を見つけたとき、通電して動けば良しとするか、配線図との不一致として直してから引き渡すかを決める。"
+        },
+        {
+          "industry": "care",
+          "scene": "モニタリングで、サービス提供責任者が計画どおりの回数と時間で提供されたかを見るか、計画に書いた目標に近づいたかまで見るかを決める。"
+        },
+        {
+          "industry": "retail",
+          "scene": "和菓子職人が包装前の製品検査で、形と重さを見るだけか、異物と味まで確かめてから店頭に出すかを決める。"
+        }
+      ],
+      "prompt": "「できました」と言う前に、何と見比べていますか。",
+      "anti_pattern": null,
+      "sources": [
+        "JOB tag 看板制作",
+        "広告美術仕上げ技能士（技能検定）",
+        "屋外広告業 モデル評価シート・モデルカリキュラム（厚労省報道発表別添 2012-05）",
+        "電気工事士試験（電気技術者試験センター）",
+        "東京都 集団指導資料 指定介護老人福祉施設（R5）",
+        "JOB tag 和菓子製造、和菓子職人",
+        "菓子製造技能検定 試験科目及びその範囲並びにその細目（厚労省）"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-018",
+      "title": "仕上がりの合否を、何で示すかを決める",
+      "business_model_tags": [
+        "repetitive_production",
+        "project_based"
+      ],
+      "value_chain_stages": [
+        "production",
+        "close"
+      ],
+      "boundary_context": null,
+      "observation": "仕上がり（寸法・露出・色・味）の合否を、寸法などの数値、見本・写真、過去の良品、熟練者の目のうち何を基準に判断するかを決める。",
+      "why_it_matters": "数値や見本・写真に外に出した線は新人に渡せるが、目の線は人に付くので継承の対象になる（品質・継承）。",
+      "examples": [
+        {
+          "industry": "electrical",
+          "scene": "リングスリーブの圧着を終えた電気工事士が、心線の露出を定規で測り、決めた長さを超えていればやり直す。"
+        },
+        {
+          "industry": "signage",
+          "scene": "広告面の塗装で、職長が指定色と調合した塗料を見比べて色合せの合否を決め、新人には見本と並べて自分で判断させる。"
+        },
+        {
+          "industry": "retail",
+          "scene": "菓子職人が焼き上がりの菓子を一つ割って、色と香りで店頭に出せるかどうかを決める。"
+        }
+      ],
+      "prompt": "「この仕上がりはダメ」を、新人にどう伝えていますか。",
+      "anti_pattern": null,
+      "sources": [
+        "電気工事士試験（電気技術者試験センター）",
+        "広告美術仕上げ技能士（技能検定）",
+        "JOB tag 看板制作",
+        "菓子製造技能検定 試験科目及びその範囲並びにその細目（厚労省）"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T05:45:59+09:00"
+    },
+    {
+      "card_id": "LENS-019",
+      "title": "事故の原因を、人・手順・環境のどこに置くかを決める",
+      "business_model_tags": [
+        "human_service",
+        "project_based",
+        "store_retail"
+      ],
+      "value_chain_stages": [
+        "support"
+      ],
+      "boundary_context": null,
+      "observation": "事故・ヒヤリハットの後に、原因を本人（職員）要因・手順・環境のどこに置くかを決める。",
+      "why_it_matters": "個人の責任で終えると手順と環境が変わらず、同じ事故が繰り返される（安全・継承）。",
+      "examples": [
+        {
+          "industry": "care",
+          "scene": "利用者が居室で転倒したあと、事故報告書を書く職員が、原因を本人のふらつきに置くか、見守りの手順に置くか、床の段差に置くかを決める。"
+        },
+        {
+          "industry": "electrical",
+          "scene": "配電盤作業中の感電未遂のあと、現場責任者が原因を作業者の不注意に置くか、元電源を切らない手順に置くかを決める。"
+        },
+        {
+          "industry": "retail",
+          "scene": "挽肉機械に手を巻き込まれかけたあと、店長が原因を本人の不注意に置くか、機械を止めずに洗う手順と壊れたままのスイッチに置くかを決める。"
+        }
+      ],
+      "prompt": "事故やヒヤリの後、何を変えましたか。人を注意して終わったことはありますか。",
+      "anti_pattern": null,
+      "sources": [
+        "介護保険施設等における事故の報告様式等について（老高発1129第1号 R6）",
+        "職場のあんぜんサイト（厚労省・労働災害事例）",
+        "職業能力評価基準 電気通信工事業",
+        "厚労省 第三次産業（小売業・飲食店・社会福祉施設）の労働災害防止資料"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-020",
+      "title": "指示元が複数あるとき、誰の判断が最後に残るかを決めておく",
+      "business_model_tags": [
+        "project_based",
+        "store_retail"
+      ],
+      "value_chain_stages": [
+        "install",
+        "production",
+        "support"
+      ],
+      "boundary_context": null,
+      "observation": "本部・店長・担当、元請・下請・施設側のように指示が多層にあるとき、現場の判断をどの層に残し、誰が作業範囲と時間を決めるかを先に決めておく。",
+      "why_it_matters": "指揮が曖昧な現場は事故の原因になり、権限が曖昧な店舗は改善が止まる（安全・効率）。",
+      "examples": [
+        {
+          "industry": "electrical",
+          "scene": "病院の設備工事で、元請の責任者が着手前に、施設側の技師とビル管理会社がいる中で誰が作業の指揮を執るかを決めて全員に伝える。"
+        },
+        {
+          "industry": "retail",
+          "scene": "店長が巡回で陳列を直すよう指示したあとに本部の指導員が別の並べ方を指導したとき、担当者がどちらに従うかを店長が決めておく。"
+        },
+        {
+          "industry": "retail",
+          "scene": "店長が仕入れの仕組みを変えたいと思ったとき、自店の判断で変えるか、商品部長に上げるかを決める。"
+        }
+      ],
+      "prompt": "「誰の言うことを聞けばいいか」迷う場面はありますか。そこで最後に決めるのは誰ですか。",
+      "anti_pattern": null,
+      "sources": [
+        "職場のあんぜんサイト（厚労省・労働災害事例）",
+        "JOB tag 建築施工管理技術者",
+        "職業能力評価基準 スーパーマーケット業",
+        "JOB tag スーパー店長",
+        "職業能力評価基準 スーパーマーケット業 導入・活用マニュアル"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-021",
+      "title": "新人を単独に切り替える時期を、何を見て決めるか",
+      "business_model_tags": [
+        "human_service",
+        "store_retail"
+      ],
+      "value_chain_stages": [
+        "support",
+        "production"
+      ],
+      "boundary_context": null,
+      "observation": "同行・補助付きで始めた新人を、本人の技能と相手（利用者・作業）の難度を見て、いつ単独訪問や加工担当に切り替えるかを決める。",
+      "why_it_matters": "切り替えが早すぎれば事故、遅すぎれば育たないので、安全と継承の両方に効く。",
+      "examples": [
+        {
+          "industry": "care",
+          "scene": "サービス提供責任者が、新任の訪問介護員に同行を何回付けたあとその利用者への単独訪問に切り替えるかを、本人の介助の様子と利用者の難しさを見て決める。"
+        },
+        {
+          "industry": "retail",
+          "scene": "店長が入社間もない店員に、包丁を使う店内加工をいつから一人で持たせるかを、切り方の習熟を見て決める。"
+        }
+      ],
+      "prompt": "新人を一人で行かせる（任せる）のは、何ができたときですか。",
+      "anti_pattern": null,
+      "sources": [
+        "JOB tag 訪問介護のサービス提供責任者",
+        "職業能力評価基準 在宅介護業",
+        "JOB tag 訪問介護員",
+        "JOB tag スーパー店員",
+        "JOB tag スーパー店長",
+        "長野県小売業SAFEだより 第2号"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    },
+    {
+      "card_id": "LENS-022",
+      "title": "責任者が持つ仕事を、代行者にどこから渡すかを決める",
+      "business_model_tags": [
+        "store_retail",
+        "human_service"
+      ],
+      "value_chain_stages": [
+        "support"
+      ],
+      "boundary_context": null,
+      "observation": "店長・管理者が一人で持っている仕事（発注指示・人事評価・苦情・計画作成）を、代行者や補佐を置くときにどの仕事から渡し、どれを手元に残すかを決める。",
+      "why_it_matters": "渡す順が決まっていないと、多店舗化・多拠点化が責任者の長時間労働で止まる（継承・効率）。",
+      "examples": [
+        {
+          "industry": "retail",
+          "scene": "店長が休みの日に、発注の指示と苦情対応を店長代行に任せるか、自分に電話させるかを決める。"
+        },
+        {
+          "industry": "retail",
+          "scene": "店長が自店の営業方針を本部に推薦するとき、どこまで自店で決めてよいかを本部と確かめておく。"
+        },
+        {
+          "industry": "care",
+          "scene": "訪問介護の管理者がサービス提供責任者を兼務していたが、利用者が増えたので管理者補佐を置き、計画作成と訪問介護員への伝達から渡す。"
+        }
+      ],
+      "prompt": "自分がいない日に止まる仕事は何ですか。それを誰に、どこまで渡していますか。",
+      "anti_pattern": null,
+      "sources": [
+        "職業能力評価基準 専門店業",
+        "職業能力評価基準 スーパーマーケット業",
+        "JOB tag スーパー店長",
+        "職業能力評価基準 在宅介護業"
+      ],
+      "field_validation": {
+        "cases_count": 0
+      },
+      "review_status": "unreviewed",
+      "created_at": "2026-10-10T01:24:00+09:00",
+      "updated_at": "2026-10-10T02:10:00+09:00"
+    }
+  ]
+}
