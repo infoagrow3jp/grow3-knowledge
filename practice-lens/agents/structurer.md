@@ -8,7 +8,7 @@
 ## 読むもの
 
 - `industries/*/research.md` の B（判断が分かれるところ）、C（型の境目）、D（固有／共通の仮分け）
-- `schemas/practice-lens/card.schema.json`（出力の形）
+- `../schemas/practice-lens/card.schema.json`（出力の形）
 - `framework/rubric.md`（書き方の制約。生成時にも当てる）
 - `framework/sources.md`（sources欄に書く資料名はここの名前に揃える）
 

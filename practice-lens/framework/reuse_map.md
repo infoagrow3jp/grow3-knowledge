@@ -2,7 +2,7 @@
 
 正本：`infoagrow3jp/grow3-knowledge` の `schemas/organization-diagnosis/common.schema.json`（2026-10-09取得・確認）
 
-結論：**organization-diagnosis には手を入れない。** 隣に `practice-lens/` を置き、`$ref` で借りる。
+結論：**organization-diagnosis には手を入れない。** 隣に `schemas/practice-lens/` を置き、`$ref` で借りる。
 
 `$id` は正本と同じ規約で `https://grow3.jp/schemas/practice-lens/v0.1/…` とし、common への参照は `../../organization-diagnosis/v0.1/common.schema.json`（正本の `$id` に解決される）。`$id` は論理的な識別URIなので、実ファイルを `v0.1/` フォルダに置く必要はない。検査は `tools/schema_check.py` が `$id` で解決する。
 
@@ -36,7 +36,7 @@ GPT案は `registerType` のenumに `observation_cards` を足す方向だが、
 
 なので封筒ごと別にする。中身の部品だけ借りる。
 
-## New（practice-lens/ に新しく置くもの）
+## New（schemas/practice-lens/ に新しく置くもの）
 
 | 定義 | 内容 |
 |---|---|
