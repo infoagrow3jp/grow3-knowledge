@@ -813,3 +813,22 @@ DEC-019の承認フローに基づく機械的な承認記録であり、新し�
   - Pattern register に載せる案（「2件以上の反復」という定義を汚す）。
   - リポジトリ直下に tools／framework／agents／library／industries を展開する案（直下の名前の衝突と混在を避けるため）。
 - 見直し条件：正式Libraryに最初のカードを採用するとき。promotion record の運用を非公開領域で始めるとき。
+
+### DEC-030｜through-line（一本線の支援プロセス）を `through-line/` と `schemas/through-line/` に追加する
+
+- 日付：2026-10-11
+- 状態：確定
+- 対象：`through-line/`（agents／framework／fixtures／proposals／tools）、`schemas/through-line/monosashi.schema.json`
+- 決定：
+  - through-line v0.3.4 を取り込む（v0.3.3 から、架空の発言の言い回しだけを直したもの）。これは、数字 → 流れ → 現場 → 因果 → 制約 → 判断 → 人 の一本線を、organization-diagnosis の register の上でつなぐ**実験的な支援プロセス**であり、**実案件での検証は済んでいない**。検査（L1〜L12・M1〜M6）が確かめているのは、架空の1例と、それをわざと変えた例でのつながりだけである。
+  - organization-diagnosis には手を入れない。register の形は organization-diagnosis の schema が決め、through-line はその上に一本線の約束だけを載せる。
+  - モノサシ台帳の schema（`monosashi.schema.json`）は、organization-diagnosis から独立させて `schemas/through-line/` に置く。理由は、organization-diagnosis の register には規範（こう判断する）を置く場所がなく、registerType を足すと common.schema.json を変えることになるため。部品（caseId・日時・各ID・extensions）は common.schema.json から `$ref` で借りる。`$id` は DEC-010 の規約に沿い `https://grow3.jp/schemas/through-line/v0.1/` とする。
+  - `fixtures/fictional-signage/` は**架空のテストデータ**である（実在の会社・人物とは無関係。数値・発言・日付・聞き取り結果・認定はすべて架空）。実案件の register とモノサシ台帳（`monosashi.json`）は顧客に紐づく記録なので、公開リポジトリには置かず、非公開の案件領域に置く。
+  - `proposals/`（`constraint_calc.py` と指標定義書 6-1 の追補案）は、**財務側への未採用の提案**である。正本の `financial_calc.py` と `docs/financial-analysis_指標定義書_v0.2.md` は変えない。採否は、財務側で別に判断して記録する。
+  - モノサシを評価（等級別の期待行動）に使ってよいかは、人事制度設計OSの確認を経てから判断する。through-line の schema と検査が見るのは形だけである。
+  - 確定前の別コンテキストレビューは、GPT による実物レビュー（v0.1.1〜v0.3.3 の6回）で行った。
+- 理由：一本線の約束を、organization-diagnosis の凍結済み設計と common.schema.json を変えずに試せる形で持つため。公開リポジトリに顧客由来の情報を持ち込まないため。財務の正本を、検証前の提案で動かさないため。
+- 採用しなかった案：
+  - organization-diagnosis に registerType（モノサシ）を足す案（凍結済みの common.schema.json を変えることになる）。
+  - `constraint_calc.py` を `financial_calc.py` に直接入れる案（財務側の判断と検証の前に正本を変えることになる）。
+- 見直し条件：実案件で最初に一本線を通すとき。財務側が proposals の採否を決めたとき。モノサシを評価に使う最初の判断をするとき。
