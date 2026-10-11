@@ -1,0 +1,196 @@
+{
+  "schema_version": "0.1.0",
+  "case_id": "CASE-ORG-901",
+  "register_type": "hypotheses",
+  "last_updated_at": "2026-11-16T10:00:00+09:00",
+  "items": [
+    {
+      "hypothesis_id": "HYP-001",
+      "layer": "structure",
+      "claim": "会社全体の完了件数を縛っているのは、施工工程のうち班長の判断を待つ時間である。",
+      "supporting_evidence_ids": [
+        "EVD-20261115-005",
+        "EVD-20261115-006",
+        "EVD-20261115-002",
+        "EVD-20261115-001",
+        "EVD-20261115-003",
+        "EVD-20261108-003",
+        "EVD-20261115-008",
+        "EVD-20261115-010",
+        "EVD-20261115-009"
+      ],
+      "primary_supporting_evidence_ids": [
+        "EVD-20261115-005",
+        "EVD-20261115-006",
+        "EVD-20261115-008"
+      ],
+      "supporting_pattern_ids": [
+        "PAT-001"
+      ],
+      "counter_evidence_review": {
+        "status": "none_found_in_reviewed_sources",
+        "reviewed_sources": [
+          "EVD-20261115-001",
+          "EVD-20261115-002",
+          "mtg/20261108_minutes.md"
+        ],
+        "note": "設計・製作の完了件数は施工を上回っており、施工より上流が詰まっている証拠は見つからなかった。"
+      },
+      "alternative_hypothesis_review": {
+        "status": "considered",
+        "alternatives": [
+          "製作の処理能力が制約である",
+          "設計・見積の着手待ちが制約である",
+          "受注（案件数）そのものが制約である"
+        ],
+        "note": "製作10件/週・設計9件/週に対し施工7件/週。受注が制約なら製作完了後の滞留は生じないはずだが、平均6.5日ある。"
+      },
+      "status": "TO_CONFIRM",
+      "sensitivity": "internal",
+      "confirmation_questions": [
+        "班長の判断待ちは、どの種類の案件で長いか。",
+        "班長が不在の日の施工完了件数はどうなるか。"
+      ],
+      "next_review_trigger": "4週間の実測（ACT-001）の回収後",
+      "created_at": "2026-11-16T10:00:00+09:00",
+      "last_reviewed_at": "2026-11-16T10:00:00+09:00",
+      "extensions": {
+        "through_line": {
+          "kind": "constraint_candidate",
+          "stage": "install",
+          "resource": "班長が判断対応に使える時間",
+          "constraint_unit": "時間",
+          "used_evidence_id": "EVD-20261115-010",
+          "available_evidence_id": "EVD-20261115-009",
+          "next_constraint": {
+            "stage": "design",
+            "basis_evidence_ids": [
+              "EVD-20261115-001",
+              "EVD-20261115-002"
+            ],
+            "note": "施工が上がっても、上流は設計9件/週・製作10件/週。次に縛るのは設計の見込み。"
+          }
+        }
+      }
+    },
+    {
+      "hypothesis_id": "HYP-002",
+      "layer": "structure",
+      "claim": "製作から施工へ渡る情報に、図面に載らない現場条件（営業時間・電源の位置など）が含まれていない。",
+      "supporting_evidence_ids": [
+        "EVD-20261108-001",
+        "EVD-20261108-002",
+        "EVD-20261115-004"
+      ],
+      "primary_supporting_evidence_ids": [
+        "EVD-20261108-001",
+        "EVD-20261108-002"
+      ],
+      "supporting_pattern_ids": [],
+      "counter_evidence_review": {
+        "status": "not_reviewed",
+        "reviewed_sources": [],
+        "note": ""
+      },
+      "alternative_hypothesis_review": {
+        "status": "considered",
+        "alternatives": [
+          "現場条件は渡っているが、施工側が読んでいない"
+        ],
+        "note": ""
+      },
+      "status": "TO_CONFIRM",
+      "sensitivity": "internal",
+      "confirmation_questions": [
+        "受け渡しの書類に、現場条件を書く欄はあるか。"
+      ],
+      "next_review_trigger": "4週間の実測（ACT-001）の回収後",
+      "created_at": "2026-11-16T10:00:00+09:00",
+      "last_reviewed_at": "2026-11-16T10:00:00+09:00",
+      "extensions": {
+        "through_line": {
+          "kind": "structure"
+        }
+      }
+    },
+    {
+      "hypothesis_id": "HYP-003",
+      "layer": "mental_model",
+      "claim": "現場の判断は班長がするもの、という前提が班員の側にある。",
+      "supporting_evidence_ids": [
+        "EVD-20261108-003"
+      ],
+      "primary_supporting_evidence_ids": [
+        "EVD-20261108-003"
+      ],
+      "supporting_pattern_ids": [],
+      "counter_evidence_review": {
+        "status": "found",
+        "reviewed_sources": [
+          "EVD-20261122-003"
+        ],
+        "note": "聞き取った案件では、班員は班長に聞かずに自分で判断して進めていた。"
+      },
+      "alternative_hypothesis_review": {
+        "status": "considered",
+        "alternatives": [
+          "班員は判断しているが、見るところが班長と違う（HYP-004）"
+        ],
+        "note": ""
+      },
+      "status": "WEAKENED",
+      "sensitivity": "internal",
+      "confirmation_questions": [
+        "班員は、どこまでなら自分で決めてよいと思っているか。"
+      ],
+      "next_review_trigger": "次の聞き取り",
+      "created_at": "2026-11-16T10:00:00+09:00",
+      "last_reviewed_at": "2026-11-22T17:00:00+09:00"
+    },
+    {
+      "hypothesis_id": "HYP-004",
+      "layer": "structure",
+      "claim": "班長が現場で見ているところ（電源の位置など）が班員に渡っていないため、班長は現場の判断を任せられず、確認が班長に集まる。",
+      "supporting_evidence_ids": [
+        "EVD-20261122-001",
+        "EVD-20261122-002",
+        "EVD-20261122-005",
+        "EVD-20261122-004",
+        "EVD-20261108-001"
+      ],
+      "primary_supporting_evidence_ids": [
+        "EVD-20261122-001",
+        "EVD-20261122-002",
+        "EVD-20261122-005"
+      ],
+      "supporting_pattern_ids": [
+        "PAT-001"
+      ],
+      "counter_evidence_review": {
+        "status": "not_reviewed",
+        "reviewed_sources": [],
+        "note": ""
+      },
+      "alternative_hypothesis_review": {
+        "status": "considered",
+        "alternatives": [
+          "受け渡しの情報が足りないだけで、見るところは渡っている"
+        ],
+        "note": "電源の位置は現場で見える情報で、受け渡しの不足だけでは説明できない。"
+      },
+      "status": "TO_CONFIRM",
+      "sensitivity": "internal",
+      "confirmation_questions": [
+        "ほかの班員も、電源の位置を最初に見ていないか。"
+      ],
+      "next_review_trigger": "ACT-006 の確認場面のあと",
+      "created_at": "2026-11-22T17:00:00+09:00",
+      "last_reviewed_at": "2026-11-22T17:00:00+09:00",
+      "extensions": {
+        "through_line": {
+          "kind": "structure"
+        }
+      }
+    }
+  ]
+}

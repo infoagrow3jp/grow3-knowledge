@@ -1,0 +1,172 @@
+{
+  "schema_version": "0.1.0",
+  "case_id": "CASE-ORG-901",
+  "register_type": "causal",
+  "last_updated_at": "2026-11-16T10:00:00+09:00",
+  "items": [
+    {
+      "causal_type": "causal_hypothesis",
+      "edge_id": "CED-001",
+      "from_variable": "受け渡し時に渡る現場条件の量",
+      "to_variable": "施工時の班長への確認件数",
+      "polarity": "negative",
+      "delay": "none",
+      "supporting_evidence_ids": [
+        "EVD-20261108-001",
+        "EVD-20261108-002",
+        "EVD-20261115-004"
+      ],
+      "supporting_hypothesis_ids": [
+        "HYP-002"
+      ],
+      "status": "TO_CONFIRM",
+      "sensitivity": "internal",
+      "notes": "",
+      "extensions": {
+        "through_line": {
+          "from": {
+            "layer": "field",
+            "stage": "handoff"
+          },
+          "to": {
+            "layer": "flow",
+            "stage": "install"
+          }
+        }
+      }
+    },
+    {
+      "causal_type": "causal_hypothesis",
+      "edge_id": "CED-002",
+      "from_variable": "施工時の班長への確認件数",
+      "to_variable": "班長の判断を待つ時間",
+      "polarity": "positive",
+      "delay": "none",
+      "supporting_evidence_ids": [
+        "EVD-20261115-006",
+        "EVD-20261108-003",
+        "EVD-20261115-008"
+      ],
+      "supporting_hypothesis_ids": [
+        "HYP-001"
+      ],
+      "status": "TO_CONFIRM",
+      "sensitivity": "internal",
+      "notes": "",
+      "extensions": {
+        "through_line": {
+          "from": {
+            "layer": "flow",
+            "stage": "install"
+          },
+          "to": {
+            "layer": "flow",
+            "stage": "install"
+          }
+        }
+      }
+    },
+    {
+      "causal_type": "causal_hypothesis",
+      "edge_id": "CED-003",
+      "from_variable": "班長の判断を待つ時間",
+      "to_variable": "施工の週あたり完了件数",
+      "polarity": "negative",
+      "delay": "none",
+      "supporting_evidence_ids": [
+        "EVD-20261115-006",
+        "EVD-20261115-005",
+        "EVD-20261115-008"
+      ],
+      "supporting_hypothesis_ids": [
+        "HYP-001"
+      ],
+      "status": "TO_CONFIRM",
+      "sensitivity": "internal",
+      "notes": "",
+      "extensions": {
+        "through_line": {
+          "from": {
+            "layer": "flow",
+            "stage": "install"
+          },
+          "to": {
+            "layer": "flow",
+            "stage": "install"
+          }
+        }
+      }
+    },
+    {
+      "causal_type": "causal_hypothesis",
+      "edge_id": "CED-004",
+      "from_variable": "施工の週あたり完了件数",
+      "to_variable": "年間の完了案件数（Q）",
+      "polarity": "positive",
+      "delay": "possible",
+      "supporting_evidence_ids": [
+        "EVD-20261115-005",
+        "EVD-20261115-003",
+        "EVD-20261101-001"
+      ],
+      "supporting_hypothesis_ids": [
+        "HYP-001"
+      ],
+      "status": "TO_CONFIRM",
+      "sensitivity": "internal",
+      "notes": "Q から MQ・G への関係は MQ会計の定義（指標定義書 §5）であり、因果の矢印にはしない。",
+      "extensions": {
+        "through_line": {
+          "from": {
+            "layer": "flow",
+            "stage": "install"
+          },
+          "to": {
+            "layer": "finance",
+            "stage": null
+          }
+        }
+      }
+    },
+    {
+      "causal_type": "causal_hypothesis",
+      "edge_id": "CED-005",
+      "from_variable": "施工の週あたり完了件数",
+      "to_variable": "施工応援の外注費（V候補）",
+      "polarity": "negative",
+      "delay": "possible",
+      "supporting_evidence_ids": [
+        "EVD-20261108-004",
+        "EVD-20261101-004"
+      ],
+      "supporting_hypothesis_ids": [],
+      "status": "TO_CONFIRM",
+      "sensitivity": "internal",
+      "notes": "",
+      "extensions": {
+        "through_line": {
+          "from": {
+            "layer": "flow",
+            "stage": "install"
+          },
+          "to": {
+            "layer": "finance",
+            "stage": "install"
+          }
+        }
+      }
+    },
+    {
+      "causal_type": "chain",
+      "edge_ids": [
+        "CED-001",
+        "CED-002",
+        "CED-003",
+        "CED-004"
+      ],
+      "sequence_note": "受け渡し → 確認件数 → 判断待ち → 施工完了件数 → Q。閉じていないのでループにはしない。",
+      "sensitivity": "internal",
+      "notes": ""
+    }
+  ]
+}

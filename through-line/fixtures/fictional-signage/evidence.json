@@ -1,0 +1,1040 @@
+{
+  "schema_version": "0.1.0",
+  "case_id": "CASE-ORG-901",
+  "register_type": "evidence",
+  "last_updated_at": "2026-11-16T10:00:00+09:00",
+  "items": [
+    {
+      "evidence_id": "EVD-20261101-001",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261101-001",
+      "source_file": "finance/fy2026_pl.xlsx",
+      "source_date": "2026-11-01",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "決算書・案件台帳",
+        "field": "完了案件数"
+      },
+      "normalized_statement": "直近期の完了案件数（Q）は420件。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "完了案件数 420",
+      "instrument_name": "決算書・案件台帳",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-01",
+      "population": "直近1期の全案件",
+      "value": 420.0,
+      "unit": "件",
+      "extensions": {
+        "through_line": {
+          "layer": "finance",
+          "stage": null
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261101-002",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261101-001",
+      "source_file": "finance/fy2026_pl.xlsx",
+      "source_date": "2026-11-01",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "financial_calc.calc_mq",
+        "field": "mq_total"
+      },
+      "normalized_statement": "直近期のMQ総額は113,400,000円（financial_calc.calc_mq の出力）。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "P=450000 V=180000 Q=420 → mq_total=113400000",
+      "instrument_name": "financial_calc.calc_mq",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-01",
+      "population": "直近1期の全案件",
+      "value": 113400000.0,
+      "unit": "円",
+      "extensions": {
+        "through_line": {
+          "layer": "finance",
+          "stage": null
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261101-003",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261101-001",
+      "source_file": "finance/fy2026_pl.xlsx",
+      "source_date": "2026-11-01",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "financial_calc.calc_mq",
+        "field": "g_operating_profit"
+      },
+      "normalized_statement": "直近期のGは8,400,000円（financial_calc.calc_mq の出力）。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "mq_total=113400000 F=105000000 → g=8400000",
+      "instrument_name": "financial_calc.calc_mq",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-01",
+      "population": "直近1期の全案件",
+      "value": 8400000.0,
+      "unit": "円",
+      "extensions": {
+        "through_line": {
+          "layer": "finance",
+          "stage": null
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261101-004",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261101-001",
+      "source_file": "finance/fy2026_ledger.xlsx",
+      "source_date": "2026-11-01",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "総勘定元帳",
+        "field": "外注費（施工応援）"
+      },
+      "normalized_statement": "直近期の施工応援の外注費は960万円（V候補・区分要確認）。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "外注費（施工応援）9,600,000",
+      "instrument_name": "総勘定元帳",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-01",
+      "population": "直近1期",
+      "value": 9600000.0,
+      "unit": "円",
+      "extensions": {
+        "through_line": {
+          "layer": "finance",
+          "stage": "install"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-001",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/4weeks_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "工程記録表",
+        "field": "設計完了件数"
+      },
+      "normalized_statement": "設計・見積の完了は週平均9.0件。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "設計完了件数 9.0",
+      "instrument_name": "工程記録表",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 9.0,
+      "unit": "件/週",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "design",
+          "measure": "throughput"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-002",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/4weeks_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "工程記録表",
+        "field": "製作完了件数"
+      },
+      "normalized_statement": "製作の完了は週平均10.0件。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "製作完了件数 10.0",
+      "instrument_name": "工程記録表",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 10.0,
+      "unit": "件/週",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "production",
+          "measure": "throughput"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-003",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/4weeks_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "工程記録表",
+        "field": "製作完了→施工着手の日数"
+      },
+      "normalized_statement": "製作完了から施工着手までの滞留は平均6.5日。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "製作完了→施工着手の日数 6.5",
+      "instrument_name": "工程記録表",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 6.5,
+      "unit": "日",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "handoff"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-004",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/4weeks_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "連絡記録",
+        "field": "施工前後の確認連絡件数"
+      },
+      "normalized_statement": "施工班から設計・製作への確認の連絡は週平均14.0件。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "施工前後の確認連絡件数 14.0",
+      "instrument_name": "連絡記録",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 14.0,
+      "unit": "件/週",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "handoff"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-005",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/4weeks_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "工程記録表",
+        "field": "施工完了件数"
+      },
+      "normalized_statement": "施工の完了は週平均7.0件。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "施工完了件数 7.0",
+      "instrument_name": "工程記録表",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 7.0,
+      "unit": "件/週",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "install",
+          "measure": "throughput"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-006",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/4weeks_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "施工日報",
+        "field": "班長の判断待ち時間"
+      },
+      "normalized_statement": "施工班長の判断を待つ時間は1案件あたり平均2.1時間。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "班長の判断待ち時間 2.1",
+      "instrument_name": "施工日報",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 2.1,
+      "unit": "時間/件",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "install",
+          "measure": "wait"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-007",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/4weeks_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "施工日報",
+        "field": "再訪問件数"
+      },
+      "normalized_statement": "施工後の再訪問（手直し）は4週間で5件。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "再訪問件数 5.0",
+      "instrument_name": "施工日報",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 5.0,
+      "unit": "件/4週",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "install"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-009",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/leader_time_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "班長の勤務配分表",
+        "field": "判断対応に使える時間"
+      },
+      "normalized_statement": "班長が判断対応に使える時間は週12.0時間（残りは自分の施工作業）。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "判断対応に使える時間 12.0",
+      "instrument_name": "班長の勤務配分表",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 12.0,
+      "unit": "時間/週",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "install",
+          "measure": "constraint_available"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-010",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/leader_time_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "班長の対応記録",
+        "field": "判断対応に使った時間"
+      },
+      "normalized_statement": "班長が判断対応に使った時間は週平均11.0時間。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "判断対応に使った時間 11.0",
+      "instrument_name": "班長の対応記録",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 11.0,
+      "unit": "時間/週",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "install",
+          "measure": "constraint_used"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-011",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/leader_time_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "班長の対応記録",
+        "field": "判断対応の時間（袖・壁面（標準））"
+      },
+      "normalized_statement": "袖・壁面（標準）の案件で、班長が判断対応に使った時間は1件あたり1.0時間。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "袖・壁面（標準） 1.0",
+      "instrument_name": "班長の対応記録",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 1.0,
+      "unit": "時間/件",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "install",
+          "measure": "constraint_per_item",
+          "item_type": "standard"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-012",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/leader_time_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "班長の対応記録",
+        "field": "判断対応の時間（自立・大型）"
+      },
+      "normalized_statement": "自立・大型の案件で、班長が判断対応に使った時間は1件あたり3.0時間。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "自立・大型 3.0",
+      "instrument_name": "班長の対応記録",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 3.0,
+      "unit": "時間/件",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "install",
+          "measure": "constraint_per_item",
+          "item_type": "large"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-013",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/leader_time_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "班長の対応記録",
+        "field": "判断対応の時間（電飾・改修）"
+      },
+      "normalized_statement": "電飾・改修の案件で、班長が判断対応に使った時間は1件あたり2.0時間。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "電飾・改修 2.0",
+      "instrument_name": "班長の対応記録",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 2.0,
+      "unit": "時間/件",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "install",
+          "measure": "constraint_per_item",
+          "item_type": "illuminated"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-014",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/4weeks_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "工程記録表",
+        "field": "完了件数（袖・壁面（標準））"
+      },
+      "normalized_statement": "袖・壁面（標準）の完了は4週間で16件。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "袖・壁面（標準） 16",
+      "instrument_name": "工程記録表",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 16.0,
+      "unit": "件/4週",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "install",
+          "measure": "mix_count",
+          "item_type": "standard"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-015",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/4weeks_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "工程記録表",
+        "field": "完了件数（自立・大型）"
+      },
+      "normalized_statement": "自立・大型の完了は4週間で4件。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "自立・大型 4",
+      "instrument_name": "工程記録表",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 4.0,
+      "unit": "件/4週",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "install",
+          "measure": "mix_count",
+          "item_type": "large"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-016",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "flow/4weeks_log.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "工程記録表",
+        "field": "完了件数（電飾・改修）"
+      },
+      "normalized_statement": "電飾・改修の完了は4週間で8件。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "電飾・改修 8",
+      "instrument_name": "工程記録表",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 8.0,
+      "unit": "件/4週",
+      "extensions": {
+        "through_line": {
+          "layer": "flow",
+          "stage": "install",
+          "measure": "mix_count",
+          "item_type": "illuminated"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-017",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "finance/job_cost_ledger.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "financial_calc.calc_mq",
+        "field": "m_unit_margin"
+      },
+      "normalized_statement": "袖・壁面（標準）の1件あたりMは230,000円（financial_calc.calc_mq の出力）。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "P=380000 V=150000 → m_unit_margin=230000",
+      "instrument_name": "financial_calc.calc_mq",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 230000.0,
+      "unit": "円/件",
+      "extensions": {
+        "through_line": {
+          "layer": "finance",
+          "stage": null,
+          "measure": "unit_margin",
+          "item_type": "standard"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-018",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "finance/job_cost_ledger.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "financial_calc.calc_mq",
+        "field": "m_unit_margin"
+      },
+      "normalized_statement": "自立・大型の1件あたりMは400,000円（financial_calc.calc_mq の出力）。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "P=700000 V=300000 → m_unit_margin=400000",
+      "instrument_name": "financial_calc.calc_mq",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 400000.0,
+      "unit": "円/件",
+      "extensions": {
+        "through_line": {
+          "layer": "finance",
+          "stage": null,
+          "measure": "unit_margin",
+          "item_type": "large"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-019",
+      "evidence_type": "MEASURED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "finance/job_cost_ledger.xlsx",
+      "source_date": "2026-11-15",
+      "source_pointer": {
+        "type": "measurement",
+        "instrument": "financial_calc.calc_mq",
+        "field": "m_unit_margin"
+      },
+      "normalized_statement": "電飾・改修の1件あたりMは290,000円（financial_calc.calc_mq の出力）。",
+      "source_form": "measured_raw",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の設定値。",
+      "raw_measurement": "P=480000 V=190000 → m_unit_margin=290000",
+      "instrument_name": "financial_calc.calc_mq",
+      "instrument_version": "fixture-1",
+      "measurement_date": "2026-11-15",
+      "population": "2026-10-19〜11-13の全案件",
+      "value": 290000.0,
+      "unit": "円/件",
+      "extensions": {
+        "through_line": {
+          "layer": "finance",
+          "stage": null,
+          "measure": "unit_margin",
+          "item_type": "illuminated"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261108-001",
+      "evidence_type": "REPORTED",
+      "mtg_session_id": "MTG-20261108-001",
+      "source_file": "mtg/20261108_minutes.md",
+      "source_date": "2026-11-08",
+      "source_pointer": {
+        "type": "minutes",
+        "section": "価値の流れとこだわり",
+        "paragraph": 3,
+        "line": 1
+      },
+      "normalized_statement": "施工班長は、図面に無い現場条件を施工当日に電話で確認している。",
+      "source_form": "summary_minutes",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "",
+      "occurrence_key_applicability": "applicable",
+      "occurrence_key": "OCC-20261020-001",
+      "occurrence_date": "2026-10-20",
+      "verbatim_excerpt": "図面には書いてないことが多いんで、現場に着いてから毎回電話して聞いてます。",
+      "speaker_category": "client_manager",
+      "speaker_role_label": "施工班長",
+      "speaker_attribution_status": "verified",
+      "elicitation_context": "open_question",
+      "extensions": {
+        "through_line": {
+          "layer": "field",
+          "stage": "install",
+          "lens_ids": [
+            "LENS-009"
+          ]
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261108-002",
+      "evidence_type": "REPORTED",
+      "mtg_session_id": "MTG-20261108-001",
+      "source_file": "mtg/20261108_minutes.md",
+      "source_date": "2026-11-08",
+      "source_pointer": {
+        "type": "minutes",
+        "section": "価値の流れとこだわり",
+        "paragraph": 5,
+        "line": 1
+      },
+      "normalized_statement": "製作担当は、依頼主の営業時間などの現場条件を施工班に渡していない。",
+      "source_form": "summary_minutes",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "",
+      "occurrence_key_applicability": "applicable",
+      "occurrence_key": "OCC-20261027-001",
+      "occurrence_date": "2026-10-27",
+      "verbatim_excerpt": "できたら渡して終わりです。お店が何時に閉まるかまでは、こっちは聞いてないです。",
+      "speaker_category": "client_member",
+      "speaker_role_label": "製作担当",
+      "speaker_attribution_status": "verified",
+      "elicitation_context": "open_question",
+      "extensions": {
+        "through_line": {
+          "layer": "field",
+          "stage": "handoff",
+          "lens_ids": [
+            "LENS-008"
+          ]
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261108-003",
+      "evidence_type": "REPORTED",
+      "mtg_session_id": "MTG-20261108-001",
+      "source_file": "mtg/20261108_minutes.md",
+      "source_date": "2026-11-08",
+      "source_pointer": {
+        "type": "minutes",
+        "section": "価値の流れとこだわり",
+        "paragraph": 7,
+        "line": 1
+      },
+      "normalized_statement": "施工班員は、班長に確認するまで作業を止めて待っている。",
+      "source_form": "summary_minutes",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "",
+      "occurrence_key_applicability": "applicable",
+      "occurrence_key": "OCC-20261029-001",
+      "occurrence_date": "2026-10-29",
+      "verbatim_excerpt": "班長に聞かないと決められないので、電話がつながるまで待っています。",
+      "speaker_category": "client_member",
+      "speaker_role_label": "施工班員",
+      "speaker_attribution_status": "verified",
+      "elicitation_context": "spontaneous",
+      "extensions": {
+        "through_line": {
+          "layer": "field",
+          "stage": "install"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261108-004",
+      "evidence_type": "REPORTED",
+      "mtg_session_id": "MTG-20261108-001",
+      "source_file": "mtg/20261108_minutes.md",
+      "source_date": "2026-11-08",
+      "source_pointer": {
+        "type": "minutes",
+        "section": "価値の流れとこだわり",
+        "paragraph": 9,
+        "line": 1
+      },
+      "normalized_statement": "社長は、施工が間に合わないときに応援を外注している。",
+      "source_form": "summary_minutes",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "",
+      "occurrence_key_applicability": "applicable",
+      "occurrence_key": "OCC-UNKNOWN-001",
+      "occurrence_date": null,
+      "verbatim_excerpt": "施工が詰まったら応援を呼ぶしかない。高くつくのは分かっているんですが。",
+      "speaker_category": "client_manager",
+      "speaker_role_label": "社長",
+      "speaker_attribution_status": "verified",
+      "elicitation_context": "spontaneous",
+      "extensions": {
+        "through_line": {
+          "layer": "field",
+          "stage": "install"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261115-008",
+      "evidence_type": "OBSERVED",
+      "mtg_session_id": "MTG-20261115-001",
+      "source_file": "field/20261112_site_note.md",
+      "source_date": "2026-11-12",
+      "source_pointer": {
+        "type": "note",
+        "section": "施工立ち会い"
+      },
+      "normalized_statement": "施工当日、班員2名が班長の電話が終わるまで約40分作業を止めていた。",
+      "source_form": "observer_note",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "",
+      "occurrence_key_applicability": "applicable",
+      "occurrence_key": "OCC-20261112-001",
+      "occurrence_date": "2026-11-12",
+      "observation_record": "10:20〜11:00、取付位置の判断待ちで班員2名が待機。班長は別現場と電話中。",
+      "observer_category": "consultant",
+      "observed_at": "2026-11-12T10:20:00+09:00",
+      "extensions": {
+        "through_line": {
+          "layer": "field",
+          "stage": "install"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261122-001",
+      "evidence_type": "DOCUMENTED",
+      "mtg_session_id": "MTG-20261122-001",
+      "source_file": "monosashi/20261122_gengoka_sheet.pdf",
+      "source_date": "2026-11-22",
+      "source_pointer": {
+        "type": "document",
+        "page": 1,
+        "item": "普段使っているモノサシ／ペアシェア"
+      },
+      "normalized_statement": "班長は施工当日の現場判断について5つのモノサシを書き、うち3つ（電源の位置を最初に見る／下地が図面と違えば止める／迷ったら通りからの見え方を優先する）は班員に渡せていないとした。",
+      "source_form": "original_document",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の記入内容。",
+      "verbatim_excerpt": "①着いたらまず電源の位置を見る ②営業時間中は音の出る作業をしない ③下地が図面と違えば止める ④迷ったら通りからの見え方を優先 ⑤完了は依頼主の立会いまで。渡せているのは②⑤。",
+      "document_type": "モノサシ言語化シート",
+      "document_issuer": "施工班長",
+      "extensions": {
+        "through_line": {
+          "layer": "field",
+          "stage": "install",
+          "sheet": "言語化シート"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261122-002",
+      "evidence_type": "REPORTED",
+      "mtg_session_id": "MTG-20261122-001",
+      "source_file": "monosashi/20261122_suriawase_note.md",
+      "source_date": "2026-11-22",
+      "source_pointer": {
+        "type": "minutes",
+        "section": "②再現（視点・着目点）",
+        "paragraph": 1,
+        "line": 1
+      },
+      "normalized_statement": "班員は、取付位置が図面どおりかどうかを確かめようとしていた。",
+      "source_form": "summary_minutes",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の聞き取り結果。",
+      "verbatim_excerpt": "図面どおりの位置に付いているか、そこだけ見ていました。",
+      "speaker_category": "client_member",
+      "speaker_role_label": "施工班員",
+      "speaker_attribution_status": "verified",
+      "elicitation_context": "open_question",
+      "extensions": {
+        "through_line": {
+          "layer": "field",
+          "stage": "install",
+          "sheet": "②再現（視点・着目点）"
+        }
+      },
+      "occurrence_key_applicability": "applicable",
+      "occurrence_key": "OCC-20261118-001",
+      "occurrence_date": "2026-11-18"
+    },
+    {
+      "evidence_id": "EVD-20261122-003",
+      "evidence_type": "REPORTED",
+      "mtg_session_id": "MTG-20261122-001",
+      "source_file": "monosashi/20261122_suriawase_note.md",
+      "source_date": "2026-11-22",
+      "source_pointer": {
+        "type": "minutes",
+        "section": "②再現（解釈・先読み・判断）",
+        "paragraph": 2,
+        "line": 1
+      },
+      "normalized_statement": "班員は、図面どおりなら問題は起きないと考え、班長に聞くほどではないと判断して取付を進めた。",
+      "source_form": "summary_minutes",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の聞き取り結果。",
+      "verbatim_excerpt": "寸法は合っていたので、わざわざ班長に聞くことでもないかなと思って、そのまま付けました。",
+      "speaker_category": "client_member",
+      "speaker_role_label": "施工班員",
+      "speaker_attribution_status": "verified",
+      "elicitation_context": "open_question",
+      "extensions": {
+        "through_line": {
+          "layer": "field",
+          "stage": "install",
+          "sheet": "②再現（解釈・先読み・判断）"
+        }
+      },
+      "occurrence_key_applicability": "applicable",
+      "occurrence_key": "OCC-20261118-001",
+      "occurrence_date": "2026-11-18"
+    },
+    {
+      "evidence_id": "EVD-20261122-004",
+      "evidence_type": "REPORTED",
+      "mtg_session_id": "MTG-20261122-001",
+      "source_file": "monosashi/20261122_suriawase_note.md",
+      "source_date": "2026-11-22",
+      "source_pointer": {
+        "type": "minutes",
+        "section": "③結果",
+        "paragraph": 1,
+        "line": 1
+      },
+      "normalized_statement": "取付後、電源の位置が図面と違っていて配線が届かず、翌日に再訪問して手直しした。",
+      "source_form": "summary_minutes",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の聞き取り結果。",
+      "verbatim_excerpt": "配線が届かなくて、次の日にもう一回行きました。",
+      "speaker_category": "client_member",
+      "speaker_role_label": "施工班員",
+      "speaker_attribution_status": "verified",
+      "elicitation_context": "open_question",
+      "extensions": {
+        "through_line": {
+          "layer": "field",
+          "stage": "install",
+          "sheet": "③結果"
+        }
+      },
+      "occurrence_key_applicability": "applicable",
+      "occurrence_key": "OCC-20261118-001",
+      "occurrence_date": "2026-11-18"
+    },
+    {
+      "evidence_id": "EVD-20261122-005",
+      "evidence_type": "REPORTED",
+      "mtg_session_id": "MTG-20261122-001",
+      "source_file": "monosashi/20261122_suriawase_note.md",
+      "source_date": "2026-11-22",
+      "source_pointer": {
+        "type": "minutes",
+        "section": "④責任者の見え",
+        "paragraph": 1,
+        "line": 1
+      },
+      "normalized_statement": "班長は、現場に着いたら最初に電源の位置を見る。図面と違うことがよくあるため。",
+      "source_form": "summary_minutes",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の聞き取り結果。",
+      "verbatim_excerpt": "私は着いたらまず電源を見ます。図面と違うことがよくあるので。",
+      "speaker_category": "client_manager",
+      "speaker_role_label": "施工班長",
+      "speaker_attribution_status": "verified",
+      "elicitation_context": "open_question",
+      "extensions": {
+        "through_line": {
+          "layer": "field",
+          "stage": "install",
+          "sheet": "④責任者の見え"
+        }
+      }
+    },
+    {
+      "evidence_id": "EVD-20261122-006",
+      "evidence_type": "REPORTED",
+      "mtg_session_id": "MTG-20261122-001",
+      "source_file": "monosashi/20261122_suriawase_note.md",
+      "source_date": "2026-11-22",
+      "source_pointer": {
+        "type": "minutes",
+        "section": "④責任者の見え",
+        "paragraph": 2,
+        "line": 1
+      },
+      "normalized_statement": "班長は、取付位置を図面から変える必要が出たら、依頼主に見え方を確かめるので先に連絡がほしいと考えている。",
+      "source_form": "summary_minutes",
+      "review_status": "spot_checked",
+      "sensitivity": "internal",
+      "notes": "架空の聞き取り結果。",
+      "verbatim_excerpt": "位置を変えるなら、お客さんに見え方を確認しないといけない。だから、やる前に電話してほしい。",
+      "speaker_category": "client_manager",
+      "speaker_role_label": "施工班長",
+      "speaker_attribution_status": "verified",
+      "elicitation_context": "open_question",
+      "extensions": {
+        "through_line": {
+          "layer": "field",
+          "stage": "install",
+          "sheet": "④責任者の見え"
+        }
+      }
+    }
+  ]
+}

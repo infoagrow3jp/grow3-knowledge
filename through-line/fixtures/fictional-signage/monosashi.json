@@ -1,0 +1,94 @@
+{
+  "schema_version": "0.1.0",
+  "record_type": "monosashi_ledger",
+  "case_id": "CASE-ORG-901",
+  "last_updated_at": "2026-11-22T17:00:00+09:00",
+  "items": [
+    {
+      "monosashi_id": "MNS-001",
+      "kind": "observation_point",
+      "statement": "取付の前に、電源の位置が図面と同じかを見る。",
+      "job": "施工当日の現場判断",
+      "judgment_scene": "施工当日、図面に無い現場条件に気づいたとき、自分で決めて進めるか、班長に聞くか。",
+      "source_action_id": "ACT-002",
+      "source_evidence_ids": [
+        "EVD-20261122-002",
+        "EVD-20261122-005",
+        "EVD-20261122-004"
+      ],
+      "source_case_count": 1,
+      "state": "certified",
+      "provisional": false,
+      "line_check_status": "not_applicable",
+      "info_and_authority_confirmed": true,
+      "uses": {
+        "development": "in_use",
+        "work_standard": "adopted",
+        "evaluation": "on_hold",
+        "evaluation_note": "1件の案件から出たもの。ほかの班員・ほかの案件で確かめておらず、等級別の役割との照らし合わせも済んでいない。"
+      },
+      "hr_os_review_status": "not_reviewed",
+      "sensitivity": "internal",
+      "created_at": "2026-11-22T17:00:00+09:00",
+      "updated_at": "2026-11-22T17:00:00+09:00",
+      "certification": {
+        "certified_by_role": "施工班長",
+        "certified_at": "2026-11-22",
+        "reason": "配線の手直しは再訪問になり、依頼主の営業を二度止めることになるから。"
+      }
+    },
+    {
+      "monosashi_id": "MNS-002",
+      "kind": "consultation_line",
+      "statement": "取付位置を図面から変えるときは、進める前に班長に連絡する。",
+      "job": "施工当日の現場判断",
+      "judgment_scene": "施工当日、図面に無い現場条件に気づいたとき、自分で決めて進めるか、班長に聞くか。",
+      "source_action_id": "ACT-002",
+      "source_evidence_ids": [
+        "EVD-20261122-003",
+        "EVD-20261122-006"
+      ],
+      "source_case_count": 1,
+      "state": "candidate",
+      "provisional": true,
+      "line_check_status": "not_checked",
+      "info_and_authority_confirmed": false,
+      "uses": {
+        "development": "in_use",
+        "work_standard": "not_adopted",
+        "evaluation": "not_proposed",
+        "evaluation_note": "候補。線の4基準の検証をしていない。1on1の材料として使う。"
+      },
+      "hr_os_review_status": "not_reviewed",
+      "sensitivity": "internal",
+      "created_at": "2026-11-22T17:00:00+09:00",
+      "updated_at": "2026-11-22T17:00:00+09:00"
+    },
+    {
+      "monosashi_id": "MNS-003",
+      "kind": "selection_rule",
+      "statement": "工期と通りからの見え方がぶつかったら、見え方を優先する。",
+      "job": "施工当日の現場判断",
+      "judgment_scene": "施工当日、図面に無い現場条件に気づいたとき、自分で決めて進めるか、班長に聞くか。",
+      "source_action_id": "ACT-002",
+      "source_evidence_ids": [
+        "EVD-20261122-001"
+      ],
+      "source_case_count": 0,
+      "state": "on_hold",
+      "provisional": false,
+      "line_check_status": "not_applicable",
+      "info_and_authority_confirmed": false,
+      "uses": {
+        "development": "not_used",
+        "work_standard": "not_adopted",
+        "evaluation": "not_proposed",
+        "evaluation_note": "保留。班長の自己申告だけで、実案件での再現が無い。もう少し事例を見る。"
+      },
+      "hr_os_review_status": "not_reviewed",
+      "sensitivity": "internal",
+      "created_at": "2026-11-22T17:00:00+09:00",
+      "updated_at": "2026-11-22T17:00:00+09:00"
+    }
+  ]
+}

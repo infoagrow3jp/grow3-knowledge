@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grow3.jp/schemas/through-line/v0.1/monosashi.schema.json",
+  "title": "Monosashi ledger (customer case)",
+  "description": "モノサシ化の聞き取りで出た「会社に残すもの」の台帳。顧客の案件ごとに持つ（非公開の案件領域）。organization-diagnosis の register には、規範（こう判断する）を置く場所が無いので、封筒だけ別に持ち、部品は common.schema.json から $ref で借りる。状態（候補／認定／保留）と、用途ごとの扱い（育成／業務の基準／評価）を分けて持つ。この schema が見るのは形だけ。モノサシが妥当かどうかは顧客の責任者が、評価に使ってよいかは人事制度設計OS が判断する。",
+  "type": "object",
+  "required": ["schema_version", "record_type", "case_id", "last_updated_at", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "0.1.0" },
+    "record_type": { "const": "monosashi_ledger" },
+    "case_id": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/caseId" },
+    "last_updated_at": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/dateTime" },
+    "items": { "type": "array", "items": { "$ref": "#/$defs/monosashi" } },
+    "extensions": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/extensions" }
+  },
+  "$defs": {
+    "monosashiId": { "type": "string", "pattern": "^MNS-[0-9]{3,}$", "description": "発行後不変。使い回さない。" },
+    "monosashi": {
+      "type": "object",
+      "required": ["monosashi_id", "kind", "statement", "job", "judgment_scene", "source_action_id", "source_evidence_ids",
+                   "source_case_count", "state", "provisional", "line_check_status", "info_and_authority_confirmed",
+                   "uses", "hr_os_review_status", "sensitivity", "created_at", "updated_at"],
+      "additionalProperties": false,
+      "properties": {
+        "monosashi_id": { "$ref": "#/$defs/monosashiId" },
+        "kind": {
+          "enum": ["observation_point", "selection_rule", "consultation_line"],
+          "description": "すり合わせシート⑤の3分類。observation_point＝どこを見るか／selection_rule＝何を優先するか／consultation_line＝どこから相談するか。"
+        },
+        "statement": { "type": "string", "description": "モノサシの文。判断を分ける境界が一文で言えること。" },
+        "job": { "type": "string", "description": "任せる仕事。" },
+        "judgment_scene": { "type": "string", "description": "このモノサシが効く判断の場面。" },
+        "source_action_id": {
+          "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/verificationActionId",
+          "description": "このモノサシが出た聞き取り（verification_actions の monosashi_interview）。"
+        },
+        "source_evidence_ids": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/evidenceId" },
+          "description": "元になった発言・記録。"
+        },
+        "source_case_count": { "type": "integer", "minimum": 0, "description": "何件の実案件から出たか。元の証拠に付いている出来事（occurrence_key）の、異なるものの数と一致させる。自己申告だけで実案件での再現が無ければ 0。1件由来は弱い候補。" },
+        "state": {
+          "enum": ["candidate", "certified", "on_hold"],
+          "description": "すり合わせシート⑤の状態。candidate＝候補／certified＝認定／on_hold＝保留・もう少し事例を見る。認定するのは顧客の責任者。"
+        },
+        "certification": {
+          "type": "object",
+          "required": ["certified_by_role", "certified_at", "reason"],
+          "additionalProperties": false,
+          "properties": {
+            "certified_by_role": { "type": "string", "description": "認定した責任者の役割。個人名は書かない。" },
+            "certified_at": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/date" },
+            "reason": { "type": "string", "minLength": 1, "description": "なぜこのモノサシにするか。本人へ伝える理由。" }
+          }
+        },
+        "provisional": { "type": "boolean", "description": "暫定の学習材料として扱っているか。認定前のものを育成に使うときは true。" },
+        "line_check_status": {
+          "enum": ["not_applicable", "not_checked", "passed"],
+          "description": "線の4基準（責任接続・必要性・実案件差・代替可能性）の検証。相談線にだけ当てる。観察ポイントと選択ルールは not_applicable。"
+        },
+        "info_and_authority_confirmed": { "type": "boolean", "description": "本人が、この判断をするための情報と権限を持っていることを確かめたか。" },
+        "uses": {
+          "type": "object",
+          "required": ["development", "work_standard", "evaluation"],
+          "additionalProperties": false,
+          "properties": {
+            "development": { "enum": ["in_use", "not_used"], "description": "1on1・振り返り・育成課題の発見。候補の段階から使える。" },
+            "work_standard": { "enum": ["adopted", "not_adopted"], "description": "OJT・仕事の判断基準の共有。認定が要る。" },
+            "evaluation": { "enum": ["not_proposed", "on_hold", "proposed_to_hr_os", "adopted"], "description": "等級別の期待行動・評価項目。認定に加えて、人事制度設計OS の確認が要る。" },
+            "evaluation_note": { "type": "string", "description": "評価に出さない／止めている理由。" },
+            "evaluation_exception": {
+              "type": "object",
+              "required": ["approved_by_role", "reason"],
+              "additionalProperties": false,
+              "properties": {
+                "approved_by_role": { "type": "string", "minLength": 1, "description": "例外を認めた人の役割（人事制度設計の責任者）。" },
+                "reason": { "type": "string", "minLength": 1, "description": "実案件が2件に満たないのに評価項目として採用する理由（例：安全・法令上の必要が明らか）。" }
+              },
+              "description": "異なる場面・担当者で確かめられていないものを、例外として評価項目に採用するときだけ書く。"
+            }
+          }
+        },
+        "hr_os_review_status": {
+          "enum": ["not_reviewed", "reviewed_hold", "reviewed_ok"],
+          "description": "人事制度設計OS 側での確認（等級別の役割・権限、観察できるか、公平に評価できるか、運用できるか）。"
+        },
+        "sensitivity": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/sensitivity" },
+        "created_at": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/dateTime" },
+        "updated_at": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/dateTime" },
+        "extensions": { "$ref": "../../organization-diagnosis/v0.1/common.schema.json#/$defs/extensions" }
+      },
+      "allOf": [
+        { "if": { "properties": { "state": { "const": "certified" } }, "required": ["state"] }, "then": { "required": ["certification"] } },
+        { "if": { "properties": { "state": { "enum": ["candidate", "on_hold"] } }, "required": ["state"] }, "then": { "not": { "required": ["certification"] } } },
+        { "if": { "properties": { "kind": { "const": "consultation_line" } }, "required": ["kind"] },
+          "then": { "properties": { "line_check_status": { "enum": ["not_checked", "passed"] } } },
+          "else": { "properties": { "line_check_status": { "const": "not_applicable" } } } }
+      ]
+    }
+  }
+}

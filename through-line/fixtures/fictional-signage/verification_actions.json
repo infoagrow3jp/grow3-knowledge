@@ -1,0 +1,407 @@
+{
+  "schema_version": "0.1.0",
+  "case_id": "CASE-ORG-901",
+  "register_type": "verification_actions",
+  "last_updated_at": "2026-11-16T10:00:00+09:00",
+  "items": [
+    {
+      "action_id": "ACT-001",
+      "action_type": "data_collection",
+      "action_description": "さらに4週間、設計・製作・施工の完了件数、製作完了後の滞留日数、班長の判断待ち時間を日次で記録する。",
+      "target_hypothesis_ids": [
+        "HYP-001"
+      ],
+      "support_signal": "施工の完了件数が設計・製作を一貫して下回り、製作完了後の滞留が減らない。",
+      "weaken_signal": "製作または設計の完了件数が施工を下回る週が半分以上ある。",
+      "next_review_trigger": "次回の打合せ",
+      "sensitivity": "internal",
+      "created_at": "2026-11-16T10:00:00+09:00",
+      "mtg_session_id": "MTG-20261115-001",
+      "extensions": {
+        "through_line": {
+          "kind": "constraint_measurement"
+        }
+      }
+    },
+    {
+      "action_id": "ACT-002",
+      "action_type": "additional_interview",
+      "action_description": "施工班員1名に、判断のズレが起きた実案件1件について「判断の見え方・線のすり合わせシート」で聞き取り、班長の見えと比べる。",
+      "target_hypothesis_ids": [
+        "HYP-001",
+        "HYP-003"
+      ],
+      "support_signal": "班長だけが見ている手がかりが複数あり、班員は自分で決めてよい範囲を班長より狭く置いている。",
+      "weaken_signal": "班員も同じ手がかりを見ており、止まる理由が見え方でも相談の線でもない。",
+      "next_review_trigger": "次回の打合せ",
+      "sensitivity": "internal",
+      "created_at": "2026-11-16T10:00:00+09:00",
+      "mtg_session_id": "MTG-20261115-001",
+      "extensions": {
+        "through_line": {
+          "kind": "monosashi_interview",
+          "judgment_scene": "施工当日、図面に無い現場条件に気づいたとき、自分で決めて進めるか、班長に聞くか。",
+          "case_selection": "この場面で、班長が途中で口を出した、または手直しになった実案件を1件。",
+          "person": "施工班員",
+          "responsible": "施工班長",
+          "lens_ids": [
+            "LENS-009",
+            "LENS-008"
+          ],
+          "instrument": "判断の見え方・線のすり合わせシート v0.2"
+        }
+      }
+    },
+    {
+      "action_id": "ACT-003",
+      "action_type": "small_experiment",
+      "action_description": "2週間、受け渡しのときに現場条件3点（営業時間・電源の位置・搬入経路）を紙で渡す。",
+      "target_hypothesis_ids": [
+        "HYP-002"
+      ],
+      "support_signal": "施工班からの確認連絡が週14件から目に見えて減る。",
+      "weaken_signal": "確認連絡の件数が変わらない。",
+      "next_review_trigger": "次回の打合せ",
+      "sensitivity": "internal",
+      "created_at": "2026-11-16T10:00:00+09:00",
+      "mtg_session_id": "MTG-20261115-001",
+      "extensions": {
+        "through_line": {
+          "kind": "structure_experiment"
+        }
+      }
+    },
+    {
+      "action_id": "ACT-005",
+      "action_type": "additional_interview",
+      "action_description": "聞き取りの前に、施工班長に「モノサシ言語化シート」を書いてもらう。任せたい仕事は、施工当日の現場判断。",
+      "target_hypothesis_ids": [
+        "HYP-001",
+        "HYP-003"
+      ],
+      "support_signal": "班長のモノサシのうち、班員にまだ渡せていないものが複数ある。",
+      "weaken_signal": "班長のモノサシはすでに渡せており、班員が待つ理由が別にある。",
+      "next_review_trigger": "次回の打合せ",
+      "sensitivity": "internal",
+      "created_at": "2026-11-16T10:00:00+09:00",
+      "mtg_session_id": "MTG-20261115-001",
+      "extensions": {
+        "through_line": {
+          "kind": "monosashi_selfreport",
+          "responsible": "施工班長",
+          "instrument": "モノサシ言語化シート"
+        }
+      }
+    },
+    {
+      "action_id": "ACT-004",
+      "action_type": "data_collection",
+      "action_description": "案件の種類ごとに「制約資源あたりMQ」（指標定義書 §6-1）を算定する。分母は、班長が判断対応に使った時間。",
+      "target_hypothesis_ids": [
+        "HYP-001"
+      ],
+      "support_signal": "班長の判断時間あたりのMQに、案件の種類による差がある。",
+      "weaken_signal": "案件の種類による差がほとんど無い。",
+      "next_review_trigger": "次回の打合せ",
+      "sensitivity": "internal",
+      "created_at": "2026-11-16T10:00:00+09:00",
+      "mtg_session_id": "MTG-20261115-001",
+      "extensions": {
+        "through_line": {
+          "kind": "finance_recalc",
+          "constraint_unit": "時間",
+          "computed_by": "proposals/constraint_calc.py（提案中。正本の financial_calc.py には未実装）",
+          "utilization": {
+            "value": 0.9166666666666666,
+            "used_evidence_id": "EVD-20261115-010",
+            "available_evidence_id": "EVD-20261115-009",
+            "calculation_trace": {
+              "formula": "constraint_units_used ÷ constraint_units_available",
+              "constraint_units_used": 11.0,
+              "constraint_units_available": 12.0,
+              "unrounded": 0.9166666666666666
+            }
+          },
+          "ranking": [
+            {
+              "item_type": "standard",
+              "label": "袖・壁面（標準）",
+              "m_unit_margin": 230000.0,
+              "m_evidence_id": "EVD-20261115-017",
+              "constraint_units_per_item": 1.0,
+              "constraint_evidence_id": "EVD-20261115-011",
+              "mq_per_constraint_unit": 230000.0,
+              "calculation_trace": {
+                "formula": "m_unit_margin ÷ constraint_units_per_item",
+                "m_unit_margin": 230000.0,
+                "constraint_units_per_item": 1.0,
+                "constraint_unit": "時間",
+                "unrounded": 230000.0
+              }
+            },
+            {
+              "item_type": "illuminated",
+              "label": "電飾・改修",
+              "m_unit_margin": 290000.0,
+              "m_evidence_id": "EVD-20261115-019",
+              "constraint_units_per_item": 2.0,
+              "constraint_evidence_id": "EVD-20261115-013",
+              "mq_per_constraint_unit": 145000.0,
+              "calculation_trace": {
+                "formula": "m_unit_margin ÷ constraint_units_per_item",
+                "m_unit_margin": 290000.0,
+                "constraint_units_per_item": 2.0,
+                "constraint_unit": "時間",
+                "unrounded": 145000.0
+              }
+            },
+            {
+              "item_type": "large",
+              "label": "自立・大型",
+              "m_unit_margin": 400000.0,
+              "m_evidence_id": "EVD-20261115-018",
+              "constraint_units_per_item": 3.0,
+              "constraint_evidence_id": "EVD-20261115-012",
+              "mq_per_constraint_unit": 133333.33333333334,
+              "calculation_trace": {
+                "formula": "m_unit_margin ÷ constraint_units_per_item",
+                "m_unit_margin": 400000.0,
+                "constraint_units_per_item": 3.0,
+                "constraint_unit": "時間",
+                "unrounded": 133333.33333333334
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "action_id": "ACT-006",
+      "action_type": "observation",
+      "action_description": "次の施工で、班員が現場に着いたら最初に電源の位置を見て、図面との違いを声に出す。班長はそれを聞いてから作業を始める。",
+      "target_hypothesis_ids": [
+        "HYP-004"
+      ],
+      "support_signal": "班員が自分から電源の位置を確かめ、班長への確認の連絡が減る。",
+      "weaken_signal": "班員が見ても違いに気づかない、または確認の連絡が減らない。",
+      "next_review_trigger": "次回の袖看板の施工日",
+      "sensitivity": "internal",
+      "created_at": "2026-11-22T17:00:00+09:00",
+      "mtg_session_id": "MTG-20261122-001",
+      "extensions": {
+        "through_line": {
+          "kind": "monosashi_trial",
+          "monosashi_ids": [
+            "MNS-001"
+          ]
+        }
+      }
+    },
+    {
+      "action_id": "ACT-007",
+      "action_type": "data_collection",
+      "action_description": "モノサシを渡したあとの4週間、案件の種類ごとの班長の判断対応時間と、設計・製作・施工の完了件数を測り、シナリオと比べる。",
+      "target_hypothesis_ids": [
+        "HYP-001",
+        "HYP-004"
+      ],
+      "support_signal": "班長の判断対応時間が仮定（A1）の水準まで下がり、施工の完了が週9件に近づき、製作完了後の滞留が減る。",
+      "weaken_signal": "判断対応時間が下がらない。または下がっても施工の完了件数が増えない（制約は別の場所にある）。",
+      "next_review_trigger": "モノサシを渡してから4週間後",
+      "sensitivity": "internal",
+      "created_at": "2026-11-22T17:00:00+09:00",
+      "mtg_session_id": "MTG-20261122-001",
+      "extensions": {
+        "through_line": {
+          "kind": "improvement_scenario",
+          "scenario": {
+            "label": "scenario",
+            "period": "週",
+            "constraint_unit": "時間",
+            "computed_by": "proposals/constraint_calc.py（提案中）",
+            "constraint_available_evidence_id": "EVD-20261115-009",
+            "constraint_per_item_evidence_ids": {
+              "standard": "EVD-20261115-011",
+              "large": "EVD-20261115-012",
+              "illuminated": "EVD-20261115-013"
+            },
+            "mix_evidence_ids": {
+              "standard": "EVD-20261115-014",
+              "large": "EVD-20261115-015",
+              "illuminated": "EVD-20261115-016"
+            },
+            "unit_margin_evidence_ids": {
+              "standard": "EVD-20261115-017",
+              "large": "EVD-20261115-018",
+              "illuminated": "EVD-20261115-019"
+            },
+            "assumptions": [
+              {
+                "id": "A1",
+                "statement": "モノサシを渡すと、班長の判断対応は 標準1.0→0.6／大型3.0→2.4／電飾2.0→1.4 時間/件に減る。",
+                "basis": "assumption",
+                "basis_evidence_ids": []
+              },
+              {
+                "id": "A2",
+                "statement": "案件の構成は今と同じ（標準16：大型4：電飾8）。",
+                "basis": "assumption",
+                "basis_evidence_ids": [
+                  "EVD-20261115-014",
+                  "EVD-20261115-015",
+                  "EVD-20261115-016"
+                ]
+              },
+              {
+                "id": "A3",
+                "statement": "需要は週10件ある。",
+                "basis": "assumption",
+                "basis_evidence_ids": [
+                  "EVD-20261115-003"
+                ]
+              },
+              {
+                "id": "A4",
+                "statement": "設計・製作の処理量は、現状の完了実績（設計9・製作10 件/週）を超えない。完了実績は測定あり。処理できる最大の量（能力の上限）は測っていない。",
+                "basis": "assumption",
+                "basis_evidence_ids": [
+                  "EVD-20261115-001",
+                  "EVD-20261115-002"
+                ]
+              },
+              {
+                "id": "A5",
+                "statement": "増える案件の1件あたりMは、今の構成の加重平均と同じ。",
+                "basis": "assumption",
+                "basis_evidence_ids": []
+              }
+            ],
+            "before": {
+              "throughput": 7.0,
+              "throughput_evidence_id": "EVD-20261115-005",
+              "constraint_units_per_item_avg": 1.5714285714285714
+            },
+            "after": {
+              "constraint_units_per_item_by_type": {
+                "standard": 0.6,
+                "large": 2.4,
+                "illuminated": 1.4
+              },
+              "constraint_units_per_item_avg": 1.0857142857142856,
+              "by_constraint": 11.05263157894737,
+              "throughput": 9.0,
+              "binding": [
+                "design"
+              ]
+            },
+            "caps": [
+              {
+                "kind": "upstream",
+                "name": "design",
+                "stage": "design",
+                "value": 9.0,
+                "value_kind": "actual_completed",
+                "basis_evidence_id": "EVD-20261115-001",
+                "assumption_id": "A4"
+              },
+              {
+                "kind": "upstream",
+                "name": "production",
+                "stage": "production",
+                "value": 10.0,
+                "value_kind": "actual_completed",
+                "basis_evidence_id": "EVD-20261115-002",
+                "assumption_id": "A4"
+              },
+              {
+                "kind": "demand",
+                "name": "demand",
+                "value": 10.0,
+                "assumption_id": "A3"
+              }
+            ],
+            "mq_effect": {
+              "delta_q": 2.0,
+              "m_unit_margin_for_added": 271428.5714285714,
+              "m_basis": "weighted_average_current_mix",
+              "mq_delta_per_period": 542857.1428571428
+            },
+            "next_constraint": [
+              "design"
+            ],
+            "calculation_traces": {
+              "per_before": {
+                "formula": "Σ(占有時間 × 件数) ÷ Σ件数",
+                "values_by_type": {
+                  "standard": 1.0,
+                  "large": 3.0,
+                  "illuminated": 2.0
+                },
+                "counts_by_type": {
+                  "standard": 16,
+                  "large": 4,
+                  "illuminated": 8
+                },
+                "unrounded": 1.5714285714285714
+              },
+              "per_after": {
+                "formula": "Σ(占有時間 × 件数) ÷ Σ件数",
+                "values_by_type": {
+                  "standard": 0.6,
+                  "large": 2.4,
+                  "illuminated": 1.4
+                },
+                "counts_by_type": {
+                  "standard": 16,
+                  "large": 4,
+                  "illuminated": 8
+                },
+                "unrounded": 1.0857142857142856
+              },
+              "m_avg": {
+                "formula": "Σ(1件あたりM × 件数) ÷ Σ件数",
+                "values_by_type": {
+                  "standard": 230000.0,
+                  "large": 400000.0,
+                  "illuminated": 290000.0
+                },
+                "counts_by_type": {
+                  "standard": 16,
+                  "large": 4,
+                  "illuminated": 8
+                },
+                "unrounded": 271428.5714285714
+              },
+              "throughput": {
+                "formula": "min(constraint_units_available ÷ constraint_units_per_item_after, ほかの上限…)",
+                "constraint_units_available": 12.0,
+                "constraint_units_per_item_after": 1.0857142857142856,
+                "other_caps": {
+                  "design": 9.0,
+                  "production": 10.0,
+                  "demand": 10.0
+                },
+                "period": "週",
+                "by_constraint_unrounded": 11.05263157894737,
+                "caps": {
+                  "design": 9.0,
+                  "production": 10.0,
+                  "demand": 10.0,
+                  "constraint_resource": 11.05263157894737
+                }
+              },
+              "mq_delta": {
+                "formula": "(throughput_after − throughput_before) × m_unit_margin_for_added",
+                "throughput_before": 7.0,
+                "throughput_after": 9.0,
+                "m_unit_margin_for_added": 271428.5714285714,
+                "period": "週",
+                "unrounded": 542857.1428571428
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
