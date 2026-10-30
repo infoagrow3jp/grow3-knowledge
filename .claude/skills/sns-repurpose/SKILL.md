@@ -132,4 +132,6 @@ Threads本文は次の見出しで区切る。
   匿名化する（業種・規模程度に留める）。
 - 実験ログは `marketing/sns/experiment-log.md`。各条件3〜4本たまるまで結論を出さない。
 
+下書きを作るときは、references/review-flow.md の順で係（設計係・ベネフィット係・検品係・読者役）に回す。
+
 判断に迷ったら references/examples.md の『判断の分かれ目』を参照する。
