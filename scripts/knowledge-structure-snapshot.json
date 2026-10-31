@@ -2,9 +2,7 @@
   "files": {
     "grow3-blog-concept-map.md": {
       "metadata_source_hash": "sha256:2c5834ae8cda1a54b981128314f3fe5c8a6169983d48a77536a7314e26ba393e",
-      "regenerations": [
-        "2026-08-04"
-      ],
+      "regenerations": [],
       "structure": {
         "domain": [
           "blog"
@@ -23,13 +21,7 @@
     },
     "grow3-frameworks.md": {
       "metadata_source_hash": "sha256:fc0f6869beed91a42247c004fc8b590521b5321b266de7194369c2dd6bbb31df",
-      "regenerations": [
-        "2026-08-04",
-        "2026-08-04",
-        "2026-08-11",
-        "2026-08-17",
-        "2026-08-23"
-      ],
+      "regenerations": [],
       "structure": {
         "domain": [
           "frameworks"
@@ -101,9 +93,7 @@
     },
     "grow3-hr-system-design-os.md": {
       "metadata_source_hash": "sha256:74c9100bc5d9d6437873bb068e16abe045e343c0e515f7596e23b669db9b848c",
-      "regenerations": [
-        "2026-08-04"
-      ],
+      "regenerations": [],
       "structure": {
         "domain": [
           "hr"
@@ -126,10 +116,7 @@
     },
     "grow3-marketing-os.md": {
       "metadata_source_hash": "sha256:fb5d1a6e91d21d33d376e3ae70f65eddff18fa639d932a62ab02a76c46c3cf35",
-      "regenerations": [
-        "2026-08-04",
-        "2026-08-04"
-      ],
+      "regenerations": [],
       "structure": {
         "domain": [
           "marketing"
@@ -195,13 +182,9 @@
       }
     },
     "grow3-training-design-os.md": {
-      "metadata_source_hash": "sha256:ed4277c9ece8c1644904d2487476aa6cb87911a7bd668715efefb849ceaa21b6",
+      "metadata_source_hash": "sha256:9abfd19ee590b3a21984ceda26feb571225360aa999ec756a292ec02ed4d8c43",
       "regenerations": [
-        "2026-08-04",
-        "2026-08-04",
-        "2026-08-23",
-        "2026-08-23",
-        "2026-08-23"
+        "2026-10-31"
       ],
       "structure": {
         "domain": [
