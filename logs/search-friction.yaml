@@ -32,3 +32,18 @@
   query: "各文書が正本化済みかを判定する単一の基準はどれか（MANAGED_FILES・status canonical・DECISIONS.mdの確定DEC・status reviewed/approved/final/frozen の4系統に分裂）"
   searched: [scripts/knowledge_build.py, schemas/knowledge/os_frontmatter.schema.json, DECISIONS.md, INDEX.md, docs/INDEX.md]
   result: canonical_not_found
+- date: 2026-10-11
+  type: canonical_not_found
+  query: "value-workmap-os／こだわり観点ライブラリの正本はどれか（依頼文の呼称）"
+  searched: [INDEX.md, docs/INDEX.md, DECISIONS.md, practice-lens/, schemas/, git log -S, git log --grep]
+  result: fallback_used
+- date: 2026-10-29
+  type: canonical_not_found
+  query: "Grow3発信と社労士事務所・公的な立場（よろず支援拠点・調停・サーベイヤー）の線引きルールの正本はどれか"
+  searched: [grow3-marketing-os.md, grow3-blog-writing-context.md, .claude/skills/grow3-judgment/references, .claude/skills/sns-repurpose, .claude/skills/brand-review]
+  result: canonical_not_found
+- date: 2026-10-29
+  type: fallback_used
+  query: "顧客ジャーニーの段階と各段階で起こしたい認知の変化の正本はどれか"
+  searched: [INDEX.md, grow3-marketing-os.md, grow3-frameworks.md, grow3-business-model.md]
+  result: fallback_used
