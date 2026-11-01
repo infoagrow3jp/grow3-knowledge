@@ -115,8 +115,11 @@
       }
     },
     "grow3-marketing-os.md": {
-      "metadata_source_hash": "sha256:fb5d1a6e91d21d33d376e3ae70f65eddff18fa639d932a62ab02a76c46c3cf35",
-      "regenerations": [],
+      "metadata_source_hash": "sha256:fbeb013a608c4e4baf54737b74c60bf0dd14d7aa36a6c9a8151bef329b6f6e6a",
+      "regenerations": [
+        "2026-11-01",
+        "2026-11-01"
+      ],
       "structure": {
         "domain": [
           "marketing"
