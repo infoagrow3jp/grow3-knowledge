@@ -20,8 +20,10 @@
       }
     },
     "grow3-frameworks.md": {
-      "metadata_source_hash": "sha256:fc0f6869beed91a42247c004fc8b590521b5321b266de7194369c2dd6bbb31df",
-      "regenerations": [],
+      "metadata_source_hash": "sha256:d7a2d2373146f3e6bb08de3167dbd44a9ce80274bff42efef894a937b4c62063",
+      "regenerations": [
+        "2026-11-07"
+      ],
       "structure": {
         "domain": [
           "frameworks"
@@ -60,6 +62,7 @@
           "交渉と対立（ハーバード流交渉・トーマス＝キルマン）",
           "デザイン思考（人間中心で問いと解を行き来する）",
           "アクションラーニング（現実の課題×質問×内省で学ぶ）",
+          "問いのデザイン（阻害要因の5分類）",
           "経験学習サイクル（Kolb｜やって・振り返って・概念化して・試す）",
           "研修効果・学習転移（カークパトリック）",
           "成人発達理論（垂直的成長｜見方の枠組みが段階的に変わる）",
@@ -186,9 +189,10 @@
       }
     },
     "grow3-training-design-os.md": {
-      "metadata_source_hash": "sha256:9abfd19ee590b3a21984ceda26feb571225360aa999ec756a292ec02ed4d8c43",
+      "metadata_source_hash": "sha256:5124e4a3f9d05780dbd48662f669cd9fb13d2ac9547fd6a979a68db29f8b68dc",
       "regenerations": [
-        "2026-10-31"
+        "2026-10-31",
+        "2026-11-06"
       ],
       "structure": {
         "domain": [
