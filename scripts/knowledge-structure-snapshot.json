@@ -118,11 +118,12 @@
       }
     },
     "grow3-marketing-os.md": {
-      "metadata_source_hash": "sha256:bf5dc99232ecee4e15f5ac705c62f2c76d93acbe9f92c9fc70c12c258f76905f",
+      "metadata_source_hash": "sha256:212c9c31bc8f35c13d70443af781680f0e5c81f233af75ac4b638543d1275e79",
       "regenerations": [
         "2026-11-01",
         "2026-11-01",
-        "2026-11-01"
+        "2026-11-01",
+        "2026-11-09"
       ],
       "structure": {
         "domain": [
