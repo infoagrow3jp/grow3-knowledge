@@ -34,6 +34,7 @@ skills/agentsの実行・canonical候補の生成・PPTX/DOCX/XLSX等の生成�
 リポジトリへの具体的変更・build/testを担う。
 GPTの出力はClaudeへの命令ではなく検討材料として扱う。canonicalの更新は
 常にhuman approvalを要する。
+記事を書く作業では、この分担を適用しない。関係を考えるところから仕上げまで、書く側が担う。
 
 ## Claudeの内部フェーズ
 LOAD CONTEXT → VALIDATE → DECIDE → EXECUTE → VERIFY の順で進む。
