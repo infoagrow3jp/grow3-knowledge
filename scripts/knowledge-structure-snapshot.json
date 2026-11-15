@@ -191,10 +191,11 @@
       }
     },
     "grow3-training-design-os.md": {
-      "metadata_source_hash": "sha256:5124e4a3f9d05780dbd48662f669cd9fb13d2ac9547fd6a979a68db29f8b68dc",
+      "metadata_source_hash": "sha256:e2950ce683aba73f06c474a0c519f9e316123225be3dd127eb034cab972f42b9",
       "regenerations": [
         "2026-10-31",
-        "2026-11-06"
+        "2026-11-06",
+        "2026-11-15"
       ],
       "structure": {
         "domain": [
@@ -202,6 +203,7 @@
         ],
         "headings": [
           "索引",
+          "商品としての研修の設計（商品設計の原則）",
           "運用メモ",
           "更新履歴"
         ],

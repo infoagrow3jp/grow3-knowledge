@@ -37,6 +37,33 @@ done < <(
   } | LC_ALL=C sort -zu
 )
 
+# 設計の関門（2026-11-15追加）：登録済みの設計作業フォルダ（Dropbox含む）の
+# 着手票を検査する。リポジトリに変更が無くても実行する（Dropbox直書きの仕事を拾うため）。
+# pythonが無い環境では警告のみ（道具の不在で全セッションを止めない。未対応経路として扱う）。
+GATE_OUTPUT=""
+GATE_STATUS=0
+if [ -f "$REPO_ROOT/scripts/design_gate_check.py" ]; then
+  if command -v python >/dev/null 2>&1; then
+    GATE_OUTPUT=$(python "$REPO_ROOT/scripts/design_gate_check.py" --hook 2>&1)
+    GATE_STATUS=$?
+  elif command -v py >/dev/null 2>&1; then
+    GATE_OUTPUT=$(py -3 "$REPO_ROOT/scripts/design_gate_check.py" --hook 2>&1)
+    GATE_STATUS=$?
+  else
+    echo "設計の関門：pythonが見つからないため着手票の検査を実行できませんでした。" >&2
+  fi
+fi
+if [ "$GATE_STATUS" -ne 0 ]; then
+  [ -n "$GATE_OUTPUT" ] && printf '%s\n' "$GATE_OUTPUT"
+  [ -n "$GATE_OUTPUT" ] && printf '%s\n' "$GATE_OUTPUT" >&2
+  if [ "$ACTIVE" = "true" ]; then
+    echo "設計の関門のFAILが未解消ですが、ループ防止のため停止を許可します。" >&2
+  else
+    echo "設計の関門：着手票のないまま設計の仕事が進んでいます。着手票を書いてください。" >&2
+    exit 2
+  fi
+fi
+
 [ "${#CHANGED[@]}" -eq 0 ] && exit 0
 
 # checkerの診断（stdout＋stderr）をまとめて取得し、実際のexit codeを保持する

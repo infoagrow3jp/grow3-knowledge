@@ -8,6 +8,9 @@ _tmp_*
 _icon_work/
 __pycache__/
 
+# 設計の関門：このPCだけの検査対象（extra: の絶対パス。公開しない）
+scripts/design-gate-local.txt
+
 # ルート直下の調査・再設計用スクリプトと出力
 _pptx_inspect.py
 _pptx_inspect_report.txt

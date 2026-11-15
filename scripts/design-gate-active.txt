@@ -1,0 +1,17 @@
+# 設計の関門：検査対象の設定（design_gate_check.py が読む）
+# scan:   この直下のサブフォルダ全部を検査対象にする（登録不要で自動検出）
+# except: scan配下で検査しないフォルダ名（設計の仕事ではない既存の作業。
+#         誤検出で止まるときも、ここに1行足して先へ進み、小林さんへ一行で報告する）
+# extra:  scan配下以外で検査対象に足すフォルダ（絶対パス）。ただし extra: は
+#         このファイルではなく、git管理しない design-gate-local.txt に書く
+#         （--init が自動登録。公開リポジトリに作業フォルダの絶対パスを載せない）
+scan: C:\Users\yksr3\Dropbox\grow3-knowledge_workspace\drafts
+except: ai-usage
+except: keiei-kakushin
+except: lexicon
+except: ontology
+except: persona
+except: principle-exploration
+# exceptに挙げた6つは2026-11-15時点の現物（記事・語彙・正本整備など、研修・商品・提案の
+# 設計ではない作業）。新しい設計の仕事をexcept配下に置かない。
+# drafts直下に直接置かれた単独ファイル（フォルダなし）は検査できない（票はフォルダ単位）。
