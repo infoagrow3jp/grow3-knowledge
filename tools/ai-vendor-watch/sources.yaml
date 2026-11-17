@@ -1,0 +1,169 @@
+# 監視ソースの定義（公式のみ）。提供元を足すときは、ここに足すだけで済む形にする。
+# まとめサイト・個人ブログは足さない。
+since: "2026-06-01"   # これより前の更新は取り込まない
+
+vendors:
+  anthropic: {prefix: A, skill: claude-usage}
+  openai:    {prefix: O, skill: gpt-usage}
+  google:    {prefix: G, skill: gemini-usage}
+
+# 仮判定に使う語。core に当たれば「判定待ち」。default が 判定待ち のソースで、
+# core に当たらず exclude だけに当たる項目は「対象外」。
+judge:
+  core: >-
+    \b(API|SDK|CLI|model|models|deprecat\w*|retire\w*|sunset|breaking|migrat\w*|headless|
+    non-interactive|agent|agents|subagent\w*|skill|skills|plugin\w*|MCP|tool use|tools?|
+    prompt\w*|context window|token\w*|permission\w*|sandbox\w*|approval\w*|config\w*|settings|
+    Claude Code|Codex|Gemini CLI|AGENTS\.md|CLAUDE\.md|GEMINI\.md|flag|option|parameter\w*|
+    endpoint\w*|Opus|Sonnet|Haiku|Fable|GPT-\S+|Gemini \d\S*|reasoning|thinking|effort|
+    structured output\w*|batch|cach\w+|streaming|rate limit\w*)\b
+  exclude: >-
+    \b(pricing|price|billing|invoice\w*|credits?|region\w*|countr\w+|available in|data residency|
+    SSO|SCIM|admin\w*|audit log\w*|compliance|Enterprise plan\w*|Team plan\w*|workspace analytics|
+    AWS|Bedrock|Vertex|Azure|Foundry)\b
+
+sources:
+  # ---------- Anthropic ----------
+  - id: claude-platform
+    vendor: anthropic
+    label: Claude Platform
+    type: md_dated
+    url: https://platform.claude.com/docs/en/release-notes/overview.md
+    page_url: https://platform.claude.com/docs/en/release-notes/overview
+    heading: '^#{2,4} (?P<date>[A-Z][a-z]+ \d{1,2}(?:st|nd|rd|th)?, 20\d\d)\s*$'
+    item: bullets
+  - id: claude-apps
+    vendor: anthropic
+    label: Claudeアプリ
+    type: md_dated
+    url: https://support.claude.com/en/articles/12138966-release-notes.md
+    page_url: https://support.claude.com/en/articles/12138966-release-notes
+    heading: '^### (?P<date>[A-Z][a-z]+ \d{1,2}, 20\d\d)\s*$'
+    item: bold
+    default: 対象外
+  - id: claude-code
+    vendor: anthropic
+    label: Claude Code
+    type: claude_code_changelog
+    product: Claude Code
+    url: https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md
+    page_url: https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md
+    npm: https://registry.npmjs.org/@anthropic-ai/claude-code
+  - id: anthropic-news
+    vendor: anthropic
+    label: 記事（anthropic.com/news）
+    type: html_dated
+    url: https://www.anthropic.com/news
+    base: https://www.anthropic.com
+    pattern: '<time[^>]*>(?P<date>[^<]+)</time>\s*</header>(?:\s*<a[^>]*aria-hidden[^>]*>.*?</a>)?\s*<a[^>]*href="(?P<href>[^"]+)"[^>]*>\s*<h[23][^>]*>(?P<title>.*?)</h[23]>'
+    default: 対象外
+  - id: anthropic-engineering
+    vendor: anthropic
+    label: 記事（anthropic.com/engineering）
+    type: html_dated
+    url: https://www.anthropic.com/engineering
+    base: https://www.anthropic.com
+    pattern: '<time[^>]*>(?P<date>[^<]+)</time>\s*</header>(?:\s*<figure.*?</figure>)?(?:\s*<a[^>]*aria-hidden[^>]*>.*?</a>)?\s*<a[^>]*href="(?P<href>[^"]+)"[^>]*>\s*<h[23][^>]*>(?P<title>.*?)</h[23]>'
+    default: 対象外
+  - id: claude-blog
+    vendor: anthropic
+    label: 記事（claude.com/blog）
+    type: html_dated
+    url: https://claude.com/blog
+    base: https://claude.com
+    pattern: '<span[^>]*>(?P<date>[A-Z][a-z]{2,8} \d{1,2}, 20\d\d)</span>\s*</div>\s*(?:<div[^>]*>\s*)*<h3[^>]*>(?P<title>.*?)</h3>'
+    default: 対象外
+
+  # ---------- OpenAI ----------
+  - id: openai-api
+    vendor: openai
+    label: OpenAI API
+    type: md_dated
+    url: https://developers.openai.com/api/docs/changelog.md
+    page_url: https://developers.openai.com/api/docs/changelog
+    heading: '^### (?P<date>[A-Z][a-z]{2,8} \d{1,2})\s*$'
+    year_heading: '^## [A-Z][a-z]+,? (?P<year>20\d\d)\s*$'
+    item: entry
+  - id: codex
+    vendor: openai
+    label: Codex
+    type: codex_html
+    url: https://developers.openai.com/codex/changelog
+  - id: chatgpt-whats-new
+    vendor: openai
+    label: ChatGPT（What's new）
+    # help.openai.com のリリースノートは自動取得を拒否される（403）ため、公式の週次まとめを使う。
+    type: md_weekly
+    url: https://learn.chatgpt.com/docs/whats-new.md
+    default: 対象外
+  - id: openai-news
+    vendor: openai
+    label: 記事（openai.com/news）
+    type: rss
+    url: https://openai.com/news/rss.xml
+    default: 対象外
+
+  # ---------- Google ----------
+  - id: gemini-api
+    vendor: google
+    label: Gemini API
+    type: md_dated
+    url: https://ai.google.dev/gemini-api/docs/changelog.md.txt
+    page_url: https://ai.google.dev/gemini-api/docs/changelog
+    heading: '^## (?P<date>[A-Z][a-z]+ \d{1,2}, 20\d\d)\s*(?:\{%\s*id="(?P<anchor>[^"]+)"\s*%\})?\s*$'
+    item: bullets
+  - id: gemini-cli
+    vendor: google
+    label: Gemini CLI
+    type: github_releases
+    product: Gemini CLI
+    repo: google-gemini/gemini-cli
+    skip_tag: 'nightly|preview'
+  - id: gemini-cli-notes
+    vendor: google
+    label: Gemini CLI（リリースノート）
+    type: html_dated
+    url: https://geminicli.com/docs/changelogs
+    pattern: '<h[1-4][^>]*>(?P<title>(?:<[^>]+>|\s)*Announcements: v[0-9.]+ - (?P<date>20\d\d-\d\d-\d\d).*?)</h[1-4]>'
+  - id: gemini-app
+    vendor: google
+    label: Geminiアプリ
+    type: html_cards
+    url: https://gemini.google/release-notes/
+    card_date: '<h2[^>]*>\s*(?P<date>20\d\d\.\d\d\.\d\d)\s*</h2>'
+    card_title: '<h3[^>]*>(?P<title>.*?)</h3>'
+    default: 対象外
+  - id: google-blog-gemini
+    vendor: google
+    label: 記事（blog.google Gemini）
+    type: rss
+    url: https://blog.google/products/gemini/rss/
+    default: 対象外
+  - id: google-blog-deepmind
+    vendor: google
+    label: 記事（blog.google DeepMind）
+    type: rss
+    url: https://blog.google/technology/google-deepmind/rss/
+    default: 対象外
+  - id: google-developers-blog
+    vendor: google
+    label: 記事（developers.googleblog.com）
+    type: rss
+    url: https://developers.googleblog.com/feeds/posts/default
+    default: 対象外
+
+# ドキュメントのページ一覧（新規・削除だけを見る。本文の差分は重点ページだけ）
+doc_indexes:
+  - {id: claude-code-docs, vendor: anthropic, label: Claude Codeドキュメント, urls: ["https://code.claude.com/docs/llms.txt"]}
+  - {id: claude-platform-docs, vendor: anthropic, label: Platformドキュメント, urls: ["https://platform.claude.com/llms.txt"]}
+  - id: openai-docs
+    vendor: openai
+    label: OpenAIドキュメント
+    urls: ["https://developers.openai.com/api/docs/llms.txt", "https://developers.openai.com/codex/llms.txt"]
+  - {id: gemini-api-docs, vendor: google, label: Gemini APIドキュメント, urls: ["https://ai.google.dev/gemini-api/docs/llms.txt"]}
+  - {id: gemini-cli-docs, vendor: google, label: Gemini CLIドキュメント, urls: ["https://geminicli.com/llms.txt"]}
+
+# 重点ページ（本文の変更を検知する）。一覧の正は各スキルの references/sources.md の表
+# （根拠ID｜ページ｜URL｜確認日）で、collect.py がそこから読む。ここには、スキルの根拠に
+# していないが変更を見張りたいページだけを足す（id / vendor / label / url）。
+focus_pages: []
