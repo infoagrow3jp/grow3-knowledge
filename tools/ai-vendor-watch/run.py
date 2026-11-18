@@ -50,8 +50,9 @@ class Run:
 
     # ---------- git ----------
     def git(self, *a, check=False) -> tuple[int, str]:
+        # pre-commit フックの中の bash も Git 付属のものになるよう、PATH の先頭に Git の bin を置く
         r = subprocess.run(["git", *a], cwd=REPO, capture_output=True, text=True,
-                           encoding="utf-8", errors="replace")
+                           encoding="utf-8", errors="replace", env=git_env())
         if check and r.returncode:
             raise RuntimeError(f"git {' '.join(a)} が失敗: {r.stderr.strip()[:300]}")
         return r.returncode, (r.stdout + r.stderr).strip()
@@ -330,15 +331,32 @@ class Run:
         return bad
 
     # ---------- 5. 公開と状態の確定 ----------
-    def predelivery(self) -> bool:
-        script = REPO / "scripts" / "pre-delivery-check.sh"
-        if not script.exists():
+    def run_check(self, *args: str):
+        """出荷前検品を Git 付属の bash で流す。戻り値：True=合格／False=不合格（FAILあり）／None=検品を実行できなかった。
+        PATH の先頭にある bash は WSL のものの場合があり、そこからはリポジトリのスクリプトが見えない（終了コード127）。"""
+        if not (REPO / "scripts" / "pre-delivery-check.sh").exists():
             return True
-        r = subprocess.run(["bash", "scripts/pre-delivery-check.sh", "--staged"], cwd=REPO,
-                           capture_output=True, text=True, encoding="utf-8", errors="replace")
-        if r.returncode:
-            self.notes.append("出荷前検品の不合格: " + (r.stdout + r.stderr)[-400:])
-        return r.returncode == 0
+        bash = git_bash()
+        if not bash:
+            self.notes.append("出荷前検品を実行できなかった: Git 付属の bash が見つからない")
+            return None
+        try:
+            r = subprocess.run([bash, "scripts/pre-delivery-check.sh", *args], cwd=REPO, capture_output=True,
+                               text=True, encoding="utf-8", errors="replace", timeout=900, env=git_env())
+        except Exception as e:
+            self.notes.append(f"出荷前検品を実行できなかった: {e}")
+            return None
+        out = (r.stdout + r.stderr)[-400:]
+        if r.returncode == 0:
+            return True
+        if r.returncode == 1 and "検品結果:" in r.stdout:   # 検品が最後まで走って FAIL を出した
+            self.notes.append("出荷前検品の不合格: " + out)
+            return False
+        self.notes.append(f"出荷前検品を実行できなかった（終了コード {r.returncode}）: " + out)
+        return None
+
+    def predelivery(self):
+        return self.run_check("--staged")
 
     def set_states(self, ids, st):
         state = collect.load_state()
@@ -364,7 +382,14 @@ class Run:
         self.stage()
         if not self.git("diff", "--cached", "--name-only")[1].strip():
             return
-        if not self.predelivery():
+        verdict = self.predelivery()
+        if verdict is None:
+            # 検品そのものが動かなかった。中身の不合格ではないので本体は捨てず、反映待ちに戻して次の実行に回す
+            self.git("reset", "-q")
+            self.set_states(ids, ST_APPLY)
+            self.failures.append("出荷前検品を実行できなかったためコミットしない（反映待ちのまま。次の実行で処理する）")
+            return
+        if not verdict:
             # スキル本体の変更を捨て、ログと状態だけで通し直す
             for skill in self.applied:
                 self.discard_body(skill)
@@ -372,7 +397,7 @@ class Run:
             self.failures.append("出荷前検品に不合格のためスキル本体の変更を捨てた（反映待ちのまま）")
             ids, self.applied = [], {}
             self.stage()
-            if not self.predelivery():
+            if self.predelivery() is not True:
                 self.git("reset", "-q")
                 self.failures.append("ログと状態だけでも出荷前検品を通らなかった（コミットしない）")
                 return
@@ -400,9 +425,7 @@ class Run:
             return
         errs = [e for s in self.applied for e in check_skill.check(s)]
         files = self.git("diff", "--name-only", f"{REMOTE}/{BRANCH}..HEAD")[1].split()
-        r = subprocess.run(["bash", "scripts/pre-delivery-check.sh", *files], cwd=REPO, capture_output=True,
-                           text=True, encoding="utf-8", errors="replace") if (REPO / "scripts/pre-delivery-check.sh").exists() else None
-        if errs or (r and r.returncode):
+        if errs or self.run_check(*files) is not True:
             self.self_heal("載せ直した後の検査に不合格")
             return
         if not self.push():
@@ -443,6 +466,35 @@ class Run:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
         print(json.dumps(rec, ensure_ascii=False, indent=1))
         return 1 if self.failures else 0
+
+
+def git_bash() -> str | None:
+    """Git for Windows 付属の bash を探す（git.exe の場所から決める）。Windows 以外は PATH の bash。"""
+    if os.name != "nt":
+        return shutil.which("bash")
+    git = shutil.which("git")
+    cands = []
+    if git:
+        root = Path(git).resolve().parent.parent          # …\Git\cmd\git.exe または …\Gitin\git.exe
+        cands += [root / "bin" / "bash.exe", root / "usr" / "bin" / "bash.exe", root.parent / "bin" / "bash.exe"]
+    for env in ("ProgramFiles", "ProgramW6432", "LOCALAPPDATA"):
+        if os.environ.get(env):
+            cands.append(Path(os.environ[env]) / "Git" / "bin" / "bash.exe")
+            cands.append(Path(os.environ[env]) / "Programs" / "Git" / "bin" / "bash.exe")
+    for c in cands:
+        if c.is_file():
+            return str(c)
+    return None
+
+
+def git_env() -> dict:
+    env = os.environ.copy()
+    bash = git_bash()
+    if bash and os.name == "nt":
+        b = Path(bash).parent
+        extra = [str(b), str(b.parent / "usr" / "bin")]
+        env["PATH"] = os.pathsep.join(extra + [env.get("PATH", "")])
+    return env
 
 
 def official_domains(skill: str) -> list[str]:
