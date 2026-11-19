@@ -17,10 +17,10 @@ description: >-
 - APIキーは環境変数 `GEMINI_API_KEY` で渡す。RESTは `x-goog-api-key` ヘッダで `v1beta/interactions` へ POST［D-gemini-api-get-started］
 
 ## モデルの選び方
-- APIはまず `gemini-4-hydrogen`。深い推論は `gemini-4-carbon` か `gemini-4-argon`、大量・低コストは `gemini-3.5-flash-lite`［D-gemini-api-latest-model］
+- APIはまず `gemini-4-hydrogen`。深い推論は `gemini-4-neon`・`gemini-4-carbon`・`gemini-4-argon`、大量・低コストは `gemini-3.5-flash-lite`［D-gemini-api-latest-model、G-2026-11-18-2］
 - モデルIDは公式一覧の文字列をそのまま使い、停止予定の表で確かめる［D-gemini-api-models、D-gemini-api-deprecations］
 - CLIは `-m` を省くと `auto`。指定するなら別名 `pro`・`flash`・`flash-lite` を使う［D-gemini-cli-reference］
-- `thinking_level` はモデルで使える値が違う（Carbon・Argon は `low`〜`high`、Hydrogen は `xhigh` まで）［D-gemini-api-latest-model］
+- `thinking_level` はモデルで使える値が違う（Carbon・Argon は `low`〜`high`、Hydrogen・Neon は `xhigh` まで）［D-gemini-api-latest-model、G-2026-11-18-2］
 - `gemini-4-carbon` で `max_output_tokens` を指定するなら 32,768 以上（思考と出力の合計の上限）［D-gemini-api-carbon］
 
 ## 指示の書き方
@@ -40,7 +40,7 @@ description: >-
 ## 操作別の注意
 - CLIのセッション再開は `gemini -r "latest" "指示"`。ID指定は `-r "<session-id>"`、一覧は `--list-sessions`（現在のプロジェクト分）［D-gemini-cli-reference］
 - 全ツール自動承認（`yolo`）はコマンドラインでしか有効にできない。`security.disableYoloMode` が true なら効かない［D-gemini-cli-configuration］
-- ツールごとの許可・拒否は `~/.gemini/policies/*.toml` に書く。ワークスペースの `.gemini/policies` は効かない［D-gemini-cli-policy-engine］
+- ツールごとの許可・拒否は `~/.gemini/policies/*.toml` に書く。ワークスペースの `.gemini/policies` は効かない。`argsPattern` は RE2 構文で、最上位の引数は `\x00` 区切り［D-gemini-cli-policy-engine、G-2026-11-19-4］
 - フォルダの信頼が有効な環境では、未信頼フォルダでの非対話実行は失敗する。`--skip-trust` か `GEMINI_CLI_TRUST_WORKSPACE=true` を付ける［D-gemini-cli-trusted-folders］
 - APIの会話継続は `previous_interaction_id`。`tools`・`system_instruction`・`generation_config` は引き継がれないので毎回指定する［D-gemini-api-interactions］
 - `store=false` にすると `previous_interaction_id` とバックグラウンド実行が使えない［D-gemini-api-interactions］

@@ -63,6 +63,7 @@
 - effort の決まり方は、環境変数 `CLAUDE_CODE_EFFORT_LEVEL`、セッション中の指定（`/effort` など）、`--effort`、設定ファイル、モデルの既定の順［D-claude-code-model-config］
 - 設定ファイルの `effortLevel` に書けるのは `low`・`medium`・`high`・`xhigh`（`max` は書けない）［D-claude-code-model-config］
 - 段階の目安：`low` は結果を毎回見る軽い作業、`medium` は範囲が明確な日常の開発、`high` は検証や境界条件が効く作業、`max` は任せきりの難問（考えすぎることがあるので試してから使う）［D-claude-code-model-config］
+- 圧縮の窓の大きさ（`CLAUDE_CODE_AUTO_COMPACT_WINDOW`）は100K トークン以上の数で指定する（例：`200000`）。値を引用した警告が出たら、そのセッションは指定どおりの値を使っていないので、数を指定し直す。`200k`・`1M` の書き方は v2.1.304 以降［A-2026-11-19-14］
 - `--fallback-model sonnet,haiku` のように渡すと、主モデルが混雑・利用不可のときに順に切り替える［D-claude-code-cli-reference］
 - サブエージェントのモデルは、呼び出し時の `model` 指定、定義の `model`、環境変数 `CLAUDE_CODE_SUBAGENT_MODEL`、親のモデルの順で決まる［D-claude-code-sub-agents］
 
@@ -140,6 +141,7 @@
 - 複数語のフィールド名は camelCase（`maxTurns`・`disallowedTools`・`permissionMode`）。未知のフィールドはエラーなしで無視される［D-claude-code-sub-agents］
 - 主なフィールド：`tools`（省くと全ツールを継承）、`disallowedTools`、`model`、`permissionMode`、`maxTurns`、`skills`（本文ごと先に読ませる）、`effort`、`isolation: worktree`［D-claude-code-sub-agents］
 - `model` には `sonnet`・`opus`・`haiku`・`fable`、モデルID、`inherit` が書ける。省くと、呼び出した会話と同じモデルで動く［D-claude-code-sub-agents］
+- `autoCompactWindow` は100000以上の整数で書く。frontmatter では `200k` は200と読まれ、下限未満として無視される〔v2.1.296以降〕。`CLAUDE_CODE_AUTO_COMPACT_WINDOW` も設定したときは、`autoCompactWindow`・モデルの文脈窓・その変数の窓のうち最小のものが使われる〔v2.1.312以降〕［A-2026-11-19-13］
 - サブエージェントは、新しい独立した文脈で始まる。会話履歴・呼び出し済みのスキル・読み込み済みのファイルは見えない［D-claude-code-sub-agents］
 - サブエージェントのシステムプロンプトは、定義の本文と環境情報だけで、Claude Code 本体のシステムプロンプトは入らない［D-claude-code-sub-agents］
 - CLAUDE.md の階層は、サブエージェントにも読み込まれる（組み込みの Explore と Plan は読まない。`omitClaudeMd: true` で外せる〔v2.1.271以降〕）［D-claude-code-sub-agents］
@@ -184,6 +186,8 @@
 - 承認を外部のツールに任せるときは `--permission-prompt-tool mcp__<サーバー>__<ツール>`［D-claude-code-cli-reference］
 - `bypassPermissions`（`--dangerously-skip-permissions`）は、隔離したコンテナ・VMの中だけで使う。Linux と macOS では、root や `sudo` での起動は拒否される［D-claude-code-permission-modes］
 - `bypassPermissions` でも deny ルールは効く。allow ルールは効果がない［D-claude-code-permission-modes］
+- `--restricted` を付けた起動では `bypassPermissions` が拒否され、`Error: bypassPermissions not supported in restricted mode` になる。`--dangerously-skip-permissions` など有効にしている指定を外すか、`--restricted` なしで起動する〔v2.1.248以降〕［A-2026-11-19-10］
+- auto モードでは、サーバー側の分類器の審査のもとで、作業ツリーがきれいな状態の `git reset --hard` が止められることがある。止められた後は分類器がきれいな状態を見て、Claude の再試行を許可できる［A-2026-11-19-10］
 - どのモードでも自動承認されないもの：明示の ask ルールに当たるツール、`AskUserQuestion`、重要なパスへの `rm`・`rmdir`［D-claude-code-permission-modes］
 - 権限ルールは Claude Code が強制する。指示文や CLAUDE.md に書いても、許可・禁止は変わらない［D-claude-code-permissions］
 
@@ -251,6 +255,7 @@
 - 使わない：`claude-fable-5-2`・`claude-mythos-5-2` での `thinking: {type: "disabled"}`（代わりに effort を下げる）。400［D-platform-fable-5-2-migration］
 - 使わない：`claude-fable-5-2`・`claude-mythos-5-2` での `tool_choice` の `{type: "any"}`・`{type: "tool", name: "..."}`（代わりに `{type: "auto"}`）。400［D-platform-fable-5-2-migration］
 - 使わない：`claude-sonnet-4-5-20250929`（代わりに `claude-sonnet-5-5`）。非推奨で、提供終了は2026年11月30日［D-platform-model-deprecations］
+- 使わない：日付なしの `claude-sonnet-4-5`（代わりに `claude-sonnet-5-5`）。日付つきIDと同じ2026年11月30日に提供終了。提供終了後、Claude Code は `There's an issue with the selected model` で始まるエラーを出す。フォールバックのモデル列を設定していれば次のモデルへ切り替わる［A-2026-11-19-16］
 - 使わない：`claude-mythos-preview`（非推奨。提供終了日は未発表）［D-platform-model-deprecations］
 - 使わない：提供終了のモデル。`claude-opus-4-1-20250805`・`claude-opus-4-20250514`（代わりに `claude-opus-4-8`）、`claude-sonnet-4-20250514`・`claude-3-7-sonnet-20250219`（代わりに `claude-sonnet-5-5`）、`claude-3-5-haiku-20241022`・`claude-3-haiku-20240307`（代わりに `claude-haiku-4-5-20251001`）［D-platform-model-deprecations］
 - 使わない：`--enable-auto-mode`（代わりに `--permission-mode auto`）。v2.1.111 で削除［D-claude-code-cli-reference］

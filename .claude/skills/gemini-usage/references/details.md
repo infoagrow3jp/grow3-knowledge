@@ -39,6 +39,7 @@ gemini -p "指示" --output-format json
 - REST の応答は `Interaction` リソース全体で、`steps` 配列に `thought` や `model_output` が順に入る［D-gemini-api-get-started］
 - システム指示は `system_instruction`、生成の設定は `generation_config`（`thinking_level`・`max_output_tokens` など）で渡す［D-gemini-api-interactions、D-gemini-api-carbon］
 - ストリーミングは `stream=True`。`step.delta` イベントで文章の断片が届く［D-gemini-api-get-started］
+- Word・PowerPoint・Excel と OpenDocument のファイルを直接渡せる。ユーザーの指示と関数の応答の中で、文書・表計算・動画・音声の一部（ページ範囲・シート・セル範囲・時間区間、ページ画像・抽出テキスト・数式・動画の文字起こしなどの層）だけを選んで処理できる［G-2026-11-18-1］
 
 呼び出しの形：
 
@@ -57,11 +58,12 @@ print(interaction.output_text)
 
 ### Gemini API
 
-- 文章・コード・推論の現行の推奨は、汎用の既定が `gemini-4-hydrogen`、最上位の推論が `gemini-4-carbon` と `gemini-4-argon`、大量・低コストが `gemini-3.5-flash-lite`［D-gemini-api-latest-model］
+- 文章・コード・推論の現行の推奨は、汎用の既定が `gemini-4-hydrogen`、最上位の推論が `gemini-4-neon`・`gemini-4-carbon`・`gemini-4-argon`、大量・低コストが `gemini-3.5-flash-lite`［D-gemini-api-latest-model、G-2026-11-18-2］
+- `gemini-4-neon` は2026年11月18日に一般提供（GA）になった。有料枠のみで、価格は入力100万トークンあたり $3.00・出力 $15.00［G-2026-11-18-2］
 - `gemini-4-carbon` は推論の深さを優先するモデルで、1ターンあたりの思考トークンと遅延が Argon より大きい［D-gemini-api-carbon］
 - `gemini-4-argon` は応答が速く1ターンあたりのトークン消費が少ない。対話的なコーディングや日常の機能開発向け［D-gemini-api-carbon］
-- Gemini 4 の3モデルはコンテキストが100万トークン、出力は既定64K・ロングデコードで最大100万トークン［D-gemini-api-latest-model］
-- `thinking_level` の使える値は、`gemini-4-carbon` と `gemini-4-argon` が `low`・`medium`（既定）・`high`、`gemini-4-hydrogen` が `low`・`medium`・`high`（既定）・`xhigh`、`gemini-3.5-flash-lite` が `minimal`（既定）・`low`・`medium`・`high`［D-gemini-api-latest-model］
+- Gemini 4 の各モデルはコンテキストが100万トークン、出力は既定64K・ロングデコードで最大100万トークン［D-gemini-api-latest-model、G-2026-11-18-2］
+- `thinking_level` の使える値は、`gemini-4-carbon` と `gemini-4-argon` が `low`・`medium`（既定）・`high`、`gemini-4-hydrogen` と `gemini-4-neon` が `low`・`medium`・`high`（既定）・`xhigh`、`gemini-3.5-flash-lite` が `minimal`（既定）・`low`・`medium`・`high`［D-gemini-api-latest-model］
 - `thinking_level` は3段階とも評価し、品質の基準を満たす最も低い値を選ぶ［D-gemini-api-carbon］
 - `max_output_tokens` は思考と出力の合計の上限。`gemini-4-carbon` では、32K未満を指定している既存の実装は 32,768 以上に上げる［D-gemini-api-carbon］
 - `gemini-4-carbon` は無料枠では使えない［D-gemini-api-carbon］
@@ -149,6 +151,9 @@ print(interaction.output_text)
 - 優先度は 0〜999 で、数字が大きいほど優先される。階層は Admin が User より、User が既定より優先される［D-gemini-cli-policy-engine］
 - シェルのコマンドは `commandPrefix` か `commandRegex` で指定する（同じルールで両方は使えない）［D-gemini-cli-policy-engine］
 - リダイレクト（`>` など）やコマンド置換（`$()` など）を含むコマンドは、ルールに合っても確認になる。許すには `allowRedirection`・`allowCommandSubstitution` を true にする［D-gemini-cli-policy-engine］
+- ツール引数は安定したJSON文字列にして `argsPattern` の正規表現と照合する。最上位の引数どうしは `\x00` で区切られ、ネストした値は区切られない。最上位だけに合わせるには `\x00` で始める（例 `'\x00"command":"git '`）［G-2026-11-19-4］
+- `argsPattern` は RE2 構文。先読み・後読み・後方参照・`\uXXXX` は使えず（`\x{XXXX}` を使う）、繰り返しは1,000回まで。旧版はJavaScriptの正規表現として評価していたので、以前読み込めたルールが無効と報告されたら書き直す［G-2026-11-19-4］
+- `commandRegex` は最上位の `command` 引数だけに合う。`ls|pwd` のような選択肢もコマンドの先頭から合わせる［G-2026-11-19-4］
 - MCP のツールは `mcpName` で指定する。MCP サーバー名にアンダースコアを使うとルールが正しく効かない［D-gemini-cli-policy-engine］
 - 追加のポリシーの場所は設定の `policyPaths` で指定できる［D-gemini-cli-configuration］
 
