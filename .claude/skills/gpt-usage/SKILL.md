@@ -10,8 +10,7 @@ description: >-
 - `codex exec` の既定は読み取り専用。編集させるなら `--sandbox workspace-write` を付ける［D-codex-non-interactive］
 - Git リポジトリの外では止まる。外で使うなら `--skip-git-repo-check` を付ける［D-codex-non-interactive］
 - 長い指示は stdin で渡す：`cat prompt.txt | codex exec -`。引数と併用するとパイプ側は追加の文脈になる［D-codex-non-interactive］
-- API は Responses API：`client.responses.create(model="<モデルID>", input="…")`、文章は `response.output_text`［D-api-quickstart］
-- SDK は環境変数 `OPENAI_API_KEY` を自動で読む（引数でキーを渡さなくてよい）［D-api-quickstart］
+- API は Responses API：`client.responses.create(model="<モデルID>", input="…")`、文章は `response.output_text`。SDK は環境変数 `OPENAI_API_KEY` を自動で読む［D-api-quickstart］
 
 ## モデルの選び方
 - 現行ID：`gpt-6.2-astra`（最難度）、`gpt-6.2-sol`（日常のコーディング・エージェント）、`gpt-6.1-terra`（文章・画像）、`gpt-6-luna`（定型・大量）［O-2026-11-19-16］
@@ -43,7 +42,7 @@ description: >-
 - 非対話で新たな承認が要る操作は失敗する。権限は起動時に指定する（`codex exec` の表に `--ask-for-approval` はない）［D-codex-subagents、D-codex-cli-reference］
 - 機械で読むなら `--json`、最終メッセージだけなら `-o <ファイル>`、形を固定するなら `--output-schema <schema.json>`［D-codex-non-interactive］
 - API の続きは `previous_response_id`。`instructions` は引き継がれないので、連なり全体の指示は最初の `developer` メッセージに置く（`conversation` と併用不可）［O-2026-11-19-17、O-2026-11-19-18］
-- GPT-6.2 以降は、推論の項目より前の履歴を書き換えるか `safety_identifier` を変えると、その推論の項目が捨てられる。履歴は先頭を変えず追記する［O-2026-11-19-20］
+- GPT-6.2 以降は、推論の項目より前の履歴を書き換えるか `safety_identifier` を変えると、その推論の項目が捨てられる。`tools`・`text.format` も変えない。履歴は先頭を変えず追記し、ツールの追加は `additional_tools`、出力の形や effort の変更は `configuration_update` を末尾に足す［O-2026-11-19-20、O-2026-11-19-2］
 - API の構造化出力は `response_format` ではなく `text.format` で指定する［D-api-migrate-responses］
 
 ## 使わないもの
@@ -51,6 +50,7 @@ description: >-
 - 使わない：`approval_policy` の `untrusted`・`on-failure`（代わりに `on-request` か `never`）［D-codex-approvals、D-codex-config-reference］
 - 使わない：Codex の `wire_api = "chat"`（代わりに Responses API 互換のエンドポイント）［D-codex-models］
 - 使わない：ChatGPT サインインの Codex での `gpt-5.5`・`gpt-5.4`・`gpt-5.3-codex`（代わりに `gpt-6.1-sol` など現行ID）［D-codex-models］
+- 使わない：`gpt-6.2-astra`・`gpt-6.2-sol` への `service_tier: flex`（非対応。代わりに Standard）［O-2026-11-19-3］
 - 使わない：新規実装とツール呼び出しでの Chat Completions（代わりに Responses API）［D-api-migrate-responses、D-api-gpt6-guide］
 - 使わない：Assistants API（停止済み。代わりに Responses API と Conversations API）［D-api-deprecations］
 - 使わない：`/v1/prompts` の保存済みプロンプト（2026-11-30 停止。代わりにプロンプトをコードに置く）［D-api-deprecations］

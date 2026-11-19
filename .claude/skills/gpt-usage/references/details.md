@@ -72,6 +72,9 @@ print(response.output_text)
 - Codex CLI では起動時に `--model`（`-m`）で指定し、非対話実行でも `codex exec -m gpt-6.2-sol "…"` のように同じ指定が使える。［O-2026-11-19-14］
 - GPT-6.2 Astra・GPT-6.2 Sol は Codex でコンテキストウィンドウを最大 100 万トークンまで使える（`config.toml` の `model_context_window` で設定する）。［O-2026-11-19-14］
 - Responses API の公開ベータで、バックグラウンド完了の猶予を2時間か8時間から選べる。対象は `gpt-6.2-astra`・`gpt-6.2-sol`・`gpt-6.1-terra`・`gpt-6-luna` で、トークン単価は Standard より2時間枠で 30%、8時間枠で 40% 低い。［O-2026-11-17-72］
+- `gpt-6.2-astra`・`gpt-6.2-sol` は Flex（`service_tier: flex`）に対応しない。［O-2026-11-19-3］
+- `gpt-6.2-astra`・`gpt-6.2-sol` は Ultrafast に対応する（公開時点）。データ所在地の指定は、US・EU が Standard・Fast・Batch、Ultrafast は US のみ。［O-2026-11-19-5、O-2026-11-19-3］
+- `gpt-6.2-astra`・`gpt-6.2-sol` は Chat Completions でも使えるが、ツール呼び出しには Responses API が要る。［O-2026-11-19-3］
 - `gpt-6.1-terra` を Codex CLI で使うには 0.159.0 以降が要る。［D-codex-models］
 - 既定のモデルは `config.toml` の `model` で決まり、指定がなければ推奨モデルが使われる。［D-codex-models］
 - API キーで認証した Codex では、使えるモデルは API の組織とプロジェクトに従う。［D-codex-models］
@@ -87,6 +90,8 @@ print(response.output_text)
 - `gpt-6.1-terra`・`gpt-6-sol`・`gpt-6-luna` は `none` に対応する。［D-api-gpt6-guide］
 - `gpt-6.1-sol`・`gpt-6-sol`・`gpt-6-luna` は、`reasoning.effort` を省くと `medium` になる。［D-api-reasoning］
 - 既存のリクエストが `minimal` を使っているなら、`low` から始めて代表的なタスクで比べる。［D-api-gpt6-guide］
+- `gpt-6.2-astra`・`gpt-6.2-sol` を新規に使うなら `medium` から始める。`none` か `minimal` を使っていた呼び出しは `low` にする。［O-2026-11-19-3］
+- `gpt-6.2-astra`・`gpt-6.2-sol` では、Chat Completions でも `temperature`・`top_p`・`logprobs`・`top_logprobs` を省く（Responses では `temperature`・`top_p`・`top_logprobs` を省き、`include` から `message.output_text.logprobs` を外す）。［O-2026-11-19-3］
 - 推論の強さが `none` 以外のときは `temperature`・`top_p`・`top_logprobs` を外す（Responses では `include` から `message.output_text.logprobs` も外す）。［D-api-gpt6-guide］
 - `reasoning.mode` は `standard`（既定）と `pro` があり、推論の強さとは独立している。［D-api-reasoning］
 - `reasoning.effort` は品質を取り戻す主な手段ではなく、調整のつまみとして扱う。［D-api-reasoning］
@@ -105,6 +110,16 @@ print(response.output_text)
 - Codex への良い指示は、求める挙動を名指しし、関係するコードや再現手順を示し、大事な制約を守らせ、変更の確かめ方を伝える。［D-codex-prompting］
 - IDE 拡張は開いているファイルを自動で文脈に入れるが、CLI ではパスを明示する。［D-codex-prompting］
 - 大事な作業では、最後の確認（たとえば全項目に担当と期限があるか）を指示に含める。［D-codex-prompting］
+
+GPT-6.2 を Codex で使うときの公式の書き方：
+
+- 同僚に頼む調子で書き、成果をレビューするときに何を見るかを伝える。［O-2026-11-19-6］
+- 推論の強さは作業の深さに合わせる：簡単な調査は Medium、1つの原因を複数のシステムにわたって追うなら High、複数の原因が絡むなら Extra High。［O-2026-11-19-6］
+- 完了条件と、網羅してほしい箇所を伝える。［O-2026-11-19-6］
+- 並列にしたい作業には「必要に応じてサブエージェントを使う」と書く。繰り返し使う指示は、適用条件とともにスキルか `AGENTS.md` に書く。Ultra では Codex が自分でサブエージェントを投入するかを判断する。［O-2026-11-19-6］
+- `AGENTS.md` は簡潔にし、コードやドキュメントから推測できないプロジェクトの要件・規約・必須の流れだけを書く。［O-2026-11-19-6］
+- 複数のエージェントが同じマシンを使うときは、ビルドとテストの同時実行数に配慮させ、終わるときにバックグラウンドのジョブと一時ファイルを片付けさせる。［O-2026-11-19-6］
+- API では、既定の出力がより簡潔・直接的になるので、既存の「簡潔に」系の指示を見直す。意図が不明だと次の一手を提案して確認待ちになることがあるので、長い作業では妥当で後から戻せる仮定を置いて進め、その仮定を述べるよう書く。［O-2026-11-19-3］
 
 ### API のプロンプト
 
@@ -145,6 +160,9 @@ print(response.output_text)
 - `codex exec` と `codex review` は、書き込み可能なサンドボックスでも、信頼済みのプロジェクトでだけプロジェクトの設定とプロジェクト定義の MCP サーバーを読む。`--trust` で信頼を保存できる。［D-codex-non-interactive］
 - プロジェクト側の `.codex/config.toml` に書いても無視されるキーがある（`model_provider`・`model_providers`・`profile`・`notify`・`otel` など）。これらはユーザー設定に置く。［D-codex-config-reference］
 - よく変える項目は `model`、`approval_policy`、`sandbox_mode`、`web_search`、`model_reasoning_effort`。［D-codex-config-basic］
+- `--strict-config` を付けると、`config.toml` の未知のキーがエラーになる。付けなければ無視される。［O-2026-11-20-1］
+- 有効なモデル・承認方針・トークン使用量は `/status`、設定の層の優先順は `/debug-config` で確かめられる。［O-2026-11-20-1］
+- ChatGPT Work のチャットは管理された環境で動き、手元の Codex の設定ファイルを読まない。［O-2026-11-20-1］
 - 管理された端末では、組織が `requirements.toml` で制約をかけていることがある（たとえば `approval_policy = "never"` や `sandbox_mode = "danger-full-access"` の禁止）。［D-codex-config-basic］
 
 ### スキル
@@ -209,6 +227,10 @@ print(response.output_text)
 
 - 前の応答の続きは `previous_response_id` で指定する。前の応答の `instructions` は引き継がれない。連なり全体の指示は、最初のリクエストの `input` の先頭の `developer` メッセージに置くと、後続の応答に引き継がれる。［O-2026-11-19-17、O-2026-11-19-18］
 - GPT-6.2 以降は、推論の項目より前の内容を挿入・編集する（例：過去のツール結果を書き換える）と、その推論の項目が捨てられる（`prefix_mismatch`）。項目を丸ごと削除するだけ、または推論の項目より後ろに追記するだけでは、この理由では捨てられない。［O-2026-11-19-20］
+- GPT-6.2 以降は、Responses API の `tools`・`text.format` を途中で変えても、その後ろの推論の項目が捨てられる。変更は追記で行う：ツールの追加は `additional_tools` の項目、出力の形や推論の強さの変更は `configuration_update` の項目を `input` の末尾に足し、リクエスト単位の設定は元のまま保つ。ツールを絞るなら `tool_choice` と `allowed_tools`。［O-2026-11-19-2］
+- GPT-6.2 より前のモデルでは `instructions` を変えると先頭が変わり、キャッシュが切れる。過去の `input` の項目の編集、ツール結果や古いターンの縮小・要約への置き換えも同様。縮める必要があるなら compaction を使うか、最初に送る前に縮める。［O-2026-11-19-2］
+- OpenAI の compaction（`/responses/compact`、`context_management`）では後続の推論の項目が残る。`/responses/compact` を呼ぶときは `instructions` を省き、返った内容を元の順序で次のリクエストに渡す。独自の compaction では、圧縮した項目を直近のターンの前ではなく文脈の末尾に置く。［O-2026-11-19-2］
+- 先頭の変更によるキャッシュ切れは `prompt_cache_options.comparison_response_id`（Prompt Cache Diagnostics）で調べられる。［O-2026-11-19-2］
 - GPT-6.2 以降は、推論の項目を作ったリクエストと再利用するリクエストで `safety_identifier` が違うと、その項目が捨てられる（`end_user_mismatch`）。片方にだけ付けた場合も含む。両方に同じ値を付けるか、両方とも付けなければ通る。［O-2026-11-19-20］
 - 推論の項目が意図せず捨てられたかは、応答の `input_transformations` で確かめられる。ほかの理由は `model_mismatch`・`organization_mismatch`・`turn_boundary`。［O-2026-11-19-20］
 - `previous_response_id` は `conversation` と一緒には使えない。［D-api-responses-create］
@@ -256,5 +278,6 @@ print(response.output_text)
 - 使わない：GPT-4o・GPT-4o mini・GPT-4.1・GPT-4.1 mini の各スナップショット（2027-01-14 に停止予定。代わりに `gpt-6-luna`）。［D-api-deprecations］
 - 使わない：`gpt-5.1`・`gpt-5.3-codex`（2027-04-01 に停止予定。代わりに `gpt-6-sol`）。［D-api-deprecations］
 - 使わない：`gpt-5.4-nano`（2027-04-01 に停止予定。代わりに `gpt-6-luna`）。［D-api-deprecations］
+- 使わない：EU のデータ所在地で `service_tier: fast`・`priority` を付けた `gpt-5.2`・`gpt-5.4`・`gpt-5.4-mini`（2027-01-11 に非推奨。代わりに同じモデルを EU のデータ所在地・Standard（`service_tier: default`）で使うか、GPT-6.2 系）。［O-2026-11-20-3］
 - 使わない：停止済みの `gpt-4`・`gpt-4-turbo`・`o1`・`o3-mini`・`gpt-5-codex`・`gpt-5.1-codex`・`gpt-5.2-codex`（一覧上の置き換え先は `gpt-5.6-sol`）。［D-api-deprecations］
 - 使わない：停止済みの `gpt-3.5-turbo`・`o4-mini`（一覧上の置き換え先は `gpt-5.6-terra`）。［D-api-deprecations］

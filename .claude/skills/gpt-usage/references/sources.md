@@ -26,7 +26,7 @@
 | D-codex-models | Codex のモデル | https://learn.chatgpt.com/docs/models.md | 2026-11-19 |
 | D-api-quickstart | API のクイックスタート | https://developers.openai.com/api/docs/quickstart.md | 2026-11-19 |
 | D-api-models | API のモデル一覧 | https://developers.openai.com/api/docs/models.md | 2026-11-19 |
-| D-api-deprecations | API の廃止・非推奨 | https://developers.openai.com/api/docs/deprecations.md | 2026-11-17 |
+| D-api-deprecations | API の廃止・非推奨 | https://developers.openai.com/api/docs/deprecations.md | 2026-11-20 |
 | D-api-responses-create | Responses API の作成リファレンス | https://developers.openai.com/api/reference/resources/responses/methods/create.md | 2026-11-19 |
 | D-api-migrate-responses | Responses API への移行ガイド | https://developers.openai.com/api/docs/guides/migrate-to-responses.md | 2026-11-19 |
 | D-api-gpt6-guide | GPT-6 の使い方（最新モデル向けのプロンプトと移行） | https://developers.openai.com/api/docs/guides/latest-model/gpt-6-astra.md | 2026-11-17 |

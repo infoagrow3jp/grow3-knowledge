@@ -20,7 +20,7 @@ description: >-
 - APIはまず `gemini-4-hydrogen`。深い推論は `gemini-4-neon`・`gemini-4-carbon`・`gemini-4-argon`、大量・低コストは `gemini-3.5-flash-lite`［D-gemini-api-latest-model、G-2026-11-18-2］
 - モデルIDは公式一覧の文字列をそのまま使い、停止予定の表で確かめる［D-gemini-api-models、D-gemini-api-deprecations］
 - CLIは `-m` を省くと `auto`。指定するなら別名 `pro`・`flash`・`flash-lite` を使う［D-gemini-cli-reference］
-- `thinking_level` はモデルで使える値が違う（Carbon・Argon は `low`〜`high`、Hydrogen・Neon は `xhigh` まで）［D-gemini-api-latest-model、G-2026-11-18-2］
+- `thinking_level` はモデルで使える値が違う（Carbon・Argon は `low`〜`high`、Hydrogen・Neon は `xhigh` まで。Gemini 4 は `minimal` 不可）［D-gemini-api-latest-model、G-2026-11-18-2、G-2026-11-20-5］
 - `gemini-4-carbon` で `max_output_tokens` を指定するなら 32,768 以上（思考と出力の合計の上限）［D-gemini-api-carbon］
 
 ## 指示の書き方
@@ -53,7 +53,7 @@ description: >-
 - 使わない：`temperature`・`top_p`・`top_k`（Gemini 4 と 3.6 以降は無視する。代わりに指定を外す）［D-gemini-api-prompting］
 - 使わない：`gemini-2.5-pro`・`gemini-2.5-flash`（代わりに `gemini-3.8-flash`・`gemini-3.5-flash-lite`）［D-gemini-api-deprecations］
 - 使わない：停止済みの `gemini-2.0-flash`・`gemini-3-pro-preview`（代わりに `gemini-3.6-flash`・`gemini-3.1-pro-preview`）［D-gemini-api-deprecations］
-- 使わない：`gemini-4-carbon` での明示キャッシュ `caches.create`・`cached_content`（代わりに既定の暗黙キャッシュ）［D-gemini-api-carbon］
+- 使わない：`gemini-4-carbon`・`gemini-4-neon` での明示キャッシュ `caches.create`・`cached_content`（代わりに既定の暗黙キャッシュ）［D-gemini-api-carbon、G-2026-11-20-4］
 - 使わない：CLIの `--yolo`・`-y`（代わりに `--approval-mode=yolo`）［D-gemini-cli-reference］
 - 使わない：CLIの `--allowed-tools` と設定の `tools.exclude`（代わりにポリシーエンジンのルール）［D-gemini-cli-reference、D-gemini-cli-policy-engine］
 

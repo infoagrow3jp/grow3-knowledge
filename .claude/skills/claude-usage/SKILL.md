@@ -10,7 +10,7 @@ description: >-
 - CLIの非対話実行は `claude -p "指示"`。終了コード0が成功、0以外が失敗［D-claude-code-headless］
 - `-p` は承認が要るツール呼び出しを拒否する。`--allowedTools "Read,Edit,Bash(git diff *)"` で列挙するか `--permission-mode auto` を付ける〔v2.1.302以降〕［D-claude-code-permission-modes、D-claude-code-headless］
 - 機械で読むときは `--output-format json` を付け、本文は `result`、セッションIDは `session_id` から取る［D-claude-code-headless］
-- どの環境でも同じ結果にしたいスクリプト・CIは `--bare` を付ける。フック・スキル・MCP・CLAUDE.md を読まず、認証は `ANTHROPIC_API_KEY` が要る［D-claude-code-headless］
+- 起動を速くしたいスクリプト・CIは `--bare` を付ける。フック・スキル・MCP・CLAUDE.md を自動で読まない（設定ファイルの権限ルールは読む）。認証は `ANTHROPIC_API_KEY` が要る［A-2026-11-20-8、D-claude-code-headless］
 - APIは `/v1/messages` へPOSTし、本文に `model`・`max_tokens`・`messages`、ヘッダーに `x-api-key`・`anthropic-version: 2026-10-21`・`content-type: application/json` を送る（SDKはヘッダーを自動で付ける）［D-platform-working-with-messages、D-platform-api-versioning］
 
 ## モデルの選び方
@@ -30,7 +30,7 @@ description: >-
 - CLAUDE.md は毎回読まれる文脈で、強制力はない。1ファイル200行未満、検証できる具体的な文で書く［D-claude-code-memory］
 - 例外を許さない決まりは CLAUDE.md ではなくフックか deny ルールにする［D-claude-code-best-practices、D-claude-code-permissions］
 - スキルは `.claude/skills/<名前>/SKILL.md`。frontmatter は1行目の `---` から書き、`description` の先頭に主な用途を置く［D-claude-code-skills］
-- サブエージェント定義は `name` と `description` が必須。欠けるとファイルごと黙って読み飛ばされ、未知のフィールド名も無視される［D-claude-code-sub-agents］
+- サブエージェント定義は `name` と `description` が必須。欠けるとファイルごと読み飛ばされ、未知のフィールド名も無視される［A-2026-11-20-5、D-claude-code-sub-agents］
 - サブエージェントは会話履歴を見ない。必要な前提は委任の指示にすべて書く［D-claude-code-sub-agents］
 
 ## 操作別の注意

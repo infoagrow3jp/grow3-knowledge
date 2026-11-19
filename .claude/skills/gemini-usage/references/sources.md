@@ -25,9 +25,9 @@
 | D-gemini-cli-subagents | Gemini CLI のサブエージェント | https://raw.githubusercontent.com/google-gemini/gemini-cli/main/docs/core/subagents.md | 2026-11-17 |
 | D-gemini-api-get-started | Gemini API のはじめ方（Interactions API） | https://aistudio.google.com/docs/get-started.md | 2026-11-19 |
 | D-gemini-api-interactions | Interactions API の概要 | https://aistudio.google.com/docs/interactions-overview.md | 2026-11-19 |
-| D-gemini-api-models | Gemini API のモデル一覧 | https://aistudio.google.com/docs/models.md | 2026-11-19 |
+| D-gemini-api-models | Gemini API のモデル一覧 | https://aistudio.google.com/docs/models.md | 2026-11-20 |
 | D-gemini-api-latest-model | 最新の Gemini モデル（選び方の概要） | https://aistudio.google.com/docs/latest-model.md | 2026-11-19 |
-| D-gemini-api-deprecations | Gemini API の廃止予定 | https://aistudio.google.com/docs/deprecations.md | 2026-11-19 |
+| D-gemini-api-deprecations | Gemini API の廃止予定 | https://aistudio.google.com/docs/deprecations.md | 2026-11-20 |
 | D-gemini-api-libraries | Gemini API のライブラリ（Google GenAI SDK と旧ライブラリ） | https://aistudio.google.com/docs/libraries.md | 2026-11-17 |
 | D-gemini-api-migrate-sdk | Google GenAI SDK への移行ガイド | https://aistudio.google.com/docs/migrate.md | 2026-11-17 |
 | D-gemini-api-prompting | プロンプト設計の公式ガイド（Prompt design strategies） | https://aistudio.google.com/docs/prompting-strategies.md | 2026-11-17 |

@@ -16,12 +16,14 @@
 - `--bare` で使えるツールは Bash・ファイル読み取り・ファイル編集。必要な文脈は `--append-system-prompt`・`--settings`・`--mcp-config`・`--agents`・`--plugin-dir` で渡す［D-claude-code-headless］
 - `--bare` ではフックが動かない（`--settings` で渡しても動かない）。フックが要る実行には使わない［D-claude-code-headless、D-claude-code-best-practices］
 - `--bare` はスクリプトとSDKからの呼び出しで推奨されるモード［D-claude-code-headless］
+- `--bare` でも設定ファイルとその権限ルールは読まれる。`~/.claude/settings.json` のフックと、プロジェクトの `.mcp.json` のMCPサーバーは動かない［A-2026-11-20-8］
 - `--bare` なしの `-p` は、信頼確認のダイアログを出さずに、作業フォルダの `.claude/settings.json` のフックと `.mcp.json` のサーバーを読み込む［D-claude-code-headless］
 - 止めどころは `--max-turns <回数>` と `--max-budget-usd <金額>`（どちらも `-p` 専用）。金額は概算で、上限を超えることがある［D-claude-code-cli-reference、D-claude-code-best-practices］
 - `-p` では、指示文に `/スキル名` を入れるとスキルが展開される。`/login` など端末専用の組み込みコマンドは使えない［D-claude-code-headless］
 - バックグラウンド作業が残っていると、`-p` は終了せず待つ。既定では連続10分の待機で残りを止める（`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS` で変更）［D-claude-code-headless］
 - SIGTERM で止めると終了コード143で、進行中のターンは未完のまま残る。ターンを終わらせたいときは SIGINT を先に送る［D-claude-code-headless］
 - セッションを保存しないときは `--no-session-persistence`（`-p` 専用。再開できなくなる）［D-claude-code-cli-reference］
+- `claude auth status` はJSONで認証状態を返し、ログインしていれば終了コード0、していなければ1。`loginExpiresAt` は保存済みログインの有効期限の見込み日か `null`〔v2.1.318以降〕［A-2026-11-20-9］
 - 無人実行の前に決めること：完了の条件、自分で確認する手段、触ってよい範囲、止める条件、結果の行き先と承認者［D-claude-code-best-practices］
 
 ### Claude API（Messages API）
@@ -54,6 +56,7 @@
 
 - `--model` には別名かモデルIDを渡す。別名は `fable`・`opus`・`sonnet`・`haiku`・`best`（`opus` と同じ）・`opusplan`（計画は `opus`、実行は `sonnet`）・`default`（上書きを消す）［D-claude-code-model-config］
 - 別名は推奨版を指し、時間とともに変わる。接続先（プロバイダー）によって古い版に解決されることがある。固定するときはモデルID（例：`claude-opus-5-5`）を渡す［D-claude-code-model-config］
+- `opus`・`sonnet` が100万トークンの窓を既定で持たない環境で両方に窓を求めるときは、モデルを `opusplan[1m]` にする［A-2026-11-20-6］
 - モデル指定の優先順は、セッション中の `/model`、起動時の `--model`、環境変数 `ANTHROPIC_MODEL`、設定ファイルの `model`、`ANTHROPIC_DEFAULT_MODEL` の順［D-claude-code-model-config］
 - `--model` と `ANTHROPIC_MODEL` は、起動したそのセッションだけに効く［D-claude-code-model-config］
 - 必要バージョン：Sonnet 5.5 は v2.1.284 以降、Opus 5.5 は v2.1.280 以降、Haiku 5.5 は v2.1.293 以降［D-claude-code-model-config］
@@ -65,6 +68,8 @@
 - 段階の目安：`low` は結果を毎回見る軽い作業、`medium` は範囲が明確な日常の開発、`high` は検証や境界条件が効く作業、`max` は任せきりの難問（考えすぎることがあるので試してから使う）［D-claude-code-model-config］
 - 圧縮の窓の大きさ（`CLAUDE_CODE_AUTO_COMPACT_WINDOW`）は100K トークン以上の数で指定する（例：`200000`）。値を引用した警告が出たら、そのセッションは指定どおりの値を使っていないので、数を指定し直す。`200k`・`1M` の書き方は v2.1.304 以降［A-2026-11-19-14］
 - `--fallback-model sonnet,haiku` のように渡すと、主モデルが混雑・利用不可のときに順に切り替える［D-claude-code-cli-reference］
+- `API Error: 400 Invalid effort level` が出たら v2.1.314 以降へ更新して再起動する。直らなければ `CLAUDE_CODE_EXTRA_BODY` から `output_config.effort` のキーを消す［A-2026-11-20-15］
+- フォーク・フォークしたスキル・チームメイト以外のサブエージェントの effort は、`CLAUDE_CODE_EFFORT_LEVEL`、起動元サブエージェントの `effort` かそのターンだけの指定（スキルの `effort` など）、`CLAUDE_CODE_SUBAGENT_EFFORT` のうち最初に当たるものになる。どれもなければ、主会話と同じモデルではセッションの指定に従い、別のモデルではその指定は効かない［A-2026-11-20-14、A-2026-11-20-15］
 - サブエージェントのモデルは、呼び出し時の `model` 指定、定義の `model`、環境変数 `CLAUDE_CODE_SUBAGENT_MODEL`、親のモデルの順で決まる［D-claude-code-sub-agents］
 
 ### モデルを替えるとき
@@ -108,6 +113,8 @@
 - 2つの指示が矛盾すると、どちらが採られるかは決まらない。古い指示・矛盾する指示は消す［D-claude-code-memory］
 - `@パス` で他のファイルを取り込める（最大4段）。取り込んだファイルも一緒に読まれるので、文脈の量は減らない［D-claude-code-memory］
 - 特定の時点で必ず実行させたいこと（コミット前、編集後など）はフックにする［D-claude-code-memory、D-claude-code-best-practices］
+- 確実に強制するフックは `command`・`http`・`mcp_tool` の種類にする。`prompt`・`agent` のフックは別のモデルが判断するので確定的でない［A-2026-11-20-7］
+- フック自体が失敗・タイムアウトしたときも操作を止めたいときは `onFailure: "block"` を足す。`mcp_tool` のフックでの指定は v2.1.328 以降［A-2026-11-20-7、A-2026-11-18-1］
 - システムプロンプトの水準で効かせたい指示は `--append-system-prompt` で渡す［D-claude-code-memory］
 - プロジェクト直下の CLAUDE.md は、圧縮（compact）の後に読み直される。会話の中だけで伝えた指示は残らない［D-claude-code-memory］
 - `--add-dir` で足したフォルダの CLAUDE.md は、既定では読まれない（`CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1` で読む）［D-claude-code-memory］
@@ -127,6 +134,8 @@
 - `allowed-tools` は、スキルを呼んだターンの間だけ許可する（次のメッセージで消える）［D-claude-code-skills］
 - `context: fork` を付けると、スキルを別のサブエージェントの文脈で実行する［D-claude-code-skills］
 - 呼び出された本文は会話に残り続け、後のターンで読み直されない。作業全体に効かせたい指示は「編集のたびに〜する」のように書く［D-claude-code-skills］
+- `paths` は、スキルを自動で起動させるファイルのglob（カンマ区切りかYAMLの配列）。基準は作業ディレクトリで、その外のファイルには当たらない。主会話では、同じGit worktree内のサブディレクトリへ `cd` しても、主たる作業ディレクトリが基準のまま［A-2026-11-20-13］
+- 新しいスキルが一覧に出ないときは `/reload-skills` を実行する［A-2026-11-20-13］
 - 圧縮の後は、各スキルの先頭5,000トークンだけが残る（合計25,000トークンまで）。大事な指示を SKILL.md の上のほうに置く［D-claude-code-skills］
 - 本文は短くする。長い資料は同じフォルダの別ファイルに置き、SKILL.md から参照する［D-claude-code-skills］
 - スキルが多いと、一覧の説明が削られる（一覧の予算は文脈の1%）。起動しないときは、説明に利用者が言いそうな語が入っているかを確かめる［D-claude-code-skills］
@@ -137,7 +146,7 @@
 
 - 置き場所と優先順：`--agents` で渡すJSON（そのセッションだけ）、`.claude/agents/`（プロジェクト）、`~/.claude/agents/`（個人）の順。同名は優先度の高いものが使われる［D-claude-code-sub-agents］
 - 定義ファイルは、YAML の frontmatter と、システムプロンプトになる本文（Markdown）でできている［D-claude-code-sub-agents］
-- 必須は `name` と `description`。`name` がない、`description` がない、1行目が `---` でない、YAMLが壊れている、のどれかがあると、通知なしで読み飛ばされる［D-claude-code-sub-agents］
+- 必須は `name` と `description`。`name` がない、`description` がない、1行目が `---` でない、YAMLが壊れている、のどれかがあると、読み飛ばされる［A-2026-11-20-5］
 - 複数語のフィールド名は camelCase（`maxTurns`・`disallowedTools`・`permissionMode`）。未知のフィールドはエラーなしで無視される［D-claude-code-sub-agents］
 - 主なフィールド：`tools`（省くと全ツールを継承）、`disallowedTools`、`model`、`permissionMode`、`maxTurns`、`skills`（本文ごと先に読ませる）、`effort`、`isolation: worktree`［D-claude-code-sub-agents］
 - `model` には `sonnet`・`opus`・`haiku`・`fable`、モデルID、`inherit` が書ける。省くと、呼び出した会話と同じモデルで動く［D-claude-code-sub-agents］
@@ -146,6 +155,7 @@
 - サブエージェントのシステムプロンプトは、定義の本文と環境情報だけで、Claude Code 本体のシステムプロンプトは入らない［D-claude-code-sub-agents］
 - CLAUDE.md の階層は、サブエージェントにも読み込まれる（組み込みの Explore と Plan は読まない。`omitClaudeMd: true` で外せる〔v2.1.271以降〕）［D-claude-code-sub-agents］
 - 非対話実行では、`--append-subagent-system-prompt` ですべてのサブエージェントのシステムプロンプトに文を足せる〔v2.1.205以降〕［D-claude-code-sub-agents、D-claude-code-cli-reference］
+- `claude -p` とSDKでは、サブエージェントが起こしたサブエージェントのうち、待つのは前景のものだけ。背景のものは、起こした側より長引けば主会話へ報告する［A-2026-11-20-5］
 - 同じ作業をサブエージェントに渡しても、答えは良くならない。使いどころは、並列の作業、出力の多い作業の切り離し、経緯を見ていない目でのレビュー［D-claude-code-best-practices］
 
 ### 設定ファイル
@@ -172,7 +182,9 @@
 ### 権限モードと承認
 
 - `--permission-mode` の値は `default`（表示名は Manual。`manual` も可）・`acceptEdits`・`plan`・`auto`・`dontAsk`・`bypassPermissions`［D-claude-code-cli-reference、D-claude-code-permission-modes］
-- 承認なしで動く範囲：`default` は読み取りだけ、`acceptEdits` は読み取り・ファイル編集・`mkdir` などのファイル操作、`auto` は分類器の確認つきで全部、`dontAsk` は読み取りと事前に許可したものだけ、`bypassPermissions` は全部［D-claude-code-permission-modes］
+- 承認なしで動く範囲：`default` は作業フォルダ内のファイル読み取りとサブエージェントの起動など承認の要らない操作だけ（編集・シェルコマンド・ネットワーク要求の多くは承認を求める）、`acceptEdits` は読み取り・ファイル編集・`mkdir` などのファイル操作、`auto` は分類器の確認つきで全部、`dontAsk` は読み取りと事前に許可したものだけ、`bypassPermissions` は全部［A-2026-11-20-10、A-2026-11-20-11、D-claude-code-permission-modes］
+- 作業フォルダ外の最初の読み取りで出る確認は、`-p`・Agent SDK・バックグラウンドセッション・VS Code のチャットパネル・デスクトップアプリでは出ず、読み取りはそのまま実行される［A-2026-11-20-2］
+- `--allow-dangerously-skip-permissions` は `bypassPermissions` を `Shift+Tab` の切り替えに足すだけで、そのモードでは始めない。対話端末のセッションで切り替えに入っている間は、plan モードでも、計画を承認する前にほとんどの編集とコマンドが承認なしで動く［A-2026-11-20-9］
 - 開始時のモードは、`--permission-mode`（または `--dangerously-skip-permissions`）、設定ファイルの `permissions.defaultMode`、組み込みの既定の順で決まる［D-claude-code-permission-modes］
 - `claude -p` とSDKの組み込みの既定は `default`（Manual）〔v2.1.302以降〕。承認が要る呼び出しは、許可ルール・フック・`--permission-prompt-tool` が承認しない限り拒否される［D-claude-code-permission-modes、D-claude-code-headless］
 - プロジェクトの `.claude/settings.json` と `.claude/settings.local.json` に書いた `defaultMode` の `auto` と `bypassPermissions` は効かない［D-claude-code-permission-modes］
@@ -198,6 +210,7 @@
 - Bash のルールの `*` は、空白を含む任意の文字列に当たる。`*` はサブコマンドの後に置く（`Bash(git log *)`。`Bash(git *)` は git の全コマンドを許す）［D-claude-code-permissions］
 - `Bash(git diff *)` のように `*` の前に空白を入れる。空白がない `Bash(git diff*)` は `git diff-index` にも当たる［D-claude-code-headless］
 - deny にツール名だけを書くと、そのツール自体が Claude から見えなくなる。`Bash(rm *)` のように指定を付けると、当たる呼び出しだけが止まる［D-claude-code-permissions］
+- Read・Edit の deny ルールは、組み込みのファイルツールと、Claude Code が解析できるBashコマンドのリダイレクト先・`cat`・`head`・`tail`・`sed`・`tee` などに効く。ファイル名を書かずに読むコマンド（フォルダで `grep -r pattern .`）や、スクリプトが自分でファイルを開く場合には効かない。シェルコマンドをOSの水準で縛るにはサンドボックスを有効にし、サンドボックス外での再試行を止める［A-2026-11-20-3］
 - ルールには正式なツール名を使う。画面上の表示名（例：`Stop Task`）では当たらない［D-claude-code-permissions］
 
 ### ツールの制限

@@ -40,6 +40,7 @@ gemini -p "指示" --output-format json
 - システム指示は `system_instruction`、生成の設定は `generation_config`（`thinking_level`・`max_output_tokens` など）で渡す［D-gemini-api-interactions、D-gemini-api-carbon］
 - ストリーミングは `stream=True`。`step.delta` イベントで文章の断片が届く［D-gemini-api-get-started］
 - Word・PowerPoint・Excel と OpenDocument のファイルを直接渡せる。ユーザーの指示と関数の応答の中で、文書・表計算・動画・音声の一部（ページ範囲・シート・セル範囲・時間区間、ページ画像・抽出テキスト・数式・動画の文字起こしなどの層）だけを選んで処理できる［G-2026-11-18-1］
+- ツールの検索（Preview）：ツールが多いとき、`function` か `mcp_server` のツールに `defer_loading: true` を付け、`{"type": "tool_search"}` のツールを足すと、Gemini が必要な関数スキーマだけを取得する。`execution: "client"` にすると検索をアプリ側で行う。Interactions API（`v1beta`）で Gemini 3.6 以降のモデルが対象［G-2026-11-19-11］
 
 呼び出しの形：
 
@@ -63,7 +64,7 @@ print(interaction.output_text)
 - `gemini-4-carbon` は推論の深さを優先するモデルで、1ターンあたりの思考トークンと遅延が Argon より大きい［D-gemini-api-carbon］
 - `gemini-4-argon` は応答が速く1ターンあたりのトークン消費が少ない。対話的なコーディングや日常の機能開発向け［D-gemini-api-carbon］
 - Gemini 4 の各モデルはコンテキストが100万トークン、出力は既定64K・ロングデコードで最大100万トークン［D-gemini-api-latest-model、G-2026-11-18-2］
-- `thinking_level` の使える値は、`gemini-4-carbon` と `gemini-4-argon` が `low`・`medium`（既定）・`high`、`gemini-4-hydrogen` と `gemini-4-neon` が `low`・`medium`・`high`（既定）・`xhigh`、`gemini-3.5-flash-lite` が `minimal`（既定）・`low`・`medium`・`high`［D-gemini-api-latest-model］
+- `thinking_level` の使える値は、`gemini-4-carbon` と `gemini-4-argon` が `low`・`medium`（既定）・`high`、`gemini-4-hydrogen` と `gemini-4-neon` が `low`・`medium`・`high`（既定）・`xhigh`、`gemini-3.5-flash-lite` が `minimal`（既定）・`low`・`medium`・`high`。`minimal` は Gemini 4 では使えず、指定するとエラーになる［D-gemini-api-latest-model、G-2026-11-20-5］
 - `thinking_level` は3段階とも評価し、品質の基準を満たす最も低い値を選ぶ［D-gemini-api-carbon］
 - `max_output_tokens` は思考と出力の合計の上限。`gemini-4-carbon` では、32K未満を指定している既存の実装は 32,768 以上に上げる［D-gemini-api-carbon］
 - `gemini-4-carbon` は無料枠では使えない［D-gemini-api-carbon］
@@ -72,6 +73,11 @@ print(interaction.output_text)
 - プレビュー版は、最短2週間前の告知で廃止される［D-gemini-api-models］
 - 停止予定の表の日付は「最も早い場合の停止日」。モデルごとの推奨の置き換え先も同じ表にある［D-gemini-api-deprecations］
 - 画像生成の既定は `gemini-nano-banana-2.1`、動画生成は `gemini-omni-1.2-flash`、音声読み上げは `gemini-3.8-flash-tts`、文字起こしは `gemini-3.5-transcribe`、埋め込みは `gemini-embedding-2`［D-gemini-api-latest-model］
+- 分類・ルーティング・スコアリングの推奨は `gemini-decision-1`［G-2026-11-20-3］
+- リアルタイムの対話型の世界生成は `models/genie-4`（2026年11月19日に一般提供。Interactions API の `v1beta`、有料枠のみ、停止日は未発表）［G-2026-11-19-12、G-2026-11-20-7、G-2026-11-20-8］
+- `gemini-4-neon` を使うときは、`temperature`・`top_p`・`top_k` を外す（範囲内の値は無視され、範囲外の値は 400 エラー）［G-2026-11-20-5］
+- Gemini 3.8 Flash 以前から `gemini-4-neon` へ移るときは、`thinking_level: minimal`・明示キャッシュ・低い固定の `max_output_tokens`（8,192 など。外すか 65,536 に上げる）を見直す［G-2026-11-20-5］
+- Gemini 4 では、ツールを宣言せずシステム指示で生のJSONのツール呼び出しを書かせると `MALFORMED_FUNCTION_CALL` になり得る。ネイティブの関数呼び出しか構造化出力を使う［G-2026-11-20-5］
 
 ### Gemini CLI
 
@@ -215,7 +221,7 @@ interactive = false
 - 停止済みの画像・動画モデル：`imagen-4.0-generate-001` など Imagen 系（置き換え先 `gemini-nano-banana-2.1`）、`veo-3.1-generate-preview` など Veo 系（置き換え先 `gemini-omni-1.2-flash`）［D-gemini-api-deprecations］
 - 停止済みの埋め込みモデル：`text-embedding-004`・`embedding-001`（置き換え先 `gemini-embedding-2`）［D-gemini-api-deprecations］
 - 2026年12月18日停止予定：`gemini-2.5-flash-preview-tts`・`gemini-2.5-pro-preview-tts`・`gemini-3.1-flash-tts-preview`（置き換え先 `gemini-3.8-flash-tts` か `gemini-3.8-flash-lite-tts`）［D-gemini-api-deprecations］
-- `gemini-4-carbon` は明示キャッシュ（`cachedContents`・`caches.create`）に対応しない。`cached_content` を作る・参照する呼び出しを外す。暗黙キャッシュは 4,096 トークン以上のプロンプトで既定で有効［D-gemini-api-carbon］
+- `gemini-4-carbon` と `gemini-4-neon` は明示キャッシュ（`cachedContents`・`caches.create`）に対応しない。`cached_content` を作る・参照する呼び出しを外す。暗黙キャッシュは 4,096 トークン以上のプロンプトで既定で有効［D-gemini-api-carbon、G-2026-11-20-4］
 - CLIの `--yolo`（`-y`）は非推奨。`--approval-mode=yolo` を使う［D-gemini-cli-reference］
 - CLIの `--allowed-tools` は非推奨。ポリシーエンジンを使う［D-gemini-cli-reference］
 - 設定の `tools.exclude` は非推奨。ツールを外すにはポリシーの `deny` ルールを使う［D-gemini-cli-policy-engine］
