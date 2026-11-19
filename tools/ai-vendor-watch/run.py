@@ -232,7 +232,7 @@ class Run:
             errs = check_skill.check(skill)
             if errs:
                 self.discard_body(skill)
-                self.failures.append(f"{skill}: 検査に不合格のため本体の変更を捨てた（{'; '.join(errs[:3])}）")
+                self.failures.append(f"【検品で不合格】{skill}: スキルの機械検査でFAILが出たため本体の変更を捨てた（{'; '.join(errs[:3])}）")
             elif want and not body_changed:
                 self.failures.append(f"{skill}: 反映と判定されたのに本体が変わっていない（{', '.join(want)}）")
             elif want:
@@ -263,7 +263,8 @@ class Run:
             allowed = ["Read", "Glob", "Grep", f"Edit(./{dec_path.parent.relative_to(REPO).as_posix()}/**)"]
             allowed += [f"WebFetch(domain:{d})" for d in official_domains(skill)]
             cmd = [exe, "-p", "--permission-mode", "dontAsk", "--allowedTools", ",".join(allowed),
-                   "--output-format", "json", "--max-turns", "60"]
+                   "--output-format", "json", "--max-turns", "60",
+                   "--strict-mcp-config"]   # 判定に MCP は要らない。利用者の MCP サーバーを起動しない
             if local.get("claude_model"):
                 cmd += ["--model", local["claude_model"]]
         try:
@@ -387,19 +388,22 @@ class Run:
             # 検品そのものが動かなかった。中身の不合格ではないので本体は捨てず、反映待ちに戻して次の実行に回す
             self.git("reset", "-q")
             self.set_states(ids, ST_APPLY)
-            self.failures.append("出荷前検品を実行できなかったためコミットしない（反映待ちのまま。次の実行で処理する）")
+            self.failures.append("【検品が実行できなかった】出荷前検品の道具が動かなかったためコミットしない（内容の不合格ではない。反映待ちのまま次の実行で処理する）")
             return
         if not verdict:
             # スキル本体の変更を捨て、ログと状態だけで通し直す
             for skill in self.applied:
                 self.discard_body(skill)
             self.set_states(ids, ST_APPLY)
-            self.failures.append("出荷前検品に不合格のためスキル本体の変更を捨てた（反映待ちのまま）")
+            self.failures.append("【検品で不合格】出荷前検品でFAILが出たためスキル本体の変更を捨てた（反映待ちのまま）")
             ids, self.applied = [], {}
             self.stage()
-            if self.predelivery() is not True:
+            verdict = self.predelivery()
+            if verdict is not True:
                 self.git("reset", "-q")
-                self.failures.append("ログと状態だけでも出荷前検品を通らなかった（コミットしない）")
+                self.failures.append("【検品が実行できなかった】ログと状態だけのコミットも、出荷前検品の道具が動かずコミットしない"
+                                     if verdict is None else
+                                     "【検品で不合格】ログと状態だけでも出荷前検品でFAILが出たためコミットしない")
                 return
         msg = f"chore(vendor-watch): {self.today} 収集{self.new}件・反映{len(ids)}件\n"
         if ids:
