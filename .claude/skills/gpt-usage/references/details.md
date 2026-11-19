@@ -44,7 +44,7 @@
 - SDK の導入は `npm install openai` または `pip install openai`。［D-api-quickstart］
 - 各 SDK は環境変数 `OPENAI_API_KEY` から API キーを自動で読む。［D-api-quickstart］
 - エンドポイントは `POST /responses`（curl の例では `https://api.openai.com/v1/responses` に `Content-Type: application/json` と `Authorization: Bearer $OPENAI_API_KEY` を付ける）。［D-api-responses-create、D-api-text］
-- 最小の形は `model` と `input` の2つで、生成された文章は SDK の `output_text` で受け取る。［D-api-quickstart］
+- 最小の形は `model` と `input` の2つで、生成された文章は SDK の `output_text` で受け取る。［O-2026-11-19-15］
 
 Python の最小の形（公式の例。モデルIDは用途に合わせて選ぶ）：
 
@@ -52,7 +52,7 @@ Python の最小の形（公式の例。モデルIDは用途に合わせて選�
 from openai import OpenAI
 client = OpenAI()
 response = client.responses.create(
-    model="gpt-6-astra",
+    model="gpt-6.2-astra",
     input="Write a one-sentence bedtime story about a unicorn.",
 )
 print(response.output_text)
@@ -64,11 +64,14 @@ print(response.output_text)
 
 ## モデルの選び方
 
-- API で迷ったら `gpt-6-astra`（複雑な推論とコーディング向けの旗艦）、知能とコストの釣り合いなら `gpt-6.1-sol`、コスト重視の大量処理なら `gpt-6-luna` が案内されている。［D-api-models］
-- `gpt-6.1-terra` は視覚的な推論・コンピューター操作・自然な文章向けの、速く効率的なモデル。［D-api-models］
-- `gpt-6-sol` は複雑なコーディングとエージェント的な作業向けのモデルとして一覧に載っている。［D-api-models］
-- Codex での案内も同じ並びで、最難度の一連の作業は Astra、コストが気になる繰り返し・長時間の作業は GPT-6.1 Sol、日常の文章と視覚的な作業は GPT-6.1 Terra、良い結果の形が分かっている定型・大量の作業は Luna。［D-codex-models］
-- Codex CLI では起動時に `--model`（`-m`）で指定し、非対話実行でも `codex exec -m gpt-6.1-sol "…"` のように同じ指定が使える。［D-codex-models］
+- API で迷ったら `gpt-6.2-astra`（複雑な推論とコーディング向けの旗艦）、知能とコストの釣り合いなら `gpt-6.2-sol`、コスト重視の大量処理なら `gpt-6-luna` が案内されている。［O-2026-11-19-16］
+- `gpt-6.2-astra` は最も難しい仕事を最初から最後まで、`gpt-6.2-sol` は日常の作業からエージェントの大規模運用までを担うモデルとして案内されている。両方とも Responses API と Chat Completions に対応するが、ツール呼び出しには Responses API が要る。［O-2026-11-17-73］
+- `gpt-6.1-terra` は視覚的な推論・コンピューター操作・自然な文章向けの、速く効率的なモデル。［O-2026-11-19-16］
+- `gpt-6.1-sol`（Astra に近い性能を低コストで）と `gpt-6-sol` は、モデル一覧の全カタログに載っている。［O-2026-11-19-16］
+- Codex での案内：最難度の一連の作業は GPT-6.2 Astra（または GPT-6 Astra）、日常のコーディング・文章・複数資料にまたがる作業は GPT-6.2 Sol、日常の文章と視覚的な作業は GPT-6.1 Terra、良い結果の形が分かっている定型・大量の作業は Luna。［O-2026-11-19-14］
+- Codex CLI では起動時に `--model`（`-m`）で指定し、非対話実行でも `codex exec -m gpt-6.2-sol "…"` のように同じ指定が使える。［O-2026-11-19-14］
+- GPT-6.2 Astra・GPT-6.2 Sol は Codex でコンテキストウィンドウを最大 100 万トークンまで使える（`config.toml` の `model_context_window` で設定する）。［O-2026-11-19-14］
+- Responses API の公開ベータで、バックグラウンド完了の猶予を2時間か8時間から選べる。対象は `gpt-6.2-astra`・`gpt-6.2-sol`・`gpt-6.1-terra`・`gpt-6-luna` で、トークン単価は Standard より2時間枠で 30%、8時間枠で 40% 低い。［O-2026-11-17-72］
 - `gpt-6.1-terra` を Codex CLI で使うには 0.159.0 以降が要る。［D-codex-models］
 - 既定のモデルは `config.toml` の `model` で決まり、指定がなければ推奨モデルが使われる。［D-codex-models］
 - API キーで認証した Codex では、使えるモデルは API の組織とプロジェクトに従う。［D-codex-models］
@@ -78,6 +81,7 @@ print(response.output_text)
 推論の強さ：
 
 - API では `reasoning.effort`（Responses）で指定する。値はモデルごとに異なり、`none`・`minimal`・`low`・`medium`・`high`・`xhigh`・`max` がありうる。［D-api-reasoning］
+- `gpt-6.2-astra`・`gpt-6.2-sol` は `reasoning.effort`（Responses）・`reasoning_effort`（Chat Completions）が `none` のリクエストを拒否する。［O-2026-11-19-20］
 - `gpt-6-astra` は `none` に対応せず、`none` を指定すると HTTP 400 になる。［D-api-reasoning］
 - `gpt-6.1-sol` は `none` と `minimal` に対応せず、既定は `medium`。［D-api-reasoning］
 - `gpt-6.1-terra`・`gpt-6-sol`・`gpt-6-luna` は `none` に対応する。［D-api-gpt6-guide］
@@ -87,7 +91,7 @@ print(response.output_text)
 - `reasoning.mode` は `standard`（既定）と `pro` があり、推論の強さとは独立している。［D-api-reasoning］
 - `reasoning.effort` は品質を取り戻す主な手段ではなく、調整のつまみとして扱う。［D-api-reasoning］
 - Codex では `config.toml` の `model_reasoning_effort` で指定する。値は `low`・`medium`・`high`・`xhigh`・`max`・`ultra` などで、使える段階はモデルとクライアントによる。［D-codex-config-reference］
-- Codex での出発点は、Luna なら `high`、Astra なら `low`、GPT-6.1 Sol はクライアントの既定。［D-codex-models、D-codex-subagents］
+- Codex での出発点は、GPT-6.2 Astra・GPT-6.2 Sol ならクライアントが選ぶ強さ、Luna なら `high`、GPT-6 Astra なら `low`。［O-2026-11-19-14、D-codex-subagents］
 - 推論の強さの段階は、モデルの世代をまたいでそのまま対応するわけではない。慣れたタスクを低めの設定で試して調整する。［D-codex-models］
 - GPT-6 Luna は Max までで、Ultra には対応しない。［D-codex-models］
 
@@ -104,8 +108,9 @@ print(response.output_text)
 
 ### API のプロンプト
 
-- `instructions` は、口調・目的・正しい応答の例など、振る舞い全体への指示を渡すもので、`input` の内容より優先される。［D-api-text］
-- `developer` メッセージは規則と業務ロジック、`user` メッセージはそれに適用される入力、という分担で考える。［D-api-text］
+- `instructions` は、口調・目的・正しい応答の例など、その応答での振る舞いへの指示を渡すもので、`input` の内容より優先される。［O-2026-11-19-19］
+- 複数のターンで使い回す指示は、`input` の最初の `developer` メッセージに置く。その回だけの指示は `instructions` に置く。［O-2026-11-19-19、O-2026-11-19-18］
+- `developer` メッセージは規則と業務ロジック、`user` メッセージはそれに適用される入力、という分担で考える。［O-2026-11-19-19］
 - 推論モデルには、課題・制約・ほしい出力形式を渡し、途中の手順を一つひとつ指定しない。［D-api-reasoning］
 - エージェント的な作業や調査の多い作業では、何をもって完了とするかと、モデルが自分の作業をどう確かめるかを定める。［D-api-reasoning］
 - 本番のプロンプトはアプリのコードの中に置き、生成した `instructions` と `input` を Responses API に直接渡す。［D-api-text］
@@ -202,7 +207,10 @@ print(response.output_text)
 
 ### 会話の継続と状態（API）
 
-- 前の応答の続きは `previous_response_id` で指定する。前の応答の `instructions` は引き継がれないので、変わらない `instructions` は毎回送り直す。［D-api-responses-create、D-api-migrate-responses］
+- 前の応答の続きは `previous_response_id` で指定する。前の応答の `instructions` は引き継がれない。連なり全体の指示は、最初のリクエストの `input` の先頭の `developer` メッセージに置くと、後続の応答に引き継がれる。［O-2026-11-19-17、O-2026-11-19-18］
+- GPT-6.2 以降は、推論の項目より前の内容を挿入・編集する（例：過去のツール結果を書き換える）と、その推論の項目が捨てられる（`prefix_mismatch`）。項目を丸ごと削除するだけ、または推論の項目より後ろに追記するだけでは、この理由では捨てられない。［O-2026-11-19-20］
+- GPT-6.2 以降は、推論の項目を作ったリクエストと再利用するリクエストで `safety_identifier` が違うと、その項目が捨てられる（`end_user_mismatch`）。片方にだけ付けた場合も含む。両方に同じ値を付けるか、両方とも付けなければ通る。［O-2026-11-19-20］
+- 推論の項目が意図せず捨てられたかは、応答の `input_transformations` で確かめられる。ほかの理由は `model_mismatch`・`organization_mismatch`・`turn_boundary`。［O-2026-11-19-20］
 - `previous_response_id` は `conversation` と一緒には使えない。［D-api-responses-create］
 - `previous_response_id` を使っても、連なりの中のそれまでの入力トークンは入力として課金される。［D-api-migrate-responses］
 - 状態を持たせない（`store: false`、または Zero Data Retention の組織）ときは、返ってきた推論の項目をすべて保持して次のリクエストで送り返す。推論の項目には既定で `encrypted_content` が含まれる。［D-api-migrate-responses、D-api-reasoning］

@@ -14,17 +14,17 @@ description: >-
 - SDK は環境変数 `OPENAI_API_KEY` を自動で読む（引数でキーを渡さなくてよい）［D-api-quickstart］
 
 ## モデルの選び方
-- 現行ID：`gpt-6-astra`（最難度）、`gpt-6.1-sol`（複雑な作業を低コストで）、`gpt-6.1-terra`（文章・画像）、`gpt-6-luna`（定型・大量）［D-api-models］
-- Codex は `-m <モデルID>` で指定する。`gpt-6.1-terra` は〔v0.159.0以降〕［D-codex-models］
+- 現行ID：`gpt-6.2-astra`（最難度）、`gpt-6.2-sol`（日常のコーディング・エージェント）、`gpt-6.1-terra`（文章・画像）、`gpt-6-luna`（定型・大量）［O-2026-11-19-16］
+- Codex は `-m <モデルID>` で指定する。`gpt-6.1-terra` は〔v0.159.0以降〕［O-2026-11-19-14］
 - 推論の強さは API が `reasoning.effort`、Codex が `-c model_reasoning_effort=<値>`［D-api-reasoning、D-codex-config-reference］
-- `gpt-6-astra` と `gpt-6.1-sol` に effort `none` を渡さない（最小は `low`。Astra は HTTP 400）［D-api-reasoning、D-api-gpt6-guide］
+- effort `none` を渡さない：`gpt-6.2-astra`・`gpt-6.2-sol` は拒否される。`gpt-6-astra` は HTTP 400、`gpt-6.1-sol` は最小が `low`［O-2026-11-19-20、D-api-gpt6-guide］
 - effort が `none` 以外のとき `temperature`・`top_p`・`top_logprobs` を送らない［D-api-gpt6-guide］
 
 ## 指示の書き方
 - 目的・文脈・出力の形・守る境界・確かめ方を書く。細かい手順は要るときだけ［D-codex-prompting］
 - CLI は開いているファイルを自動で見ない。対象のパスを指示に明記する［D-codex-prompting］
 - `gpt-6-astra` は質問して止まりやすい。非対話では「意図を推し量り完了まで進める」と書く［D-api-gpt6-guide］
-- API は全体の方針を `instructions`、依頼を `input` に分ける（`instructions` が優先）［D-api-text］
+- API は共通の指示を `input` 先頭の `developer` メッセージ、その回だけの指示を `instructions` に置く（`instructions` が優先）［O-2026-11-19-19］
 - `max_output_tokens` は推論分を含む。25,000 以上を確保し、`status` が `incomplete` でないか見る［D-api-reasoning、D-api-responses-create］
 
 ## 指示ファイル・スキル
@@ -42,7 +42,8 @@ description: >-
 - 書き込み先を増やすなら `--add-dir <パス>`。`danger-full-access`・`--yolo` は隔離環境だけ［D-codex-cli-reference、D-codex-non-interactive］
 - 非対話で新たな承認が要る操作は失敗する。権限は起動時に指定する（`codex exec` の表に `--ask-for-approval` はない）［D-codex-subagents、D-codex-cli-reference］
 - 機械で読むなら `--json`、最終メッセージだけなら `-o <ファイル>`、形を固定するなら `--output-schema <schema.json>`［D-codex-non-interactive］
-- API の続きは `previous_response_id`。`instructions` は引き継がれないので毎回送る（`conversation` と併用不可）［D-api-responses-create］
+- API の続きは `previous_response_id`。`instructions` は引き継がれないので、連なり全体の指示は最初の `developer` メッセージに置く（`conversation` と併用不可）［O-2026-11-19-17、O-2026-11-19-18］
+- GPT-6.2 以降は、推論の項目より前の履歴を書き換えるか `safety_identifier` を変えると、その推論の項目が捨てられる。履歴は先頭を変えず追記する［O-2026-11-19-20］
 - API の構造化出力は `response_format` ではなく `text.format` で指定する［D-api-migrate-responses］
 
 ## 使わないもの
