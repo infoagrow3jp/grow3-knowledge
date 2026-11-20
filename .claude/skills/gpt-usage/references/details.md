@@ -15,6 +15,7 @@
 - `OPENAI_API_KEY`・`CODEX_API_KEY` を、リポジトリ側のコードを実行するジョブ全体の環境変数に置かない。［D-codex-non-interactive］
 - GitHub Actions では CLI を自分で入れずに Codex GitHub Action（`openai/codex-action`）を使う。［D-codex-non-interactive］
 - 必須（`required = true`）の MCP サーバーが初期化に失敗すると、`codex exec` はエラーで終了する。［D-codex-non-interactive］
+- 既存の app server 上で非対話セッションを開始・再開するには `codex exec --remote <ADDR>`〔v0.171.0以降〕。［O-2026-11-20-7］
 
 `codex exec` の主なオプション（公式のオプション表にあるもの）：
 
@@ -76,6 +77,7 @@ print(response.output_text)
 - `gpt-6.2-astra`・`gpt-6.2-sol` は Ultrafast に対応する（公開時点）。データ所在地の指定は、US・EU が Standard・Fast・Batch、Ultrafast は US のみ。［O-2026-11-19-5、O-2026-11-19-3］
 - `gpt-6.2-astra`・`gpt-6.2-sol` は Chat Completions でも使えるが、ツール呼び出しには Responses API が要る。［O-2026-11-19-3］
 - `gpt-6.1-terra` を Codex CLI で使うには 0.159.0 以降が要る。［D-codex-models］
+- Codex CLI 0.171.0 で、GPT-6.2 Sol・Astra がモデルカタログに加わり、Sol がカタログの既定の選択になった。［O-2026-11-20-7］
 - 既定のモデルは `config.toml` の `model` で決まり、指定がなければ推奨モデルが使われる。［D-codex-models］
 - API キーで認証した Codex では、使えるモデルは API の組織とプロジェクトに従う。［D-codex-models］
 - 独自のモデルプロバイダーやゲートウェイを使うなら、Responses API 互換のエンドポイントにする（`wire_api` で使える値は `responses` だけ）。［D-codex-models、D-codex-config-reference］
