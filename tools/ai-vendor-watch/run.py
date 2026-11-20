@@ -39,6 +39,7 @@ SCOPE = ["tools/ai-vendor-watch", ".claude/skills/claude-usage",
 BODY = ["SKILL.md", "references/details.md", "references/superseded.md", "references/sources.md"]
 TRAILER = "Vendor-Watch-Items:"
 ITEM_RE = re.compile(r"\b[AOG]-\d{4}-\d{2}-\d{2}-\d+\b")
+AUTH_WARN_DAYS = 3                        # 判定役のログインの期限がこの日数を切ったら知らせる
 
 
 class Run:
@@ -46,6 +47,7 @@ class Run:
         self.args = args
         self.failures: list[str] = []
         self.notes: list[str] = []
+        self.warnings: list[str] = []         # 失敗ではないが、先に知らせたいこと（メールで送る）
         self.today = args.today or dt.date.today().isoformat()
 
     # ---------- git ----------
@@ -161,10 +163,40 @@ class Run:
         streak_path.write_text(json.dumps(streak, ensure_ascii=False, indent=1), encoding="utf-8")
 
     # ---------- 3. 判定・反映 / 4. 検査 ----------
+    def auth_check(self) -> bool:
+        """判定役の claude がログインしているかを、判定の前に確かめる。
+        切れていれば判定をかけない（項目は判定待ちのまま次の実行へ）。期限が近ければ warnings に残す。"""
+        exe = shutil.which("claude")
+        if not exe:
+            return True                       # 「見つからない」は invoke 側で知らせる
+        try:
+            r = subprocess.run([exe, "auth", "status"], capture_output=True, text=True,
+                               encoding="utf-8", errors="replace", timeout=60)
+            st = json.loads(r.stdout or "{}")
+        except Exception as e:                # 確認できないときは判定に進み、従来どおり結果で知らせる
+            self.notes.append(f"ログインの確認ができなかった: {e}")
+            return True
+        if not st.get("loggedIn"):
+            self.failures.append("【ログイン切れ】判定役の claude がログインしていないため判定をかけなかった"
+                                 "（項目は判定待ちのまま）。ターミナルで claude auth login を実行する")
+            return False
+        exp = st.get("loginExpiresAt")
+        if exp:
+            try:
+                left = dt.datetime.fromisoformat(exp.replace("Z", "+00:00")) - dt.datetime.now(dt.timezone.utc)
+                if left.total_seconds() < AUTH_WARN_DAYS * 86400:
+                    self.warnings.append(f"【ログインの期限が近い】判定役の claude のログインは {exp[:10]} ごろ切れる見込み。"
+                                         "早めにターミナルで claude auth login を実行する")
+            except ValueError:
+                pass
+        return True
+
     def apply(self):
         self.applied: dict[str, list[str]] = {}
         self.mf_requests: list[dict] = []
         if not self.online:
+            return
+        if not self.args.apply_cmd and not self.auth_check():
             return
         cfg = collect.yaml.safe_load(collect.SOURCES_PATH.read_text(encoding="utf-8"))
         state = collect.load_state()
@@ -465,7 +497,7 @@ class Run:
             tally[it["state"]] = tally.get(it["state"], 0) + 1
         rec = {"at": dt.datetime.now().isoformat(timespec="seconds"), "new": getattr(self, "new", 0),
                "by_source": getattr(self, "by_source", {}), "states": tally,
-               "applied": getattr(self, "applied", {}), "notes": self.notes, "failures": self.failures}
+               "applied": getattr(self, "applied", {}), "notes": self.notes, "warnings": self.warnings, "failures": self.failures}
         with (HOME / "runs.jsonl").open("a", encoding="utf-8") as f:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
         print(json.dumps(rec, ensure_ascii=False, indent=1))
