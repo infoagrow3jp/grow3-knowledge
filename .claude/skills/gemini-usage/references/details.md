@@ -74,7 +74,7 @@ print(interaction.output_text)
 - 停止予定の表の日付は「最も早い場合の停止日」。モデルごとの推奨の置き換え先も同じ表にある［D-gemini-api-deprecations］
 - 画像生成の既定は `gemini-nano-banana-2.1`、動画生成は `gemini-omni-1.2-flash`、音声読み上げは `gemini-3.8-flash-tts`、文字起こしは `gemini-3.5-transcribe`、埋め込みは `gemini-embedding-2`［D-gemini-api-latest-model］
 - 分類・ルーティング・スコアリングの推奨は `gemini-decision-1`［G-2026-11-20-3］
-- リアルタイムの対話型の世界生成は `models/genie-4`（2026年11月19日に一般提供。Interactions API の `v1beta`、有料枠のみ、停止日は未発表）［G-2026-11-19-12、G-2026-11-20-7、G-2026-11-20-8］
+- リアルタイムの対話型の世界生成は `genie-4`（2026年11月19日に一般提供。Interactions API の `v1beta`、有料枠のみ、停止日は未発表）［G-2026-11-19-12、G-2026-11-21-4、G-2026-11-21-5］
 - `gemini-4-neon` を使うときは、`temperature`・`top_p`・`top_k` を外す（範囲内の値は無視され、範囲外の値は 400 エラー）［G-2026-11-20-5］
 - Gemini 3.8 Flash 以前から `gemini-4-neon` へ移るときは、`thinking_level: minimal`・明示キャッシュ・低い固定の `max_output_tokens`（8,192 など。外すか 65,536 に上げる）を見直す［G-2026-11-20-5］
 - Gemini 4 では、ツールを宣言せずシステム指示で生のJSONのツール呼び出しを書かせると `MALFORMED_FUNCTION_CALL` になり得る。ネイティブの関数呼び出しか構造化出力を使う［G-2026-11-20-5］

@@ -92,6 +92,7 @@
 - 役割はシステムプロンプトに書く。1文でも効く［D-platform-prompting-best-practices］
 - 「迷ったら〜のツールを使え」「必ず徹底的に」のような念押しは外す。現行モデルでは使いすぎ・やりすぎの原因になる［D-platform-prompting-best-practices］
 - サブエージェントを使いすぎるときは、使う場面（並列・文脈の分離・独立した作業）と使わない場面を指示に書く［D-platform-prompting-best-practices］
+- 思考を切っているときの段階的な推論は、答えの前に考えさせ、最終回答を `<answer>` タグに入れさせれば取り出せる。推論を `<thinking>` タグなどで書かせる指示は、モデルによっては拒否される。その場合は思考に任せ、費用や遅延が気になるときは effort を下げる［A-2026-11-22-7］
 - モデル別のプロンプトの手引きがある。使うモデルの手引きを先に読む［D-platform-prompting-best-practices］
 - `claude-fable-5-2` は、effort が `medium` 以上のとき「考えずに直接答えて」と書いても思考を止めない。その行を消して effort を下げる［D-platform-fable-5-2-migration］
 - Claude Code には、リポジトリを読んでも分からないこと（会議で決めたこと、頭の中にしかない手順、必要な環境変数）だけを書く［D-claude-code-best-practices］
@@ -200,6 +201,8 @@
 - `bypassPermissions` でも deny ルールは効く。allow ルールは効果がない［D-claude-code-permission-modes］
 - `--restricted` を付けた起動では `bypassPermissions` が拒否され、`Error: bypassPermissions not supported in restricted mode` になる。`--dangerously-skip-permissions` など有効にしている指定を外すか、`--restricted` なしで起動する〔v2.1.248以降〕［A-2026-11-19-10］
 - auto モードでは、サーバー側の分類器の審査のもとで、作業ツリーがきれいな状態の `git reset --hard` が止められることがある。止められた後は分類器がきれいな状態を見て、Claude の再試行を許可できる［A-2026-11-19-10］
+- auto モードの分類器は、Agent ツールで起こしたサブエージェントの作業を3か所で確認する。エージェントチームのチームメイト以外のサブエージェントが終わると、親が読む前にその作業と最終報告を審査する。指摘や審査の拒否があっても報告は警告つきで届き、分類器が使えないときは確認を促す注記つきで届く［A-2026-11-22-1］
+- `web-fetch` サブエージェントは、`WebFetch(domain:...)` の許可ルールか事前承認ドメインがタスク内の全URLを覆うとき、最初の2つの確認を省けることがある。その場合は `dontAsk` モードで始まり、承認が要る別の取得は拒否される。3つ目の確認は残る［A-2026-11-22-1］
 - どのモードでも自動承認されないもの：明示の ask ルールに当たるツール、`AskUserQuestion`、重要なパスへの `rm`・`rmdir`［D-claude-code-permission-modes］
 - 権限ルールは Claude Code が強制する。指示文や CLAUDE.md に書いても、許可・禁止は変わらない［D-claude-code-permissions］
 

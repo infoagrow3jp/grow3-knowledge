@@ -44,6 +44,7 @@
 - 最新のモデルは Responses API と公式 SDK から使える。［D-api-models］
 - SDK の導入は `npm install openai` または `pip install openai`。［D-api-quickstart］
 - 各 SDK は環境変数 `OPENAI_API_KEY` から API キーを自動で読む。［D-api-quickstart］
+- 公式の Ruby SDK（gem）は Ruby 3.3.0 以降が要る。以前の版の gem を使っている場合は Ruby SDK 1.0 の移行ガイド（`api/docs/guides/ruby-sdk-migration`）を読む。［O-2026-11-22-2、O-2026-11-22-1］
 - エンドポイントは `POST /responses`（curl の例では `https://api.openai.com/v1/responses` に `Content-Type: application/json` と `Authorization: Bearer $OPENAI_API_KEY` を付ける）。［D-api-responses-create、D-api-text］
 - 最小の形は `model` と `input` の2つで、生成された文章は SDK の `output_text` で受け取る。［O-2026-11-19-15］
 

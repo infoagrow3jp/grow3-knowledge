@@ -24,7 +24,7 @@
 | D-codex-skills | スキルの作り方 | https://learn.chatgpt.com/docs/build-skills.md | 2026-11-17 |
 | D-codex-prompting | プロンプトの書き方（ChatGPT・Codex） | https://learn.chatgpt.com/docs/prompting.md | 2026-11-17 |
 | D-codex-models | Codex のモデル | https://learn.chatgpt.com/docs/models.md | 2026-11-19 |
-| D-api-quickstart | API のクイックスタート | https://developers.openai.com/api/docs/quickstart.md | 2026-11-19 |
+| D-api-quickstart | API のクイックスタート | https://developers.openai.com/api/docs/quickstart.md | 2026-11-22 |
 | D-api-models | API のモデル一覧 | https://developers.openai.com/api/docs/models.md | 2026-11-19 |
 | D-api-deprecations | API の廃止・非推奨 | https://developers.openai.com/api/docs/deprecations.md | 2026-11-20 |
 | D-api-responses-create | Responses API の作成リファレンス | https://developers.openai.com/api/reference/resources/responses/methods/create.md | 2026-11-19 |
