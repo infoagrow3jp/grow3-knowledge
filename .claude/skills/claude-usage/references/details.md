@@ -164,7 +164,7 @@
 - 設定ファイルは `~/.claude/settings.json`（個人）、`.claude/settings.json`（プロジェクト共有）、`.claude/settings.local.json`（個人・そのプロジェクトだけ）と、組織の管理設定［D-claude-code-settings］
 - 優先順は高い順に、管理設定、コマンドライン（`--settings`）、`.claude/settings.local.json`、`.claude/settings.json`、`~/.claude/settings.json`［D-claude-code-settings］
 - `permissions.allow` のようなリストは、上書きではなく各ファイルの分が合わさる［D-claude-code-settings］
-- 1回の実行だけ設定を変えるときは `--settings <ファイルかJSON>`。渡したキーだけが上書きされる［D-claude-code-settings、D-claude-code-cli-reference］
+- 1回の実行だけ設定を変えるときは `--settings <ファイルかJSON>`。渡したキーだけが上書きされる。`Managed`・`Global config` のキーと、`prependPlugins` など一部のユーザー設定のキーは `--settings` では設定できない［A-2026-11-23-2、D-claude-code-cli-reference］
 - 読み込む設定の範囲は `--setting-sources user,project,local` で絞れる［D-claude-code-cli-reference］
 - 環境変数は、この優先順の段には入らない。設定キーとどちらが勝つかは、組み合わせごとに決まっている［D-claude-code-settings］
 
@@ -183,7 +183,7 @@
 ### 権限モードと承認
 
 - `--permission-mode` の値は `default`（表示名は Manual。`manual` も可）・`acceptEdits`・`plan`・`auto`・`dontAsk`・`bypassPermissions`［D-claude-code-cli-reference、D-claude-code-permission-modes］
-- 承認なしで動く範囲：`default` は作業フォルダ内のファイル読み取りとサブエージェントの起動など承認の要らない操作だけ（編集・シェルコマンド・ネットワーク要求の多くは承認を求める）、`acceptEdits` は読み取り・ファイル編集・`mkdir` などのファイル操作、`auto` は分類器の確認つきで全部、`dontAsk` は読み取りと事前に許可したものだけ、`bypassPermissions` は全部［A-2026-11-20-10、A-2026-11-20-11、D-claude-code-permission-modes］
+- 承認なしで動く範囲：`default` は作業フォルダ内のファイル読み取りとサブエージェントの起動など承認の要らない操作だけ（編集・シェルコマンド・ネットワーク要求の多くは承認を求める）、`acceptEdits` は読み取り・ファイル編集・`mkdir` などのファイル操作、`auto` は分類器の確認つきで全部、`dontAsk` は読み取りと、許可ルールかフックが承認したほとんどの呼び出しだけ、`bypassPermissions` は全部［A-2026-11-20-10、A-2026-11-20-11、A-2026-11-23-1］
 - 作業フォルダ外の最初の読み取りで出る確認は、`-p`・Agent SDK・バックグラウンドセッション・VS Code のチャットパネル・デスクトップアプリでは出ず、読み取りはそのまま実行される［A-2026-11-20-2］
 - `--allow-dangerously-skip-permissions` は `bypassPermissions` を `Shift+Tab` の切り替えに足すだけで、そのモードでは始めない。対話端末のセッションで切り替えに入っている間は、plan モードでも、計画を承認する前にほとんどの編集とコマンドが承認なしで動く［A-2026-11-20-9］
 - 開始時のモードは、`--permission-mode`（または `--dangerously-skip-permissions`）、設定ファイルの `permissions.defaultMode`、組み込みの既定の順で決まる［D-claude-code-permission-modes］

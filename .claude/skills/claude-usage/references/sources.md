@@ -15,9 +15,9 @@
 |---|---|---|---|
 | D-claude-code-headless | Claude Code の非対話実行 | https://code.claude.com/docs/en/headless.md | 2026-11-20 |
 | D-claude-code-cli-reference | Claude Code の CLI リファレンス | https://code.claude.com/docs/en/cli-reference.md | 2026-11-20 |
-| D-claude-code-permission-modes | Claude Code の権限モード | https://code.claude.com/docs/en/permission-modes.md | 2026-11-22 |
+| D-claude-code-permission-modes | Claude Code の権限モード | https://code.claude.com/docs/en/permission-modes.md | 2026-11-23 |
 | D-claude-code-permissions | Claude Code の権限ルール | https://code.claude.com/docs/en/permissions.md | 2026-11-20 |
-| D-claude-code-settings | Claude Code の設定ファイルと優先順位 | https://code.claude.com/docs/en/settings.md | 2026-11-17 |
+| D-claude-code-settings | Claude Code の設定ファイルと優先順位 | https://code.claude.com/docs/en/settings.md | 2026-11-23 |
 | D-claude-code-memory | Claude Code の指示ファイル（CLAUDE.md・AGENTS.md） | https://code.claude.com/docs/en/memory.md | 2026-11-17 |
 | D-claude-code-skills | Claude Code のスキル | https://code.claude.com/docs/en/skills.md | 2026-11-20 |
 | D-claude-code-sub-agents | Claude Code のサブエージェント | https://code.claude.com/docs/en/sub-agents.md | 2026-11-20 |
