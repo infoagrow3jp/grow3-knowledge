@@ -28,6 +28,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check_skill  # noqa: E402
 import collect  # noqa: E402
+import model_watch  # noqa: E402
 from collect import ST_APPLY, ST_DONE, ST_HOLD, ST_JUDGE, ST_SKIP  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
@@ -162,6 +163,24 @@ class Run:
         HOME.mkdir(parents=True, exist_ok=True)
         streak_path.write_text(json.dumps(streak, ensure_ascii=False, indent=1), encoding="utf-8")
 
+    # ---------- 2b. 使っているモデルの見張り（mode: watch_models の提供元） ----------
+    def watch_models(self):
+        cfg = collect.yaml.safe_load(collect.SOURCES_PATH.read_text(encoding="utf-8"))
+        spec = load_local().get("model_watch") or {}
+        f = collect.Fetcher(Path(self.args.fixtures) if self.args.fixtures else None, None)
+        sent = model_watch.load_sent(HOME)
+        for vendor, v in cfg["vendors"].items():
+            if v.get("mode") != "watch_models":
+                continue
+            models, notes = model_watch.in_use(spec.get(vendor, []))
+            self.notes += notes
+            if not models:
+                continue
+            alerts, notes = model_watch.check(cfg["model_watch"][vendor], models, f.get, self.today, sent)
+            self.notes += notes + [f"モデルの見張り（{vendor}）：" + "、".join(f"{m['name']}={m['model']}" for m in models)]
+            self.failures += alerts
+        model_watch.save_sent(HOME, sent)
+
     # ---------- 3. 判定・反映 / 4. 検査 ----------
     def auth_check(self) -> bool:
         """判定役の claude がログインしているかを、判定の前に確かめる。
@@ -202,6 +221,8 @@ class Run:
         state = collect.load_state()
         for vendor, v in cfg["vendors"].items():
             skill = v["skill"]
+            if not collect.active(cfg, vendor):    # 休止中・モデルの見張りだけの提供元は自動更新しない
+                continue
             pending = {i: it for i, it in state["items"].items()
                        if it["vendor"] == vendor and it["state"] in (ST_JUDGE, ST_APPLY)
                        and i not in self.local_applied}
@@ -480,6 +501,10 @@ class Run:
             if not self.args.no_mf:
                 self.failures += mf_review(self.today)
             self.collect()
+            try:
+                self.watch_models()
+            except Exception as e:             # 見張りが動かなくても、Claude の収集・更新は止めない
+                self.failures.append(f"モデルの見張りが動かなかった: {e}"[:300])
             self.apply()
             self.publish()
             if self.args.stop_after_push:

@@ -2,10 +2,22 @@
 # まとめサイト・個人ブログは足さない。
 since: "2026-06-01"   # これより前の更新は取り込まない
 
+# mode：active＝収集と自動更新を続ける／watch_models＝定期の収集と自動更新を止め、
+# 実際に使っているモデルの廃止・互換性の変更だけを見張る（model_watch）／paused＝定期の収集と自動更新を止める。
+# 止めても、スキル・ログ・状態のファイルは消さない（2026-11-23、小林さんの指示）。
 vendors:
-  anthropic: {prefix: A, skill: claude-usage}
-  openai:    {prefix: O, skill: gpt-usage}
-  google:    {prefix: G, skill: gemini-usage}
+  anthropic: {prefix: A, skill: claude-usage, mode: active}
+  openai:    {prefix: O, skill: gpt-usage, mode: watch_models}
+  google:    {prefix: G, skill: gemini-usage, mode: paused}
+
+# watch_models の提供元で見る公式ページ。使っているモデルの名前は ~/.ai-vendor-watch/config.json の
+# model_watch（設定ファイルの場所と読み方）から毎回読み直す。
+model_watch:
+  openai:
+    deprecations: https://developers.openai.com/api/docs/deprecations.md
+    changelog: https://developers.openai.com/api/docs/changelog.md
+    codex_models: https://learn.chatgpt.com/docs/models.md
+    remind_days: 30   # 廃止日のこの日数前に、もう一度知らせる
 
 # 仮判定に使う語。core に当たれば「判定待ち」。default が 判定待ち のソースで、
 # core に当たらず exclude だけに当たる項目は「対象外」。

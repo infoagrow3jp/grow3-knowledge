@@ -501,8 +501,15 @@ def focus_pages(cfg) -> list[dict]:
     return pages
 
 
+def active(cfg, vendor: str) -> bool:
+    """sources.yaml の vendors.<提供元>.mode が active（既定）のときだけ、定期の収集と自動更新をする。"""
+    return cfg["vendors"][vendor].get("mode", "active") == "active"
+
+
 def collect_docs(cfg, state, f, today, add, failures):
     for idx in cfg.get("doc_indexes", []):
+        if not active(cfg, idx["vendor"]):
+            continue
         try:
             urls = set()
             for u in idx["urls"]:
@@ -523,6 +530,8 @@ def collect_docs(cfg, state, f, today, add, failures):
 
     cache = PRIVATE_DIR / "cache" / "focus"
     for pg in focus_pages(cfg):
+        if not active(cfg, pg["vendor"]):
+            continue
         try:
             text = "\n".join(l.rstrip() for l in f.get(pg["url"]).splitlines()).strip()
             if len(text) < 200:
@@ -590,6 +599,8 @@ def run(args) -> dict:
 
     for src in cfg["sources"]:
         if args.only and src["id"] not in args.only:
+            continue
+        if not active(cfg, src["vendor"]):      # 休止中・モデルの見張りだけの提供元は定期の収集をしない
             continue
         src["_since"] = since
         try:
