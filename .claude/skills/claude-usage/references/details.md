@@ -7,7 +7,7 @@
 - 基本形は `claude -p "指示"`（`--print` も同じ）。標準入力も読むので `cat file | claude -p "指示"` の形で渡せる［D-claude-code-headless、D-claude-code-cli-reference］
 - 成功は終了コード0、失敗は0以外。不正なフラグは実行前に標準エラーへ、実行中の失敗（認証なし等）は結果として標準出力へ出る［D-claude-code-headless］
 - 標準入力は10MBまで。超えるとエラーで終了するので、内容をファイルに書いてパスを指示に書く［D-claude-code-headless］
-- `-p` と併用できないフラグがある。`--bg` は拒否される［D-claude-code-headless、D-claude-code-cli-reference］
+- `-p` と併用できないフラグがある。`--bg` は拒否される。`--cloud` も、作業の説明を付けると拒否される［A-2026-11-24-39、D-claude-code-cli-reference］
 - `--output-format` は `text`（既定）・`json`・`stream-json` の3つ［D-claude-code-headless］
 - `json` は結果本文が `result`、セッションIDが `session_id`、概算費用が `total_cost_usd` に入る［D-claude-code-headless］
 - `stream-json` で逐次受け取るときは `--verbose` と `--include-partial-messages` を付ける。最後の行が `result` メッセージ［D-claude-code-headless］
@@ -142,6 +142,7 @@
 - スキルが多いと、一覧の説明が削られる（一覧の予算は文脈の1%）。起動しないときは、説明に利用者が言いそうな語が入っているかを確かめる［D-claude-code-skills］
 - frontmatter が読めないファイルは `claude plugin validate .claude/skills` で探せる〔v2.1.233以降〕［D-claude-code-skills］
 - フォルダ名 `synced` と `anthropic-skills` は予約されていて、その名前のスキルは読み込まれない［D-claude-code-skills］
+- 名前が `ship`・`ship-local`・`steward` のスキル・コマンドは、`/ship` が使える環境では読み込まれず、組み込みの `/ship`・`/steward` が使われる。ほかの組み込みスキルと同名のスキルは、組み込みのコマンドを置き換えるが別名は置き換えない［A-2026-11-24-43、A-2026-11-24-16］
 
 ### サブエージェント
 
@@ -246,6 +247,12 @@
 - `.claude/settings.json` の `permissions.allow` は、信頼していないフォルダでは使われず、標準エラーに警告が出る［D-claude-code-permissions］
 - 対策：`--setting-sources user`（プロジェクトの設定と `.mcp.json` を読まない）、`--bare`、`--settings '{"disableAllHooks": true}'`（フックを止める）［D-claude-code-permissions］
 
+### 組み込みの /ship・/steward
+
+- `/ship` はブランチにPRがなければ開き、`/code-review` でレビューし、指摘・失敗したチェック・コンフリクトへの対応を続ける。`/steward` はレビューを省いて対応の監視だけを始める［A-2026-11-24-16］
+- 必要なもの：v2.1.330 以降、認証済みの GitHub CLI 2.63 以降。git が 2.38 より古いと merge は手動になる。ネイティブ Windows では監視が始まらない［A-2026-11-24-16］
+- `/ship` は確認なしでコミット・push・PR作成を本人名で行う。`bypassPermissions` モードでは監視が始まらない。Claude が自律的に動いている間、`gh`・`git` の merge・approve・force-push は止められる［A-2026-11-24-16］
+
 ### 作業フォルダの追加
 
 - `--add-dir` はファイルへのアクセスを足すだけで、そのフォルダの `.claude/` の設定の大半は読まれない（スキルなどは読まれる）［D-claude-code-cli-reference、D-claude-code-skills］
@@ -272,6 +279,7 @@
 - 使わない：`claude-fable-5-2`・`claude-mythos-5-2` での `tool_choice` の `{type: "any"}`・`{type: "tool", name: "..."}`（代わりに `{type: "auto"}`）。400［D-platform-fable-5-2-migration］
 - 使わない：`claude-sonnet-4-5-20250929`（代わりに `claude-sonnet-5-5`）。非推奨で、提供終了は2026年11月30日［D-platform-model-deprecations］
 - 使わない：日付なしの `claude-sonnet-4-5`（代わりに `claude-sonnet-5-5`）。日付つきIDと同じ2026年11月30日に提供終了。提供終了後、Claude Code は `There's an issue with the selected model` で始まるエラーを出す。フォールバックのモデル列を設定していれば次のモデルへ切り替わる［A-2026-11-19-16］
+- 使わない：`claude-opus-4-5-20251101`・日付なしの `claude-opus-4-5`（代わりに `claude-opus-5-5`）。2026年11月23日に非推奨となり、Claude API での提供終了は2027年1月22日。移行は Opus 5.5 の移行ガイドの「Migrating from Claude Opus 4.5 or earlier」を読む。Claude Code や他のプラットフォームに当たる日付は、非推奨の表の Overview で確かめる［A-2026-11-23-7、A-2026-11-24-46］
 - 使わない：`claude-mythos-preview`（非推奨。提供終了日は未発表）［D-platform-model-deprecations］
 - 使わない：提供終了のモデル。`claude-opus-4-1-20250805`・`claude-opus-4-20250514`（代わりに `claude-opus-4-8`）、`claude-sonnet-4-20250514`・`claude-3-7-sonnet-20250219`（代わりに `claude-sonnet-5-5`）、`claude-3-5-haiku-20241022`・`claude-3-haiku-20240307`（代わりに `claude-haiku-4-5-20251001`）［D-platform-model-deprecations］
 - 使わない：`--enable-auto-mode`（代わりに `--permission-mode auto`）。v2.1.111 で削除［D-claude-code-cli-reference］

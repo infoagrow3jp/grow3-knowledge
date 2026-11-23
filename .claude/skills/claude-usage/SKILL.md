@@ -52,6 +52,7 @@ description: >-
 - 使わない：`thinking` の `budget_tokens`（代わりに effort。4.7以降のモデルで400）［D-platform-prompting-best-practices］
 - 使わない：`claude-fable-5-2` での `thinking: {type: "disabled"}` と `tool_choice` の `any`・`tool`（代わりに effort を下げる・`auto` にする。400）［D-platform-fable-5-2-migration］
 - 使わない：`claude-sonnet-4-5-20250929`（代わりに `claude-sonnet-5-5`。2026-11-30 に提供終了）［D-platform-model-deprecations］
+- 使わない：`claude-opus-4-5-20251101`・日付なしの `claude-opus-4-5`（代わりに `claude-opus-5-5`。Claude API では 2027-01-22 に提供終了）［A-2026-11-23-7、A-2026-11-24-46］
 - 使わない：提供終了の `claude-opus-4-1-20250805`・`claude-opus-4-20250514`・`claude-sonnet-4-20250514`・`claude-3-7-sonnet-20250219`・`claude-3-5-haiku-20241022`・`claude-3-haiku-20240307`（代わりに現行のモデルID）［D-platform-model-deprecations］
 - 使わない：`--enable-auto-mode`（代わりに `--permission-mode auto`。削除済み）［D-claude-code-cli-reference］
 - 使わない：`--remote`（代わりに `--cloud`。非推奨の別名）［D-claude-code-cli-reference］
