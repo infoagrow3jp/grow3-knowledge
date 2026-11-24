@@ -10,7 +10,7 @@
 - `-p` と併用できないフラグがある。`--bg` は拒否される。`--cloud` も、作業の説明を付けると拒否される［A-2026-11-24-39、D-claude-code-cli-reference］
 - `--output-format` は `text`（既定）・`json`・`stream-json` の3つ［D-claude-code-headless］
 - `json` は結果本文が `result`、セッションIDが `session_id`、概算費用が `total_cost_usd` に入る［D-claude-code-headless］
-- `stream-json` で逐次受け取るときは `--verbose` と `--include-partial-messages` を付ける。最後の行が `result` メッセージ［D-claude-code-headless］
+- `stream-json` で逐次受け取るときは `--verbose` と `--include-partial-messages` を付ける。`result` メッセージは `type` で探す（タスク通知のように、`result` の後に続いて別のターンを始めるメッセージがあるため）。成功の `result` に最終の本文・費用の累計・セッション情報が入る［A-2026-11-25-1］
 - `--bare` は、フック・スキル・カスタムコマンド・サブエージェント・プラグイン・MCPサーバー・自動メモリ・CLAUDE.md の自動読み込みを省く［D-claude-code-headless、D-claude-code-cli-reference］
 - `--bare` は OAuth 資格情報とキーチェーンを読まない。認証は環境変数 `ANTHROPIC_API_KEY` か、`--settings` で渡す `apiKeyHelper`［D-claude-code-headless］
 - `--bare` で使えるツールは Bash・ファイル読み取り・ファイル編集。必要な文脈は `--append-system-prompt`・`--settings`・`--mcp-config`・`--agents`・`--plugin-dir` で渡す［D-claude-code-headless］
@@ -20,6 +20,7 @@
 - `--bare` なしの `-p` は、信頼確認のダイアログを出さずに、作業フォルダの `.claude/settings.json` のフックと `.mcp.json` のサーバーを読み込む［D-claude-code-headless］
 - 止めどころは `--max-turns <回数>` と `--max-budget-usd <金額>`（どちらも `-p` 専用）。金額は概算で、上限を超えることがある［D-claude-code-cli-reference、D-claude-code-best-practices］
 - `-p` では、指示文に `/スキル名` を入れるとスキルが展開される。`/login` など端末専用の組み込みコマンドは使えない［D-claude-code-headless］
+- 非対話実行のページに、MCPサーバーが出すスキルには対応しないとの記載がある［A-2026-11-25-1］
 - バックグラウンド作業が残っていると、`-p` は終了せず待つ。既定では連続10分の待機で残りを止める（`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS` で変更）［D-claude-code-headless］
 - SIGTERM で止めると終了コード143で、進行中のターンは未完のまま残る。ターンを終わらせたいときは SIGINT を先に送る［D-claude-code-headless］
 - セッションを保存しないときは `--no-session-persistence`（`-p` 専用。再開できなくなる）［D-claude-code-cli-reference］
@@ -141,6 +142,7 @@
 - 本文は短くする。長い資料は同じフォルダの別ファイルに置き、SKILL.md から参照する［D-claude-code-skills］
 - スキルが多いと、一覧の説明が削られる（一覧の予算は文脈の1%）。起動しないときは、説明に利用者が言いそうな語が入っているかを確かめる［D-claude-code-skills］
 - frontmatter が読めないファイルは `claude plugin validate .claude/skills` で探せる〔v2.1.233以降〕［D-claude-code-skills］
+- MCPサーバーが出すスキルは v2.1.331 以降で使える。サーバー側の内容なので、frontmatter の `allowed-tools`・`disallowed-tools`・`hooks`・`model`・`effort`・`context`・`agent`・`background`・`shell`・`paths`・`metadata` は無視され、`!` コマンドは動かず、`@` 参照のファイルは添付されず、`${CLAUDE_PROJECT_DIR}`・`${CLAUDE_SESSION_ID}` は置き換えられない。補助ファイルはMCPリソースとして読まれる［A-2026-11-25-6］
 - フォルダ名 `synced` と `anthropic-skills` は予約されていて、その名前のスキルは読み込まれない［D-claude-code-skills］
 - 名前が `ship`・`ship-local`・`steward` のスキル・コマンドは、`/ship` が使える環境では読み込まれず、組み込みの `/ship`・`/steward` が使われる。ほかの組み込みスキルと同名のスキルは、組み込みのコマンドを置き換えるが別名は置き換えない［A-2026-11-24-43、A-2026-11-24-16］
 
@@ -168,6 +170,8 @@
 - 1回の実行だけ設定を変えるときは `--settings <ファイルかJSON>`。渡したキーだけが上書きされる。`Managed`・`Global config` のキーと、`prependPlugins` など一部のユーザー設定のキーは `--settings` では設定できない［A-2026-11-23-2、D-claude-code-cli-reference］
 - 読み込む設定の範囲は `--setting-sources user,project,local` で絞れる［D-claude-code-cli-reference］
 - 環境変数は、この優先順の段には入らない。設定キーとどちらが勝つかは、組み合わせごとに決まっている［D-claude-code-settings］
+- `-p` は、壊れた個人・プロジェクト・ローカルの設定ファイルや値を、ダイアログなしで読み飛ばして続ける（管理設定が解析できないときを除く）。読み込まれなかったファイルの中身は、フック・権限ルール・サンドボックス設定を含めて効かない［A-2026-11-25-5］
+- 既定の `text` 形式の `-p` では、読み込まれなかったものと読み飛ばした項目が標準エラーに出る。設定が効かないときは、端末で `claude doctor` を実行して落とされたものを確かめる［A-2026-11-25-5］
 
 ## 操作別の注意
 
@@ -186,7 +190,7 @@
 - `--permission-mode` の値は `default`（表示名は Manual。`manual` も可）・`acceptEdits`・`plan`・`auto`・`dontAsk`・`bypassPermissions`［D-claude-code-cli-reference、D-claude-code-permission-modes］
 - 承認なしで動く範囲：`default` は作業フォルダ内のファイル読み取りとサブエージェントの起動など承認の要らない操作だけ（編集・シェルコマンド・ネットワーク要求の多くは承認を求める）、`acceptEdits` は読み取り・ファイル編集・`mkdir` などのファイル操作、`auto` は分類器の確認つきで全部、`dontAsk` は読み取りと、許可ルールかフックが承認したほとんどの呼び出しだけ、`bypassPermissions` は全部［A-2026-11-20-10、A-2026-11-20-11、A-2026-11-23-1］
 - 作業フォルダ外の最初の読み取りで出る確認は、`-p`・Agent SDK・バックグラウンドセッション・VS Code のチャットパネル・デスクトップアプリでは出ず、読み取りはそのまま実行される［A-2026-11-20-2］
-- `--allow-dangerously-skip-permissions` は `bypassPermissions` を `Shift+Tab` の切り替えに足すだけで、そのモードでは始めない。対話端末のセッションで切り替えに入っている間は、plan モードでも、計画を承認する前にほとんどの編集とコマンドが承認なしで動く［A-2026-11-20-9］
+- `--allow-dangerously-skip-permissions` は `bypassPermissions` を `Shift+Tab` の切り替えに足すだけで、そのモードでは始めない。対話端末のセッションで切り替えに入っている間は、plan モードでも、計画を承認する前にほとんどの編集とコマンドが承認なしで動くことがある［A-2026-11-25-2、A-2026-11-25-3］
 - 開始時のモードは、`--permission-mode`（または `--dangerously-skip-permissions`）、設定ファイルの `permissions.defaultMode`、組み込みの既定の順で決まる［D-claude-code-permission-modes］
 - `claude -p` とSDKの組み込みの既定は `default`（Manual）〔v2.1.302以降〕。承認が要る呼び出しは、許可ルール・フック・`--permission-prompt-tool` が承認しない限り拒否される［D-claude-code-permission-modes、D-claude-code-headless］
 - プロジェクトの `.claude/settings.json` と `.claude/settings.local.json` に書いた `defaultMode` の `auto` と `bypassPermissions` は効かない［D-claude-code-permission-modes］
@@ -273,7 +277,7 @@
 ## 使わないもの
 
 - 使わない：`temperature`・`top_p`・`top_k`（代わりに指示文で調整する）。APIバージョン `2026-10-21` では、どのモデルでも400。それより前のAPIバージョンでも、4.7以降のモデルは既定以外の値で400［D-platform-api-versioning、D-platform-model-deprecations、D-platform-working-with-messages］
-- 使わない：assistant メッセージ末尾のプリフィル（代わりに構造化出力かシステムプロンプトの指示）。4.6以降のモデルで400。会話の途中に assistant メッセージを入れることは影響を受けない［D-platform-working-with-messages、D-platform-prompting-best-practices］
+- 使わない：assistant メッセージ末尾のプリフィル（代わりに構造化出力かシステムプロンプトの指示）。受け付けるかはAPIバージョンでなくモデルで決まる。4.5以前のモデルは、提供終了でない限り受け付け、それ以外のモデルは400。会話の途中に assistant メッセージを入れることは影響を受けない［A-2026-11-25-9、D-platform-prompting-best-practices］
 - 使わない：`thinking` の `budget_tokens`（代わりに effort。上限は `max_tokens` で切る）。4.7以降のモデルで400、Opus 4.6 と Sonnet 4.6 では非推奨［D-platform-prompting-best-practices、D-platform-models-overview］
 - 使わない：`claude-fable-5-2`・`claude-mythos-5-2` での `thinking: {type: "disabled"}`（代わりに effort を下げる）。400［D-platform-fable-5-2-migration］
 - 使わない：`claude-fable-5-2`・`claude-mythos-5-2` での `tool_choice` の `{type: "any"}`・`{type: "tool", name: "..."}`（代わりに `{type: "auto"}`）。400［D-platform-fable-5-2-migration］
