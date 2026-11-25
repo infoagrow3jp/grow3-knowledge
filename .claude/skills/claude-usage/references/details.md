@@ -24,6 +24,7 @@
 - バックグラウンド作業が残っていると、`-p` は終了せず待つ。既定では連続10分の待機で残りを止める（`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS` で変更）［D-claude-code-headless］
 - SIGTERM で止めると終了コード143で、進行中のターンは未完のまま残る。ターンを終わらせたいときは SIGINT を先に送る［D-claude-code-headless］
 - セッションを保存しないときは `--no-session-persistence`（`-p` 専用。再開できなくなる）［D-claude-code-cli-reference］
+- `claude auth login` は、claude.ai のログインを保存できなかったとき、終了コード1で終わり、確かめる点（残っているロックファイル、ディスクの空きなど）を出す［A-2026-11-24-52］
 - `claude auth status` はJSONで認証状態を返し、ログインしていれば終了コード0、していなければ1。`loginExpiresAt` は保存済みログインの有効期限の見込み日か `null`〔v2.1.318以降〕［A-2026-11-20-9］
 - 無人実行の前に決めること：完了の条件、自分で確認する手段、触ってよい範囲、止める条件、結果の行き先と承認者［D-claude-code-best-practices］
 
@@ -37,6 +38,9 @@
 - Messages API は状態を持たない。毎回、会話履歴の全体を送る［D-platform-working-with-messages］
 - システムプロンプトは最上位の `system` に書く。会話の途中で足す指示は、user ターンの直後に `"role": "system"` のメッセージとして入れる（先頭には置けない。対応モデルは Fable 5.2・Opus 5.5・Sonnet 5.5・Haiku 5.5 など）［D-platform-working-with-messages］
 - 応答の終わり方は `stop_reason` で判定する（`end_turn`・`max_tokens`・`refusal` など）。`refusal` には `stop_details` が付く［D-platform-working-with-messages］
+- SDKでエラーの原因ごとに処理を分けるときは、SDKを最新版へ更新する。APIのエラーにはエラーコード・メッセージ・詳細が付き、コードごとに専用の例外クラス（Go では定数）がある。例：月の上限に達したときの `enforced_spend_limit_reached`（HTTP 429）は `EnforcedSpendLimitReachedError`（Python・Ruby）［A-2026-11-04-1、A-2026-11-26-1］
+- 429 の分岐を先に置くと `enforced_spend_limit_reached` も拾う。範囲の狭い分岐を先に書く［A-2026-11-26-1］
+- ストリームが始まった後のエラーは、HTTP 200 の後にエラーイベントで届き、SDKは再試行しない。HTTPの状態ではなく `error.type`（例：`overloaded_error`）かエラーコードで判定する［A-2026-11-26-1］
 
 ## モデルの選び方
 
@@ -78,7 +82,10 @@
 - 替える前に、モデル別の移行ガイドで破壊的変更を確かめる［D-platform-choosing-a-model、D-platform-fable-5-2-migration］
 - Opus 4.8 以前から `claude-fable-5-2` へ移ると、`thinking` を指定しないリクエストでも思考が走る。`max_tokens` を見直し、思考を減らしたいところは effort を下げる［D-platform-fable-5-2-migration］
 - 別のモデルへ会話を移すと、移行先が読めない `thinking` ブロックはAPIが落とす（リクエストは成功する）［D-platform-fable-5-2-migration］
-- 提供終了日を過ぎたモデルへのリクエストは失敗する。提供終了の60日以上前に通知がある［D-platform-model-deprecations］
+- 提供終了日を過ぎたモデルへのリクエストは失敗する。Claude API の Messages API は 404 `not_found_error` を返す。提供終了の60日以上前に通知がある［D-platform-model-deprecations、A-2026-11-26-24］
+- 非推奨のモデルは、提供終了日の前に、公式の非推奨の履歴にある推奨の置き換え先か別の現行モデルへ移す［A-2026-11-26-24］
+- `claude-fable-5-2`・`claude-mythos-5-2` は30日のデータ保持が要る。保持のない組織・ワークスペースのリクエストは400 `invalid_request_error`。従来のゼロデータ保持（ZDR）契約では、Anthropic の明示の許可がない限り使えない［A-2026-11-26-25］
+- Claude Managed Agents で `claude-fable-5-2` へ移すときは、通常はエージェントの `model` フィールドを変えるだけ。詳細は Managed Agents の移行ページの「Migrating between model versions」［A-2026-11-26-25］
 
 ## 指示の書き方
 
@@ -95,6 +102,7 @@
 - サブエージェントを使いすぎるときは、使う場面（並列・文脈の分離・独立した作業）と使わない場面を指示に書く［D-platform-prompting-best-practices］
 - 思考を切っているときの段階的な推論は、答えの前に考えさせ、最終回答を `<answer>` タグに入れさせれば取り出せる。推論を `<thinking>` タグなどで書かせる指示は、モデルによっては拒否される。その場合は思考に任せ、費用や遅延が気になるときは effort を下げる［A-2026-11-22-7］
 - モデル別のプロンプトの手引きがある。使うモデルの手引きを先に読む［D-platform-prompting-best-practices］
+- 残りの文脈窓を自分で把握する機能（context awareness）を持つのは `claude-sonnet-4-5`（非推奨）と `claude-haiku-4-5` だけ［A-2026-11-26-26］
 - `claude-fable-5-2` は、effort が `medium` 以上のとき「考えずに直接答えて」と書いても思考を止めない。その行を消して effort を下げる［D-platform-fable-5-2-migration］
 - Claude Code には、リポジトリを読んでも分からないこと（会議で決めたこと、頭の中にしかない手順、必要な環境変数）だけを書く［D-claude-code-best-practices］
 - 手元にある材料は説明せずに渡す（ファイルは `@パス`、コマンド出力はパイプ）［D-claude-code-best-practices］
@@ -117,6 +125,7 @@
 - 特定の時点で必ず実行させたいこと（コミット前、編集後など）はフックにする［D-claude-code-memory、D-claude-code-best-practices］
 - 確実に強制するフックは `command`・`http`・`mcp_tool` の種類にする。`prompt`・`agent` のフックは別のモデルが判断するので確定的でない［A-2026-11-20-7］
 - フック自体が失敗・タイムアウトしたときも操作を止めたいときは `onFailure: "block"` を足す。`mcp_tool` のフックでの指定は v2.1.328 以降［A-2026-11-20-7、A-2026-11-18-1］
+- フックのイベント `PreSkillShellCommand` は、スキルやコマンドが読み込まれるときのインラインのシェルコマンドを拒否できる〔v2.1.332以降〕。v2.1.331 以前では、設定ファイルにこの名前があると起動時にダイアログが開く［A-2026-11-24-52］
 - システムプロンプトの水準で効かせたい指示は `--append-system-prompt` で渡す［D-claude-code-memory］
 - プロジェクト直下の CLAUDE.md は、圧縮（compact）の後に読み直される。会話の中だけで伝えた指示は残らない［D-claude-code-memory］
 - `--add-dir` で足したフォルダの CLAUDE.md は、既定では読まれない（`CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1` で読む）［D-claude-code-memory］
@@ -143,6 +152,9 @@
 - スキルが多いと、一覧の説明が削られる（一覧の予算は文脈の1%）。起動しないときは、説明に利用者が言いそうな語が入っているかを確かめる［D-claude-code-skills］
 - frontmatter が読めないファイルは `claude plugin validate .claude/skills` で探せる〔v2.1.233以降〕［D-claude-code-skills］
 - MCPサーバーが出すスキルは v2.1.331 以降で使える。サーバー側の内容なので、frontmatter の `allowed-tools`・`disallowed-tools`・`hooks`・`model`・`effort`・`context`・`agent`・`background`・`shell`・`paths`・`metadata` は無視され、`!` コマンドは動かず、`@` 参照のファイルは添付されず、`${CLAUDE_PROJECT_DIR}`・`${CLAUDE_SESSION_ID}` は置き換えられない。補助ファイルはMCPリソースとして読まれる［A-2026-11-25-6］
+- MCPサーバーのスキルはベータ。`/` メニューでは `サーバー名:スキル名` と表示され、ほかのスキルは名前のまま［A-2026-11-24-52］
+- frontmatter の `model` は、人が `/名前` でスキルを実行したターンにだけ効く。Claude が呼び出したときは、セッションのモデルのまま［A-2026-11-26-20］
+- 組織が禁止した値、plan モードでの自動の格上げ、auto モードの分類器が非対応のモデルのときも、セッションのモデルのまま。`context: fork` では、値はフォークしたサブエージェントの呼び出しごとのモデルになる［A-2026-11-26-20］
 - フォルダ名 `synced` と `anthropic-skills` は予約されていて、その名前のスキルは読み込まれない［D-claude-code-skills］
 - 名前が `ship`・`ship-local`・`steward` のスキル・コマンドは、`/ship` が使える環境では読み込まれず、組み込みの `/ship`・`/steward` が使われる。ほかの組み込みスキルと同名のスキルは、組み込みのコマンドを置き換えるが別名は置き換えない［A-2026-11-24-43、A-2026-11-24-16］
 
@@ -219,6 +231,9 @@
 - `Bash(git diff *)` のように `*` の前に空白を入れる。空白がない `Bash(git diff*)` は `git diff-index` にも当たる［D-claude-code-headless］
 - deny にツール名だけを書くと、そのツール自体が Claude から見えなくなる。`Bash(rm *)` のように指定を付けると、当たる呼び出しだけが止まる［D-claude-code-permissions］
 - Read・Edit の deny ルールは、組み込みのファイルツールと、Claude Code が解析できるBashコマンドのリダイレクト先・`cat`・`head`・`tail`・`sed`・`tee` などに効く。ファイル名を書かずに読むコマンド（フォルダで `grep -r pattern .`）や、スクリプトが自分でファイルを開く場合には効かない。シェルコマンドをOSの水準で縛るにはサンドボックスを有効にし、サンドボックス外での再試行を止める［A-2026-11-20-3］
+- `Edit(*)`・`Write(*)`・`NotebookEdit(*)` の allow ルールが事前に承認するのは作業フォルダ内だけ〔v2.1.317以降〕。作業フォルダの外も承認するときは、ツール名だけ（`Edit`・`Read` など）を書く。保護パスへの書き込みとネットワークパスの読み取りは、それでも承認されないことがある［A-2026-11-26-17］
+- ファイルツールの `(*)` の allow ルールで作業フォルダに留めようとしない（v2.1.317 より前はツール名だけと同じ扱い。以後も、Anthropic が作業フォルダの制限を切ると同じになりうる）。留めるときは、作業フォルダ外の読み書きを deny ルールで止める［A-2026-11-26-17］
+- 起動時の警告が `Read(*)` のルールは `adds nothing to Read's default` と言うときは、そのルールを設定ファイルから消してよい［A-2026-11-26-17］
 - ルールには正式なツール名を使う。画面上の表示名（例：`Stop Task`）では当たらない［D-claude-code-permissions］
 
 ### ツールの制限
@@ -277,7 +292,7 @@
 ## 使わないもの
 
 - 使わない：`temperature`・`top_p`・`top_k`（代わりに指示文で調整する）。APIバージョン `2026-10-21` では、どのモデルでも400。それより前のAPIバージョンでも、4.7以降のモデルは既定以外の値で400［D-platform-api-versioning、D-platform-model-deprecations、D-platform-working-with-messages］
-- 使わない：assistant メッセージ末尾のプリフィル（代わりに構造化出力かシステムプロンプトの指示）。受け付けるかはAPIバージョンでなくモデルで決まる。4.5以前のモデルは、提供終了でない限り受け付け、それ以外のモデルは400。会話の途中に assistant メッセージを入れることは影響を受けない［A-2026-11-25-9、D-platform-prompting-best-practices］
+- 使わない：assistant メッセージ末尾のプリフィル（代わりに構造化出力かシステムプロンプトの指示）。受け付けるかはAPIバージョンでなくモデルで決まる。4.5以前のモデルは、提供終了でない限り受け付け、それ以外のモデルは400。会話の途中に assistant メッセージを入れることは影響を受けない。非推奨の `claude-opus-4-5`・`claude-sonnet-4-5` の推奨の置き換え先は、プリフィルを受け付けない［A-2026-11-25-9、A-2026-11-26-27、D-platform-prompting-best-practices］
 - 使わない：`thinking` の `budget_tokens`（代わりに effort。上限は `max_tokens` で切る）。4.7以降のモデルで400、Opus 4.6 と Sonnet 4.6 では非推奨［D-platform-prompting-best-practices、D-platform-models-overview］
 - 使わない：`claude-fable-5-2`・`claude-mythos-5-2` での `thinking: {type: "disabled"}`（代わりに effort を下げる）。400［D-platform-fable-5-2-migration］
 - 使わない：`claude-fable-5-2`・`claude-mythos-5-2` での `tool_choice` の `{type: "any"}`・`{type: "tool", name: "..."}`（代わりに `{type: "auto"}`）。400［D-platform-fable-5-2-migration］
